@@ -1,0 +1,446 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{prooftree}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+
+\def\limp {\mathbin{{-}\mkern-3.5mu{\circ}}}
+
+\begin{document}
+
+\section{The calculus}
+
+We consider a very simple fragment of propositional intuitionistic
+linear logic, which comprises the multiplicative connectives
+$\otimes, \limp, \textbf{1}$, and the additive connective $\oplus$.
+
+\[
+  \begin{prooftree}
+    \justifies
+    \Gamma; P \Longrightarrow P
+    \using{init}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma, A; \Delta, A \Longrightarrow C
+    \justifies
+    \Gamma, A; \Delta \Longrightarrow C
+    \using{copy}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \Longrightarrow A
+    \qquad
+    \Gamma; \Delta' \Longrightarrow B
+    \justifies
+    \Gamma; \Delta, \Delta' \Longrightarrow A \otimes B
+    \using{\otimes R}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, A, B \Longrightarrow C
+    \justifies
+    \Gamma; \Delta, A \otimes B \Longrightarrow C
+    \using{\otimes L}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \justifies
+    \Gamma; \cdot \Longrightarrow \textbf{1}
+    \using{\textbf{1} R}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta \Longrightarrow C
+    \justifies
+    \Gamma; \Delta, \textbf{1} \Longrightarrow C
+    \using{\textbf{1} L}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \Longrightarrow A
+    \qquad
+    \Gamma; \Delta', B \Longrightarrow C
+    \justifies
+    \Gamma; \Delta, \Delta', A \limp B \Longrightarrow C
+    \using{\limp L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, A \Longrightarrow B
+    \justifies
+    \Gamma; \Delta \Longrightarrow A \limp B
+    \using{\limp R}
+  \end{prooftree}
+\]
+
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta, A \Longrightarrow C
+    \qquad
+    \Gamma; \Delta, B \Longrightarrow C
+    \justifies
+    \Gamma; \Delta, A \oplus B \Longrightarrow C
+    \using{\oplus L}
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    \Gamma; \Delta \Longrightarrow A
+    \justifies
+    \Gamma; \Delta \Longrightarrow A \oplus B
+    \using{\oplus R 1}
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    \Gamma; \Delta \Longrightarrow B
+    \justifies
+    \Gamma; \Delta \Longrightarrow A \oplus B
+    \using{\oplus R 2}
+  \end{prooftree}
+\]
+
+\section{Cut elimination}
+
+We first show that restricting the identity axiom on atomic formulas
+only is conservative:
+
+\begin{theorem}
+  The identity axiom $\Gamma; A \Longrightarrow A$, where $A$ is of
+  arbitrary complexity, is admissible.
+\end{theorem}
+\begin{proof}
+  TODO.
+\end{proof}
+
+\begin{theorem}[Linear cut elimination]
+  If $\Gamma; \Delta \Longrightarrow A$ and $\Gamma; \Delta', A
+  \Longrightarrow C$, then $\Gamma; \Delta, \Delta' \Longrightarrow C$.
+\end{theorem}
+\begin{proof}
+  By nested induction on the height of the derivations of the
+  premises, and the complexity of the cut formula. We can distinguish
+  some cases:
+
+  \begin{enumerate}
+  \item One of the premises is an axiom. Then:
+
+    \[
+      \begin{prooftree}
+        \[\justifies \Gamma; P \Longrightarrow P\] \qquad
+        \[\mathcal{E}
+        \leadsto
+        \Gamma; P \Longrightarrow C \]
+        \justifies
+        \Gamma; P \Longrightarrow C
+      \end{prooftree}
+    \]
+
+    then, just take $\mathcal{E}$. The second case is:
+
+    \[
+      \begin{prooftree}
+        \[\mathcal{D} \leadsto \Gamma; \Delta \Longrightarrow P\]
+        \qquad
+        \[\justifies \Gamma; P \Longrightarrow P\]
+        \justifies
+        \Gamma; \Delta \Longrightarrow P
+      \end{prooftree}
+    \]
+
+    then, just take $\mathcal{D}$.
+    
+  \item (Principal cuts) The cut formula is introduced by a right rule
+    in the left premise, and eliminated by a left rule in the right
+    premise... TODO.
+  \item (Left-commutative cases) The cut formula is a side formula in
+    the left premise. Then, the cut is just routinely moved to the
+    premises of the last rule that has been used to derive the left
+    premise, and the inductive hypothesis is applied since we act on
+    derivations of strictly smaller height.
+
+    \begin{enumerate}
+    \item The last rule is $copy$:
+      
+      \[
+        \begin{prooftree}
+          \[
+            \Gamma, A ; \Delta, A \Longrightarrow B
+            \justifies
+            \Gamma, A; \Delta \Longrightarrow B
+            \using{copy}
+          \] \qquad
+          \Gamma, A; \Delta', B \Longrightarrow C
+          \justifies
+          \Gamma, A ; \Delta, \Delta' \Longrightarrow C
+        \end{prooftree}
+      \]
+
+      Then,
+
+      \[
+        \begin{prooftree}
+          \[
+            \Gamma, A; \Delta, A \Longrightarrow B
+            \qquad
+            \Gamma, A; \Delta', B \Longrightarrow C
+            \justifies
+            \Gamma, A; \Delta, \Delta', A \Longrightarrow C
+            \using{cut}
+          \]
+          \justifies
+          \Gamma, A ; \Delta, \Delta' \Longrightarrow C
+          \using{copy}
+        \end{prooftree}
+      \]
+
+      
+    \item The last rule was...
+    \end{enumerate}
+    
+  \item (Right-commutative cases) The cut formula is a side formula in
+    the right premise. Then, the cut is just routinely moved to the
+    premises of the last rule that has been used to derive the right
+    premise, and the inductive hypothesis is applied since we act on
+    derivations of strictly smaller height.
+
+    \begin{enumerate}
+    \item The last rule is $copy$:
+
+      \[
+        \begin{prooftree}
+          \Gamma, A ; \Delta \Longrightarrow C
+          \qquad
+          \[
+            \Gamma, A; \Delta', C, A \Longrightarrow D
+            \justifies
+            \Gamma, A; \Delta', C \Longrightarrow D
+            \using{copy}
+          \]
+          \justifies
+          \Gamma, A; \Delta, \Delta' \Longrightarrow D
+          \using{cut}
+        \end{prooftree}
+      \]
+
+      then
+
+      \[
+        \begin{prooftree}
+          \[
+            \Gamma, A ; \Delta \Longrightarrow C
+            \qquad
+            \Gamma, A; \Delta', C, A \Longrightarrow D
+            \justifies
+            \Gamma, A; \Delta, \Delta', A \Longrightarrow D
+            \using{cut}
+          \]
+          \justifies
+          \Gamma, A; \Delta, \Delta' \Longrightarrow D
+          \using{copy}
+        \end{prooftree}
+      \]
+    \end{enumerate}
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Persistent cut elimination]
+  If $\Gamma; \cdot \Longrightarrow A$ and $\Gamma, A; \Delta
+  \Longrightarrow C$, then $\Gamma; \Delta \Longrightarrow C$.
+\end{theorem}
+\begin{proof}
+  By structural induction on the height of the derivations.
+  \begin{enumerate}
+  \item One of the premises is an initial sequent. Hence, the right
+    premise is, and
+
+    \[
+      \begin{prooftree}
+        \Gamma; \cdot \Longrightarrow A
+        \qquad
+        \[ \justifies \Gamma, A; P \Longrightarrow P\]
+        \justifies
+        \Gamma; P \Longrightarrow P
+      \end{prooftree}
+    \]
+    
+    but then also $\Gamma; P \Longrightarrow P$ is an identity axiom,
+    and can be derived without cut.
+    
+  \item All other cases are treated as right-commutative cuts, except
+    for the case where the last rule in the right premise is
+    $copy$. In this case, the cut is
+
+    \[
+      \begin{prooftree}
+        \Gamma; \cdot \Longrightarrow A
+        \qquad
+        \[
+          \Gamma, A; \Delta, A \Longrightarrow C
+          \justifies
+          \Gamma, A ; \Delta \Longrightarrow C
+          \using{copy}
+        \]
+        \justifies
+        \Gamma; \Delta \Longrightarrow C
+        \using{cut!}
+      \end{prooftree}
+    \]
+
+    But then, by inductive hypothesis and admissibility of linear cut,
+    we have
+
+    \[
+      \begin{prooftree}
+        \Gamma; \cdot \Longrightarrow A
+        \qquad
+        \[
+          \Gamma; \cdot \Longrightarrow A
+          \qquad
+          \Gamma, A; \Delta, A \Longrightarrow C
+          \justifies
+          \Gamma; \Delta, A \Longrightarrow C
+          \using{cut!}
+        \]
+        \justifies
+        \Gamma; \Delta \Longrightarrow C
+        \using{cut}
+      \end{prooftree}
+    \]
+
+  \end{enumerate}
+\end{proof}
+
+\section{Forward sequent calculus}
+
+Since weakening and contraction are admissible for the unrestricted
+zone, we can treat $\Gamma$ as a set.
+
+\[
+  \begin{prooftree}
+    \justifies
+    \cdot ; P \longrightarrow P
+    \using{init}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, A \longrightarrow C
+    \justifies
+    \Gamma \cup \{A\}; \Delta \longrightarrow C
+    \using{copy}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \longrightarrow A
+    \qquad
+    \Gamma'; \Delta' \longrightarrow B
+    \justifies
+    \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, A, B \longrightarrow C
+    \justifies
+    \Gamma; \Delta, A \otimes B \longrightarrow C
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \justifies
+    \cdot; \cdot \longrightarrow \textbf{1}  
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta \longrightarrow C
+    \justifies
+    \Gamma; \Delta, \textbf{1} \longrightarrow C
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \longrightarrow A
+    \qquad
+    \Gamma'; \Delta', B \longrightarrow C
+    \justifies
+    \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
+    \using{\limp L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, A \longrightarrow B
+    \justifies
+    \Gamma; \Delta \longrightarrow A \limp B
+    \using{\limp R}
+  \end{prooftree}
+\]
+
+\begin{definition}
+  \begin{enumerate}
+  \item A forward sequent is of the form $\Gamma; \Delta
+    \longrightarrow C$, where $\Gamma$ and $\Delta$ are the
+    unrestricted and linear resources respectively;
+  \item The correspondence relation $\prec$ between forward and
+    backward sequents is defined as follows:
+    $(\Gamma; \Delta \longrightarrow C) \prec
+    (\Gamma';\Delta\Longrightarrow C) \; iff \; \Gamma \subseteq
+    \Gamma'$. The forward sequent $s$ is sound if for every backward
+    sequent $s'$ such that $s \prec s'$, $s'$ is derivable in the
+    backward calculus;
+  \item The subsumption relation $\leq$ between forward sequents is
+    the smallest relation to satisfy:
+
+    \[
+      (Gamma; \Delta \longrightarrow C) \leq (\Gamma'; \Delta
+      \longrightarrow C)
+    \]
+
+    where $\Gamma \subseteq \Gamma'$.
+  \end{enumerate}
+\end{definition}
+
+Obviously, if $s_1 \leq s_2$ and $s_2 \prec s$, then $s_1 \prec s$.
+
+\begin{definition}
+  A rule with conclusion $s$ and premises $s_1, \dots, s_n$ is said to
+  satisfy the irredundancy property if for no $i \in \{1, \dots, n\}$,
+  $s_i \leq s$.
+\end{definition}
+
+\begin{proposition}
+  All forward rules satisfy the irredundancy property.
+\end{proposition}
+
+\begin{theorem}[Soundness]
+  If $\Gamma; \Delta \longrightarrow C$ is derivable, then it is
+  sound.
+\end{theorem}
+
+\begin{theorem}[Completeness]
+  If $\Gamma; \Delta \Longrightarrow C$ is derivable, then there
+  exists a derivable forward sequent
+  $\Gamma'; \Delta' \longrightarrow C$ such that
+  $(\Gamma'; \Delta' \longrightarrow C) \prec (\Gamma; \Delta
+  \Longrightarrow C)$.
+\end{theorem}
+
+\section{Focused derivations}
+
+
+
+\end{document}
+
