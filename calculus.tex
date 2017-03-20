@@ -5,15 +5,64 @@
 \usepackage{dsfont}
 \usepackage{prooftree}
 \usepackage{amsthm}
+\usepackage{mathtools}
+
 \newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
 
 \def\limp {\mathbin{{-}\mkern-3.5mu{\circ}}}
+\newcommand{\neuseqsymb}{
+  \mathrel{\Longrightarrow\!\!\!\!\!\!\!\!\Longrightarrow}
+  %\mathrlap{\,\Longrightarrow}\Longrightarrow
+}
+\newcommand{\neuseq}[3]{#1 ; #2 \neuseqsymb #3}
+\newcommand{\brfrel}[1]{\textsf{foc}^+_{\Uparrow}(#1)}
+\newcommand{\blfrel}[1]{\textsf{foc}^-_{\Uparrow}(#1)}
+\newcommand{\bactrel}[1]{\textsf{act}_{\Uparrow}(#1)}
+\newcommand{\relj}[3]{#1 [#2] \hookrightarrow #3}
+\newcommand{\btriseq}[4]{#1; #2; #3 \Longrightarrow #4}
+\newcommand{\rfocseq}[3]{#1; #2 \gg #3}
+\newcommand{\lfocseq}[4]{#1; #2; #3 \ll #4}
+
+\newcommand{\rinit}{\textsc{rinit}}
+\newcommand{\linit}{\textsc{linit}}
+\newcommand{\lact}{\textsc{lact}}
+\newcommand{\ract}{\textsc{ract}}
+\newcommand{\bact}{\textsc{bact}}
+\newcommand{\rfoc}{\textsc{rfoc}}
+\newcommand{\lfoc}{\textsc{lfoc}}
+\newcommand{\matchrule}{\textsc{match}}
+\newcommand{\matchprimerule}{\textsc{match'}}
+\newcommand{\rightfocusrule}{\textsc{right-focus}}
+\newcommand{\leftfocusrule}{\textsc{left-focus}}
+\newcommand{\copyfocusrule}{\textsc{copy-focus}}
+\newcommand{\rblur}{\textsc{rblur}}
+\newcommand{\lblur}{\textsc{lblur}}
+\newcommand{\rblurstar}{\textsc{rblur}^*}
+\newcommand{\lblurstar}{\textsc{lblur}^*}
+\newcommand{\faplus}{\textsc{FA}^+}
+\newcommand{\faplusstar}{\textsc{FA}^{+*}}
+\newcommand{\faminusstar}{\textsc{FA}^{-*}}
+\newcommand{\copyrule}{\textsc{copy}}
+
+
+\title{A forward focused calculus for Zsyntax}
+\author{Filippo Sestini}
 
 \begin{document}
 
-\section{The calculus}
+\maketitle
+
+\section{Backward sequent calculus}
+
+\subsection{From natural deduction to sequent calculus}
+
+...
+
+
 
 We consider a very simple fragment of propositional intuitionistic
 linear logic, which comprises the multiplicative connectives
@@ -52,20 +101,20 @@ $\otimes, \limp, \textbf{1}$, and the additive connective $\oplus$.
   \end{prooftree}
 \]
 
-\[
-  \begin{prooftree}
-    \justifies
-    \Gamma; \cdot \Longrightarrow \textbf{1}
-    \using{\textbf{1} R}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \Gamma; \Delta \Longrightarrow C
-    \justifies
-    \Gamma; \Delta, \textbf{1} \Longrightarrow C
-    \using{\textbf{1} L}
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \justifies
+%     \Gamma; \cdot \Longrightarrow \textbf{1}
+%     \using{\textbf{1} R}
+%   \end{prooftree}
+%   \qquad \qquad
+%   \begin{prooftree}
+%     \Gamma; \Delta \Longrightarrow C
+%     \justifies
+%     \Gamma; \Delta, \textbf{1} \Longrightarrow C
+%     \using{\textbf{1} L}
+%   \end{prooftree}
+% \]
 
 \[
   \begin{prooftree}
@@ -86,32 +135,32 @@ $\otimes, \limp, \textbf{1}$, and the additive connective $\oplus$.
 \]
 
 
-\[
-  \begin{prooftree}
-    \Gamma; \Delta, A \Longrightarrow C
-    \qquad
-    \Gamma; \Delta, B \Longrightarrow C
-    \justifies
-    \Gamma; \Delta, A \oplus B \Longrightarrow C
-    \using{\oplus L}
-  \end{prooftree}
-  \qquad
-  \begin{prooftree}
-    \Gamma; \Delta \Longrightarrow A
-    \justifies
-    \Gamma; \Delta \Longrightarrow A \oplus B
-    \using{\oplus R 1}
-  \end{prooftree}
-  \qquad
-  \begin{prooftree}
-    \Gamma; \Delta \Longrightarrow B
-    \justifies
-    \Gamma; \Delta \Longrightarrow A \oplus B
-    \using{\oplus R 2}
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \Gamma; \Delta, A \Longrightarrow C
+%     \qquad
+%     \Gamma; \Delta, B \Longrightarrow C
+%     \justifies
+%     \Gamma; \Delta, A \oplus B \Longrightarrow C
+%     \using{\oplus L}
+%   \end{prooftree}
+%   \qquad
+%   \begin{prooftree}
+%     \Gamma; \Delta \Longrightarrow A
+%     \justifies
+%     \Gamma; \Delta \Longrightarrow A \oplus B
+%     \using{\oplus R 1}
+%   \end{prooftree}
+%   \qquad
+%   \begin{prooftree}
+%     \Gamma; \Delta \Longrightarrow B
+%     \justifies
+%     \Gamma; \Delta \Longrightarrow A \oplus B
+%     \using{\oplus R 2}
+%   \end{prooftree}
+% \]
 
-\section{Cut elimination}
+\subsection{Cut elimination}
 
 We first show that restricting the identity axiom on atomic formulas
 only is conservative:
@@ -358,18 +407,18 @@ zone, we can treat $\Gamma$ as a set.
   \end{prooftree}
 \]
 
-\[
-  \begin{prooftree}
-    \justifies
-    \cdot; \cdot \longrightarrow \textbf{1}  
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \Gamma; \Delta \longrightarrow C
-    \justifies
-    \Gamma; \Delta, \textbf{1} \longrightarrow C
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \justifies
+%     \cdot; \cdot \longrightarrow \textbf{1}  
+%   \end{prooftree}
+%   \qquad \qquad
+%   \begin{prooftree}
+%     \Gamma; \Delta \longrightarrow C
+%     \justifies
+%     \Gamma; \Delta, \textbf{1} \longrightarrow C
+%   \end{prooftree}
+% \]
 
 \[
   \begin{prooftree}
@@ -397,23 +446,19 @@ zone, we can treat $\Gamma$ as a set.
   \item The correspondence relation $\prec$ between forward and
     backward sequents is defined as follows:
     $(\Gamma; \Delta \longrightarrow C) \prec
-    (\Gamma';\Delta\Longrightarrow C) \; iff \; \Gamma \subseteq
+    (\Gamma';\Delta\Longrightarrow C) \; \text{iff} \; \Gamma \subseteq
     \Gamma'$. The forward sequent $s$ is sound if for every backward
     sequent $s'$ such that $s \prec s'$, $s'$ is derivable in the
     backward calculus;
-  \item The subsumption relation $\leq$ between forward sequents is
-    the smallest relation to satisfy:
+  \item The symbol $\prec$ is overloaded to represent the \emph{subsumption}
+    relation between forward sequents, as the smallest relation to satisfy:
 
     \[
-      (Gamma; \Delta \longrightarrow C) \leq (\Gamma'; \Delta
-      \longrightarrow C)
+      (\Gamma; \Delta \longrightarrow C) \prec (\Gamma'; \Delta
+      \longrightarrow C) \; \text{iff} \; \Gamma \subseteq \Gamma'
     \]
-
-    where $\Gamma \subseteq \Gamma'$.
   \end{enumerate}
 \end{definition}
-
-Obviously, if $s_1 \leq s_2$ and $s_2 \prec s$, then $s_1 \prec s$.
 
 \begin{definition}
   A rule with conclusion $s$ and premises $s_1, \dots, s_n$ is said to
@@ -438,9 +483,692 @@ Obviously, if $s_1 \leq s_2$ and $s_2 \prec s$, then $s_1 \prec s$.
   \Longrightarrow C)$.
 \end{theorem}
 
+\section{The Inverse Method}
+
+...
+
+\subsection{Subformula property}
+
+...
+
+
+\begin{definition}
+  A decorated sequent is of the form $\Gamma^-_! ; \Delta^-_. \Longrightarrow
+  C^+_.$ .
+\end{definition}
+
+\begin{definition}[Decorated subformula relation]
+  The decorated subformula relation $\leq$ between decorated propositions is the
+  reflexive-transitive closure of the following cases:
+
+  \begin{alignat*}{2}
+    & A^{\pm}_{.} \leq (A \otimes B)_a^{\pm} \qquad & B^{\pm}_{.} \leq (A \otimes
+    B)_a^{\pm} \\
+    & A^{\mp}_{.} \leq (A \limp B)_a^{\pm} & B^{\pm}_{.} \leq (A \limp
+    B)_a^{\pm}
+  \end{alignat*}
+  \[
+    A^{\pm}_{.} \leq A^{\pm}_{!}
+  \]
+\end{definition}
+
+\begin{definition}
+  A decorated sequent $s_1 \equiv \Gamma^-_! ; \Delta^-_. \Longrightarrow C^+_.$
+  is a subsequent of the decorated sequent
+  $\Gamma'^-_! ; \Delta'^-_. \Longrightarrow C'^+_.$, written $s_1 \leq s_2$ if
+
+  \[
+    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
+    \Delta^-_. \cup C^+_.
+  \]
+\end{definition}
+
+\begin{theorem}[Subformula property]
+  If $\Gamma'; \Delta' \Longrightarrow C'$ appears in a proof of
+  $\Gamma; \Delta \Longrightarrow C$, then
+
+  \[
+    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
+    \Delta^-_. \cup C^+_.
+  \]
+\end{theorem}
+\begin{proof}
+  By straightforward inspection of the rules of the backward calculus. It
+  sufficies to observe that, if the following is such a rule:
+
+  \[
+    \begin{prooftree}
+      s_1 \quad s_2 \quad \dots \quad s_n
+      \justifies
+      s
+    \end{prooftree}
+  \]
+
+  then $s_i \leq s$ for all $i \in \{1, \dots, n\}$. The thesis follows by
+  transitivity of the subformula relation.
+\end{proof}
+
+Since sequents in the forward calculus contain a subset of formulas in the
+backward calculus, it follows that
+
+\begin{corollary}
+  If $\Gamma'; \Delta' \longrightarrow C'$ appears in a proof of
+  $\Gamma; \Delta \longrightarrow C$, then
+
+  \[
+    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
+    \Delta^-_. \cup C^+_.
+  \]
+\end{corollary}
+
+\subsection{Sequent representation}
+
+\begin{definition}
+  A forward sequent is represented as follows:
+
+  \[
+    u_1 \# A_1, \dots, u_m \# A_n ; l_1^{k_1} \# B_1, \dots, l_n^{k_n} \# B_k
+    \longrightarrow r \# C
+  \]
+\end{definition}
+
+...
+
+In the saturation-based search that we use in the forward direction, there is a
+form of non-determinism in selecting sequents for applying rules. It is
+therefore important that the database of sequents available as candidates is as
+less redundant as possible. We therefore need to check for sequent subsumption
+whenever a new sequent is created (\emph{forward subsumption}. In implementing
+subsumption checks, it is important to detect failures as early as possible,
+because the vast majority of checks it likely to fail. The usual strategy is to
+perform a sequence of hierarchical tests that imply subsumption if they all
+succeed. Performing these checks in sequence allows us to stop as soon as one of
+them fails.
+
+\begin{definition}[Hierarchical subsumption tests]
+  A decorated forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does
+  not subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
+
+  \begin{enumerate}
+  \item $C \neq C'$, or
+  \item $\Delta \not \subseteq \Delta'$, or
+  \item $\Gamma \not \subseteq \Gamma'$, or
+  \item $s_1 \not \prec s_2$.
+  \end{enumerate}
+
+  Where $\Gamma \subseteq \Gamma'$ if for every $l \in \mathrm{dom}(\Gamma)$,
+  $\mathrm{mult}(\Gamma, l) \leq \mathrm{mult}(\Gamma', l)$, and similarly for
+  $\Delta$.
+\end{definition}
+
+Add Theorem 4.12 of the thesis...
+
 \section{Focused derivations}
 
+A backward focused proof has two phases. In the active phase all possible rules
+are applied in an arbitrary order to asynchronous propositions. When only
+synchronous propositions remain, one proposition is selected and a \emph{focused
+  phase} for that proposition begins.
 
+As out backward linear sequent calculus is two-sided, we have left- and right-
+synchronous and asynchronous connectives.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{symbol} & \textbf{meaning} \\
+    $P$ & left-synchronous ($\limp$) \\
+    $Q$ & right-synchronous ($\otimes$) \\
+    $L$ & left-asynchronous ($\otimes$) \\
+    $R$ & right-asynchronous ($\limp$)
+  \end{tabular}
+\end{table}
+
+The above table does not include the atomic propositions. For reasons explained
+in [thesis], here we are forced to treat them as synchronous. However, we can
+differenciate the atoms by means of a \emph{focusing bias}, which indicates
+whether the atomic proposition under focus must immediately be derived in an
+initial sequent.
+
+The backward focusing calculus consists of the following kinds of sequents:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{ll}
+    \hline
+    \textbf{symbol} & \textbf{meaning} \\
+    $\Gamma; \Delta \gg A$ & right-focal sequent with $A$ under focus \\
+    $\Gamma; \Delta; A \ll Q$ & left-focal sequent with $A$ under focus \\
+    $\Gamma; \Delta; \Omega \Longrightarrow C; \cdot$ & right-active sequent \\
+    $\Gamma; \Delta; \Omega \Longrightarrow \cdot; Q$ & left-active sequent
+  \end{tabular}
+\end{table}
+
+Here, $\Delta$ contains only left-synchronous propositions, i.e., it is of the
+form $P_1, \dots, P_n$. $\Omega$ is an ordered context of propositions which may
+be synchronous of asynchronous.
+
+For active sequents the right active propositions are decomposed until they
+become right-synchronous, i.e. the sequent is of the form $\Gamma; \Delta;
+\Omega \Longrightarrow Q; \cdot$. The right hand side is then changed to $\cdot;
+Q$. Similarly, the propositions in $\Omega$ are decomposed except when the
+proposition is left-synchronous, in which case it is transferred to $\Delta$.
+
+Eventually, the active sequent is reduced to the form $\Gamma; \Delta; \cdot
+\Longrightarrow \cdot \cdot; Q$, which we call \emph{neutral sequents}.
+A focusing phase is launched from such a neutral sequent by selecting a
+\emph{focusable} proposition and giving it the corresponsing focus.
+
+\begin{definition}[Focusable proposition]
+  \begin{enumerate}
+  \item A proposition is right-focusable if it is right-synchronous and not a
+    right-biased atom;
+  \item A proposition is left-focusable if it is left-sunchronous and not a
+    left-biased atom.
+  \end{enumerate}
+\end{definition}
+
+When we are in a neutral sequent, we may copy a proposition out of the
+unrestricted context and immediately focus on it, regardless of whether it is
+focusable or not. If this proposition is actually left-asynchronous, then we
+will immediately remove focus on it and transition to an active phase.
+
+There are two forms of the initial sequent, corresponding to the two focusing
+biases. If the focal proposition becomes atomic, we terminate with one of the
+two initial forms. If the focal proposition is asynchronous, we blur the focus.
+If the focal proposition is atomic and of the wrong bias, then also we blur the
+focus, but in this case we transition directly to the neutral sequent instead of
+entering the active phase.
+
+Decomposing focal propositions uses non-invertible rules for that proposition,
+and focus is maintained to the operands of the top-level connective of the
+proposition.
+
+
+\[
+  \begin{prooftree}
+    p \; \text{left-biased}
+    \justifies
+    \Gamma; p \gg p
+    \using{rinit}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    p \; \text{right-biased}
+    \justifies
+    \Gamma; \cdot; p \ll p
+    \using{linit}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \Longrightarrow \cdot; Q
+    \justifies
+    \Gamma; \Delta; \Omega \Longrightarrow Q; \cdot
+    \using{ract}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, P; \Omega \cdot \Omega' \Longrightarrow \gamma
+    \justifies
+    \Gamma; \Delta; \Omega \cdot P \cdot \Omega' \Longrightarrow \gamma
+    \using{lact}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \gg Q \qquad Q\; \text{right-focusable}
+    \justifies
+    \Gamma; \Delta; \cdot \Longrightarrow \cdot ; Q
+    \using{rfoc}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; P \ll Q \qquad P\; \text{left-focusable}
+    \justifies
+    \Gamma; \Delta, P; \cdot \Longrightarrow \cdot; Q
+    \using{lfoc}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \cdot \Longrightarrow R; \cdot
+    \justifies
+    \Gamma; \Delta \gg R
+    \using{rblur}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; L \Longrightarrow \cdot; Q
+    \justifies
+    \Gamma; \Delta; L \ll Q
+    \using{lblur}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \cdot \Longrightarrow \cdot ; p \qquad p \; \text{right-biased}
+    \justifies
+    \Gamma; \Delta \gg p
+    \using{rblur^*}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, p; \cdot \Longrightarrow \cdot; Q \qquad p \; \text{left-biased}
+    \justifies
+    \Gamma; \Delta; p \ll Q
+    \using{lblur^*}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma, A; \Delta ; A \ll Q
+    \justifies
+    \Gamma, A; \Delta; \cdot \Longrightarrow \cdot; Q
+    \using{copy}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \cdot A \cdot B \cdot \Omega' \Longrightarrow \gamma
+    \justifies
+    \Gamma; \Delta; \Omega \cdot A \otimes B \cdot \Omega' \Longrightarrow
+    \gamma
+    \using{\otimes L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta_1 \gg A \qquad \Gamma; \Delta_2 \gg B
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 \gg A \otimes B
+    \using{\otimes R}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1; B \ll Q \qquad \Gamma; \Delta_2 \gg A
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 ; A \limp B \ll Q
+    \using{\limp L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \cdot A \Longrightarrow B; \cdot
+    \justifies
+    \Gamma; \Delta; \Omega \Longrightarrow A \limp B; \cdot
+    \using{\limp R}
+  \end{prooftree}
+\]
+
+\subsection{Backward derived rules}
+
+The primary benefit of focusing is the ability to generate derived ``big step''
+inference rules: the intermediate results of a focusing or active phase are not
+important, since those steps are ``forced'' in some way. Each derived rule
+starts (at the bottom) with a neutral sequent from which a synchronous
+proposition is selected for focus, and the focusing steps are followed. Then the
+active rules are applied, and eventually we obtain a collection of neutral
+sequents as the leaves. These neutral sequents are then treated as the premises
+of the derived rule that produces the neutral sequent with which we started.
+
+We first construct the backward derived rules. Then we will move to their
+forward version. The general design is that intermediate sequents in the eager
+active and focusing phases are not be stored in any sequent database; instead,
+all sequents constructed during search are neutral sequents at the phase
+boundaries. This is achieved by first precomputing the derived rules that
+correspond to the frontier literals of the goal sequent.
+
+For any given proposition, we are interested in constructing a derived inference
+for the proposition corresponding to a single pair of focusing and inverse
+phases.
+
+The idea is to interpret a proposition itself as the derived rules that it
+embodies. Every propostiion is viewed as a relation between the conclusion of
+the rule and its premises at the leaves of the bipole. Both the conclusion and
+the premises are neutral sequents, which we indicate as
+$\neuseq{\Gamma}{\Delta}{Q}$.
+
+There are three classes of relational interpretations:
+
+\begin{enumerate}
+\item Right focal relations for the focus formula $A$, written $\brfrel{A}$;
+\item Left focal relations for the focus formula $A$, written $\blfrel{A}$;
+\item Active relations, written
+  $\bactrel{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}$, where $\xi$ is either
+  $\cdot$ or a proposition $C$.
+\end{enumerate}
+
+\[
+  \begin{prooftree}
+    p \; \text{right-biased}
+    \justifies
+    \relj{\blfrel{p}}{\neuseq{\Gamma}{\cdot}{p}}{\cdot}
+    \using{linit}
+  \end{prooftree}\qquad\qquad
+  \begin{prooftree}
+    p \; \text{left-biased}
+    \justifies
+    \relj{\brfrel{p}}{\neuseq{\Gamma}{p}{\cdot}}{\cdot}
+    \using{rinit}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+    \qquad
+    \relj{\brfrel{B}}{\neuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+    \justifies
+    \relj{\brfrel{A \otimes B}}{\neuseq{\Gamma}{\Delta_1,
+        \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
+    \using{\otimes F}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+    \justifies
+    \relj{\brfrel{R}}{s}{\Sigma}
+    \using{FA^+}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    p \; \text{right-biased}
+    \justifies
+    \relj{\brfrel{p}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\neuseq{\Gamma}{\Delta}{p}}
+    \using{conjecture^+}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\blfrel{B}}{\neuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+    \relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+    \justifies
+    \relj{\blfrel{A \limp B}}{\neuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+      \cdot \Sigma_2}
+    \using{\limp F}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+    \justifies
+    \relj{\blfrel{L}}{s}{\Sigma}
+    \using{FA^-}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    p \; \text{left-biased}
+    \justifies
+    \relj{\blfrel{p}}{\neuseq{\Gamma}{\Delta}{Q}}{\neuseq{\Gamma}{\Delta, p}{Q}}
+    \using{conjecture^-}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
+          \Omega'}{\xi}}}{s}{\Sigma}
+    \justifies
+    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+          \Omega'}{\xi}}}{s}{\Sigma}
+    \using{\otimes A}
+  \end{prooftree}\qquad \qquad
+  \begin{prooftree}
+    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot
+          \Omega'}{B}}}{s}{\Sigma}
+    \justifies
+    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot
+          \Omega'}{A \limp B}}}{s}{\Sigma}
+    \using{\limp A}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{
+      \bactrel{
+        \btriseq{\Gamma}{\Delta,P}{\Omega \cdot \Omega'}{\xi}
+      }
+    }{s}{\Sigma}
+    \justifies
+    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot
+          \Omega'}{\xi}}}{s}{\Sigma}
+    \using{bact}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \justifies
+    \relj{
+      \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+    }{
+      \neuseq{\Gamma'}{\Delta'}{Q}
+    }{
+      \neuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+    }
+    \using{match}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \justifies
+    \relj{
+      \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+    }{
+      \neuseq{\Gamma'}{\Delta'}{\cdot}
+    }{
+      \neuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+    }
+    \using{match'}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    (\relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
+    \quad s_1 \quad s_2 \quad \dots \quad s_n
+    \justifies
+    \neuseq{\Gamma}{\Delta}{Q}
+    \using{right-focus}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    (\relj{\blfrel{Q}}{\neuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+    \quad s_1 \quad s_2 \quad \dots \quad s_n
+    \justifies
+    \neuseq{\Gamma}{\Delta, P}{Q}
+    \using{left-focus}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    (\relj{\blfrel{A}}{\neuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+    \quad s_1 \quad s_2 \quad \dots \quad s_n
+    \justifies
+    \neuseq{\Gamma, A}{\Delta}{Q}
+    \using{copy-focus}
+  \end{prooftree}
+\]
+
+\begin{lemma}\label{completeness-lemma}
+  \begin{enumerate}
+  \item If $\rfocseq{\Gamma}{\Delta}{A}$, then for some $\Sigma$
+    \begin{enumerate}
+    \item $\relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
+    \item $\Sigma$ are all derivable
+    \end{enumerate}
+  \item ...
+  \item ...
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  By simultaneous induction on the height of the derivation.
+  \begin{enumerate}
+  \item Case $\rinit$:
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \rfocseq{\Gamma}{p}{p}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    then, just apply the $\rinit$ relation.
+  \item Case $\linit$ is similar to the case above.
+  \item Case $\ract$ is trivial, since the relations corresponding to the
+    premise and conclusion sequents are identical.
+  \item Case $\lact$. Straightforward use of the $\bact$ rule for derived
+    relations.
+  \item Case $\rfoc$.
+    
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta \gg Q \qquad Q\; \text{right-focusable}
+        \justifies
+        \Gamma; \Delta; \cdot \Longrightarrow \cdot ; Q
+        \using{rfoc}
+      \end{prooftree}
+    \]
+
+    Suppose $\gamma_1, \gamma_2$ are such that $\gamma_1 \uplus \gamma_2 =
+    Q$. Then, the following:
+
+    \[
+      \relj{
+        \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\gamma_1}}
+      }{
+        \neuseq{\cdot}{\cdot}{\gamma_2}
+      }{
+        \neuseq{\Gamma}{\Delta}{Q}
+      }
+    \]
+
+    is derivable with either $\matchrule$ or $\matchprimerule$. We need to show
+    that $\neuseq{\Gamma}{\Delta}{Q}$ is derivable. By inductive hypothesis, we
+    have $\relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ for some
+    $\Sigma$ all derivable. But then,
+
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \qquad \Sigma
+        \justifies
+        \neuseq{\Gamma}{\Delta}{Q}
+        \using{\rightfocusrule}
+      \end{prooftree}
+    \]
+
+  \item Case $\lfoc$ is just analogous to $\rfoc$, with an application of
+    $\leftfocusrule$.
+  \item Case $\rblur$.
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta; \cdot \Longrightarrow R; \cdot
+        \justifies
+        \Gamma; \Delta \gg R
+        \using{\rblur}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, we have
+    $\relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
+    where all $\Sigma$ are derivable. But
+    then, we can apply the rule $\faplus$ to get the thesis
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+    
+  \item Case $\lblur$ is dual to $\rblur$.
+  \item Case $\rblurstar$.
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta; \cdot \Longrightarrow \cdot ; p \qquad p \; \text{right-biased}
+        \justifies
+        \Gamma; \Delta \gg p
+        \using{rblur^*}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis,
+    $\relj{\bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{p}}}{\neuseq{\cdot}{\cdot}{\cdot}}{\Sigma}$,
+    that must have been derived by $\matchprimerule$. Therefore, $\Sigma \equiv
+    \neuseq{\Gamma}{\Delta}{p}$, which is by hypothesis derivable.
+    Then, we can apply $\faplusstar$ to get
+    $\relj{\brfrel{p}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\neuseq{\Gamma}{\Delta}{p}}$.
+
+  \item Case $\lblurstar$ is dual to $\rblurstar$.
+  \item Case $\copyrule$.
+
+    \[
+      \begin{prooftree}
+        \Gamma, A; \Delta ; A \ll Q
+        \justifies
+        \Gamma, A; \Delta; \cdot \Longrightarrow \cdot; Q
+        \using{\copyrule}
+      \end{prooftree}
+    \]
+
+    We can apply $\matchrule$ to immediately derive
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma,
+              A}{\Delta}{\cdot}{\cdot}}}{\neuseq{\cdot}{\cdot}{Q}}{\neuseq{\Gamma,
+            A}{\Delta}{Q}}
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    and see that $\neuseq{\Gamma, A}{\Delta}{Q}$ is derivable by
+    the inductive hypothesis
+    $\relj{\blfrel{A}}{\neuseq{\Gamma,A}{\Delta}{Q}}{\Sigma}$ and an application
+    of $\copyfocusrule$.
+  \item The remaining rules of the connectives are straightforward application
+    of the inductive hypothesis.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$, then
+  $\neuseq{\Gamma}{\Delta}{Q}$.
+\end{theorem}
+\begin{proof}
+  Straightforward application of Lemma~\ref{completeness-lemma}. The last rule
+  used to derive $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$ is one of
+  $\lfoc, \rfoc$ or $\copyrule$; correspondingly, by the Lemma, we have the
+  derived rules to use as premises of $\rightfocusrule, \leftfocusrule$ and
+  $\copyfocusrule$ which derive $\neuseq{\Gamma}{\Delta}{Q}$.
+\end{proof}
+
+\subsection{Forward focusing}
 
 \end{document}
 
