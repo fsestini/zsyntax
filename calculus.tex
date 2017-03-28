@@ -14,21 +14,39 @@
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 \newtheorem{example}{Example}
+\newtheorem{fact}{Fact}
 
 \def\limp {\mathbin{{-}\mkern-3.5mu{\circ}}}
+
+% Standard backward sequents
+\newcommand{\bkwseq}[3]{#1 ; #2 \Longrightarrow #3}
+
+% backward and forward neutral sequents symbols and macros
 \newcommand{\bneuseqsymb}{
   \mathrel{\Longrightarrow\!\!\!\!\!\!\!\!\Longrightarrow}}
+% \newcommand{\fneuseqsymb}{\twoheadrightarrow}
+\newcommand{\fneuseqsymb}{
+  \mathrel{\longrightarrow\!\!\!\!\!\!\!\!\longrightarrow}}
 \newcommand{\bneuseq}[3]{#1 ; #2 \bneuseqsymb #3}
-\newcommand{\fneuseqsymb}{\twoheadrightarrow}
 \newcommand{\fneuseq}[3]{#1 ; #2 \fneuseqsymb #3}
+
+% backward derived-rule relations
 \newcommand{\brfrel}[1]{\textsf{foc}^+_{\Uparrow}(#1)}
 \newcommand{\blfrel}[1]{\textsf{foc}^-_{\Uparrow}(#1)}
 \newcommand{\bactrel}[1]{\textsf{act}_{\Uparrow}(#1)}
+
+% forward derived-rule relations
 \newcommand{\frfrel}[1]{\textsf{foc}^+_{\Downarrow}(#1)}
 \newcommand{\flfrel}[1]{\textsf{foc}^-_{\Downarrow}(#1)}
 \newcommand{\factrel}[1]{\textsf{act}_{\Downarrow}(#1)}
+
+% Relation judgement   rel[...] ~--> res
 \newcommand{\relj}[3]{#1 [#2] \hookrightarrow #3}
+
+% Three-place bold sequents     G, D, O ===> C
 \newcommand{\btriseq}[4]{#1; #2; #3 \Longrightarrow #4}
+
+% Focusing sequents
 \newcommand{\rfocseq}[3]{#1; #2 \gg #3}
 \newcommand{\lfocseq}[4]{#1; #2; #3 \ll #4}
 
@@ -64,6 +82,16 @@
 
 \newcommand{\subsequent}[2]{#1 \leq #2}
 \newcommand{\frwdseq}[3]{#1 ; #2 \longrightarrow #3}
+
+% Formula decoration
+\newcommand{\decplus}[1]{#1^+}
+\newcommand{\decminus}[1]{#1^-}
+\newcommand{\declinear}[1]{#1_.}
+\newcommand{\decunrestr}[1]{#1_!}
+\newcommand{\decpluslinear}[1]{\decplus{\declinear{#1}}}
+\newcommand{\decminuslinear}[1]{\decminus{\declinear{#1}}}
+\newcommand{\decplusminus}[1]{#1^{\pm}}
+\newcommand{\decminusplus}[1]{#1^{\mp}}
 
 \title{A forward focused calculus for Zsyntax}
 \author{Filippo Sestini}
@@ -2062,6 +2090,9 @@ There are three classes of relational interpretations:
 
 \subsection{Forward focusing}
 
+In the following rules, $\gamma \setminus \xi$ is defined as $\gamma$ if $\xi = \cdot$,
+and as $\cdot$ if $\gamma = \xi$.
+
 \[
   \begin{prooftree}
     p \; \text{left-biased}
@@ -2069,19 +2100,15 @@ There are three classes of relational interpretations:
     \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
     \using{\linit}
   \end{prooftree}
-\]
-
-\[
+  \qquad\qquad
   \begin{prooftree}
-    \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
-    \qquad
-    \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+    p \; \text{right-based}
     \justifies
-    \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
-        \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
-    \using{\otimes F}
+    \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+    \using{\rinit}
   \end{prooftree}
 \]
+
 
 \[
   \begin{prooftree}
@@ -2096,14 +2123,12 @@ There are three classes of relational interpretations:
     \relj{\frfrel{R}}{\Sigma}{s}
     \using{\faplus}
   \end{prooftree}
-\]
-
-\[
-  \begin{prooftree}
-    p \; \text{right-based}
+  \qquad \qquad
+    \begin{prooftree}
+    \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
     \justifies
-    \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
-    \using{\rinit}
+    \relj{\flfrel{L}}{\Sigma}{s}
+    \using{\faminus}
   \end{prooftree}
 \]
 
@@ -2121,12 +2146,233 @@ There are three classes of relational interpretations:
 
 \[
   \begin{prooftree}
-    \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+    \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+    \qquad
+    \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
     \justifies
-    \relj{\flfrel{L}}{\Sigma}{s}
-    \using{\faminus}
+    \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+        \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+    \using{\otimes F}
   \end{prooftree}
 \]
+
+\[
+  \begin{prooftree}
+    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
+    \justifies
+    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
+    \using{\limp A}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\factrel{
+        \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
+    }{\Sigma}{s}
+    \justifies
+    \relj{\factrel{
+        \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
+    }{\Sigma}{s}
+    \using{\otimes A}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
+    \justifies
+    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
+    \using{act}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \xi \subseteq \gamma
+    \justifies
+    \relj{
+      \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\xi}}
+    }{
+      \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\gamma}
+    }{
+      \fneuseq{\Gamma'}{\Delta'}{\gamma \setminus \xi}
+    }
+    \using{match}
+  \end{prooftree}
+\]
+
+The derived rule for positive subformulas is:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+    \justifies
+    \fneuseq{\Gamma}{\Delta}{Q}
+  \end{prooftree}
+\]
+
+Similarly, for negative propositions, we have two rules:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+    \justifies
+    \fneuseq{\Gamma}{\Delta, P}{Q}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+    \justifies
+    \fneuseq{\Gamma, A}{\Delta}{Q}
+  \end{prooftree}
+\]
+
+\begin{fact}
+  \begin{enumerate}
+  \item If $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{\gamma}}$, then either
+    \begin{enumerate}
+    \item $\xi = \cdot$ and $\gamma = Q$ for some right-synchronous $Q$;
+    \item $\xi = C$ and $\gamma = \cdot$ for some $C$.
+    \end{enumerate}
+    
+  \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\gamma}}$, then
+    $\gamma = Q$ for some right-synchronous $Q$.
+  \end{enumerate}
+\end{fact}
+
+\begin{definition}
+  The sequent $\fneuseq{\Gamma}{\Delta}{Q}$ is sound if
+  $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
+\end{definition}
+
+\begin{lemma}
+  If $\Sigma$ are sound, then
+
+  \begin{enumerate}
+  \item If $\relj{\frfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\cdot}}$,
+    then, $\btriseq{\Gamma}{\Delta}{\cdot}{A ; \cdot}$;
+  \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{Q}}$,
+    then $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$;
+  \item If
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{Q}}$, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; Q}$;
+  \item If
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{C}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{\cdot}}$, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$.
+  % \item If
+  %   $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\gamma}}}{\Sigma}
+  %   {\fneuseq{\Gamma'}{\Delta'}{C}}$, then $\gamma = C$ and
+  %   $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved by simultaneous induction on the height of the
+  derivation. We distinguish cases on the last rule used in the derivation:
+
+  \begin{itemize}
+  \item Case $\linit$. Hence,
+    $\relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}$ and $p$ is
+    left-biased. Then,
+
+    \[
+      \begin{prooftree}
+        \[
+          \[
+            p \; \text{left-biased}
+            \justifies
+            \rfocseq{\cdot}{p}{p}
+          \]
+          \justifies
+          \btriseq{\cdot}{p}{\cdot}{\cdot ; p}
+        \]
+        \justifies
+        \btriseq{\cdot}{p}{\cdot}{p ; \cdot}
+      \end{prooftree}
+    \]
+    
+  \item Case $\rinit$ is similar;
+  \item Case $\faplus{}$. 
+  \end{itemize}
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\fneuseq{\Gamma}{\Delta}{Q}$, then $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot
+  ; Q}$.
+\end{theorem}
+\begin{proof}
+  TODO...
+\end{proof}
+
+\section{Focused inverse method}
+
+The primary issue in the forward direction is to enumerate the propositions for
+which we need to derive inference rules. As the calculus of derived rules has
+only neutral sequents as premises and conclusions, we need only generate rules
+for propositions that occur in neutral sequents; we call them \emph{frontier
+  propositions}. To find the frontier propositions in a goal sequent, we
+abstractly replay the focusing and active phases to identify the phase
+transitions. Each transition from an active to a focal phase produces a frontier
+proposition. We do not consider negative left-biased focused atoms (or positive
+right-biased focused atoms) in the frontier as these will be derived using an
+init rule for which there are no premises.
+
+\[
+  \decminus{f(p)} = \emptyset \qquad
+  \decplus{f(p)} = \decplusminus{a(p)} = \{
+  \decplusminus{\declinear{p}} \} \qquad \text{if $p$ right-based}
+\]
+\[
+  \decplus{f(p)} = \emptyset \qquad
+  \decminus{f(p)} = \decminusplus{a(p)} = \{
+  \decminusplus{\declinear{p}} \} \qquad \text{if $p$ left-biased}
+\]
+\[
+  \decminus{f(A \otimes B)} = \decminus{a(A \otimes B)} \qquad
+  \decplus{f(A \otimes B)} = \decplus{f(A)}, \decplus{f(B)}
+\]
+\[
+  \decminus{a(A\otimes B)} = \decminus{a(A)}, \decminus{a(B)} \qquad
+  \decplus{a(A\otimes B)} = \decplus{f(A \otimes B)}, \decminuslinear{(A \otimes B)}
+\]
+\[
+  \decminus{f(A \limp B)} = \decplus{f(A)}, \decminus{f(B)} \qquad
+  \decplus{f(A \limp B)} = \decplus{a(A \limp B)}
+\]
+\[
+  \decminus{a(A \limp B)} = \decminus{f(A \limp B)}, \decminuslinear{(A \limp
+    B)}
+  \qquad
+  \decplus{a(A\limp B)} = \decminus{a(A)}, \decplus{a(B)}
+\]
+
+\begin{example}
+  Put example here...
+\end{example}
+
+\begin{definition}[Frontier]
+  Given a goal $\Gamma;\Delta \Longrightarrow Q$, its frontier contains
+
+  \begin{enumerate}
+  \item All top-level propositions in $\decunrestr{\decminus{\Gamma}},
+    \decminuslinear{\Delta}$, and $\decpluslinear{Q}$;
+  \item For any $A \in \Gamma, \Delta$, the collection $\decminus{f(A)}$;
+  \item the collection $\decplus{f(Q)}$.
+  \end{enumerate}
+\end{definition}
+
+In the preparatory phase for the inverse method, we calculate the frontier
+propositions of the goal sequent. There is no need to generate initial sequents
+separately, as the executions of negative atoms in the frontier directly give us
+the necessary initial sequents.
 
 \section{Search strategy}
 
@@ -2242,20 +2488,9 @@ related procedure called \emph{percolation}.
 A sequent is added to the kept sequents database if it is not globally subsumed
 by some sequent derived earlier.
 
-\subsection{The focused inverse method}
+\subsection{The focused inverse method (to be redistributed)}
 
 % Taken from 6.3
-
-The primary issue in the forward direction is to enumerate the propositions for
-which we need to derive inference rules. As the calculus of derived rules has
-only neutral sequents as premisses and conclusions, we need only generate rules
-for propositions that occur in neutral sequents; we call them \emph{frontier
-  propositions}.
-
-In the preparatory phase for the inverse method, we calculate the frontier
-propositions of the goal sequent. There is no need to generate initial sequents
-separately, as the executions of negative atoms in the frontier directly give us
-the necessary initial sequents.
 
 It is possible for a new sequent to be stronger than some sequents already in
 the database. In this case, the old weaker sequents are no longer considered for
@@ -2269,6 +2504,92 @@ Given a proposition in the frontier, the focusing phase of the derived rule for
 it is completely predictable, sincere there are no disjunctive choices to be
 made. The active phase is also predictable, since we do not have additive
 connectives.
+
+My addition: Hence, every subformula in the frontier deterministically gives
+rise to a unique derived rule schema (which can of course be matched by actual
+premise sequents in infinite ways).
+
+Doubt: perche' parla di proposizioni e non di (sotto-)formule? Non avevamo detto
+che ogni non-atomic subformula e` distinta da altre subformule relative alla
+stessa proposizione (quindi sintatticamente uguali nel caso proposizionale).
+
+\subsection{Search loop}
+
+% taken from "A focusing inverse method theorem prover for first-order
+% linear logic"
+
+We use a lazy variant of the OTTER loop as the main loop of the search
+procedure. We maintain tow global sets of derived sequents:
+
+\begin{itemize}
+\item The \emph{active set} containing sequents to be considered as premises of
+  rules;
+\item The \emph{inactive set} that contains all facts that have not yet been
+  transferred to the active set.
+\end{itemize}
+
+The inner loop of the search procedure repeats the following lazy activation
+step until either the goal sequent is subsumed (in which case the search is
+successful), or no further rules are applicable to the sequents in the acitve
+set and the inactive set is exhausted (in which case the search saturates).
+
+\begin{definition}[Lazy activation]
+  To activate the sequent $s$, i.e., to transfer it from the inactive to the
+  active set, the following steps are performed:
+
+  \begin{enumerate}
+  \item After renaming (???), $s$ is inserted into the active set;
+  \item All available rules are applied to $s$. If these applications produce
+    new rules, say a set $R$, then the following two steps are performed in a
+    loop until there are no additions to $R$:
+
+    \begin{enumerate}
+    \item For every sequent $s'$ in the active set, every rule in $R$ is applied
+      to $s'$;
+    \item any new rules generated are added to $R$.
+    \end{enumerate}
+
+    This two-steps inner loop is called the \emph{percolation} phase.
+  \item The collection of rules $R$ is added to the set of rules;
+  \item All sequents generated during the above applications are tested for
+    subsumption, and the un-subsumed sequents are added to the inactive set.
+  \end{enumerate}
+\end{definition}
+
+\begin{theorem}[Completeness of the search loop]
+  Let $S_a, S_i$ be the active and inactive sets and $R$ the collection of rules
+  of the search procedure before initiating iteration $i$. Suppose $r$ is a rule
+  in $R$ and $s_1, s_2, \dots, s_n$ is an ordered list of sequents from
+  $S_a \cup S_i$ that would, if matched agains $r$ in this order, produce a
+  successful result. Then this match actually occurs, and the result of it added
+  to the state of the search, during some iteration $j \geq i$.
+\end{theorem}
+\begin{proof}
+  By induction on $n$. If $n = 0$, then the match occurs vacuously during any
+  iteration from $i$ on. If the list is instead $n+1$ elements long, then
+  clearly the first $n$ sequents in the list potentially match $r$ successfully,
+  and by inductive hypothesis they are eventually matched agains $r$ producing a
+  partially applied rule $r'$ during some iteration $j \geq i$. We split cases
+  depending on whether $s_{n+1} \in S_a$ or $s_{n+1} \in S_i$ during such
+  iteration $j$.
+
+  \begin{itemize}
+  \item If $s_{n+1} \in S_a$ during iteration $j$ (whether because it is added
+    at the beginning of it or because it is in $S_a$ already), then the
+    percolation phase ensures that $r'$ is also matched against
+    $s_{n+1}$. Therefore, $r$ is fully applied to $s_1, \dots, s_{n+1}$ during
+    iteration $j$, where $j \geq i$ by hypothesis;
+    
+  \item If $s_{n+1} \in S_i$ during iteration $j$, then $s_{n+1}$ is eventually
+    selected for activation during some iteration $k > j$ and matched against
+    all rules in the collection of rules at that moment. From the inductive
+    hypothesis it follows that $r'$ is added in the collection of rules during
+    iteration $j$, so it certainly is in this collection during iteration
+    $k$. Therefore, $r'$ is matched agains $s_{n+1}$ during some iteration
+    $k \geq i$, hence producing the result of matching $r$ against
+    $s_1, \dots, s_{n+1}$ during such iteration.
+  \end{itemize}
+\end{proof}
 
 \end{document}
 
