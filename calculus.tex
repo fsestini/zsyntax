@@ -6,27 +6,33 @@
 \usepackage{prooftree}
 \usepackage{amsthm}
 \usepackage{mathtools}
+\usepackage{mdframed}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
+\newtheorem{example}{Example}
 
 \def\limp {\mathbin{{-}\mkern-3.5mu{\circ}}}
-\newcommand{\neuseqsymb}{
-  \mathrel{\Longrightarrow\!\!\!\!\!\!\!\!\Longrightarrow}
-  %\mathrlap{\,\Longrightarrow}\Longrightarrow
-}
-\newcommand{\neuseq}[3]{#1 ; #2 \neuseqsymb #3}
+\newcommand{\bneuseqsymb}{
+  \mathrel{\Longrightarrow\!\!\!\!\!\!\!\!\Longrightarrow}}
+\newcommand{\bneuseq}[3]{#1 ; #2 \bneuseqsymb #3}
+\newcommand{\fneuseqsymb}{\twoheadrightarrow}
+\newcommand{\fneuseq}[3]{#1 ; #2 \fneuseqsymb #3}
 \newcommand{\brfrel}[1]{\textsf{foc}^+_{\Uparrow}(#1)}
 \newcommand{\blfrel}[1]{\textsf{foc}^-_{\Uparrow}(#1)}
 \newcommand{\bactrel}[1]{\textsf{act}_{\Uparrow}(#1)}
+\newcommand{\frfrel}[1]{\textsf{foc}^+_{\Downarrow}(#1)}
+\newcommand{\flfrel}[1]{\textsf{foc}^-_{\Downarrow}(#1)}
+\newcommand{\factrel}[1]{\textsf{act}_{\Downarrow}(#1)}
 \newcommand{\relj}[3]{#1 [#2] \hookrightarrow #3}
 \newcommand{\btriseq}[4]{#1; #2; #3 \Longrightarrow #4}
 \newcommand{\rfocseq}[3]{#1; #2 \gg #3}
 \newcommand{\lfocseq}[4]{#1; #2; #3 \ll #4}
 
+\newcommand{\init}{\textsc{init}}
 \newcommand{\rinit}{\textsc{rinit}}
 \newcommand{\linit}{\textsc{linit}}
 \newcommand{\lact}{\textsc{lact}}
@@ -44,10 +50,20 @@
 \newcommand{\rblurstar}{\textsc{rblur}^*}
 \newcommand{\lblurstar}{\textsc{lblur}^*}
 \newcommand{\faplus}{\textsc{FA}^+}
+\newcommand{\faminus}{\textsc{FA}^-}
 \newcommand{\faplusstar}{\textsc{FA}^{+*}}
 \newcommand{\faminusstar}{\textsc{FA}^{-*}}
 \newcommand{\copyrule}{\textsc{copy}}
+\newcommand{\ctrlset}[1]{\mathfrak{S}_{#1}}
 
+\newcommand{\respects}[2]{#1 \, || \, #2}
+
+\newcommand{\labels}[2]{#1 \, \# \, #2}
+
+\newcommand{\strong}[1]{\textbf{#1}}
+
+\newcommand{\subsequent}[2]{#1 \leq #2}
+\newcommand{\frwdseq}[3]{#1 ; #2 \longrightarrow #3}
 
 \title{A forward focused calculus for Zsyntax}
 \author{Filippo Sestini}
@@ -55,8 +71,738 @@
 \begin{document}
 
 \maketitle
+\tableofcontents
 
 \section{Backward sequent calculus}
+
+\subsection{Control sets}
+
+\subsubsection{Annotation}
+
+\begin{definition}
+  An annotated sequent is syntactically represented as $\Gamma; \Delta
+  \Longrightarrow_{\ctrlset{}} C$, where $\Gamma, \Delta$ are the ordinary
+  unrestricted and linear contexts, $C$ is the succedent formula and
+  $\ctrlset{}$ is a control set.
+\end{definition}
+
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \Gamma; P \Longrightarrow_{\emptyset} P
+        \using{init}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma, A; \Delta, A \Longrightarrow_{\ctrlset{}} C
+        \justifies
+        \Gamma, A; \Delta \Longrightarrow_{\ctrlset{}} C
+        \using{copy}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta \Longrightarrow_{\ctrlset{1}} A
+        \qquad
+        \Gamma; \Delta' \Longrightarrow_{\ctrlset{2}} B
+        \justifies
+        \Gamma; \Delta, \Delta' \Longrightarrow_{\ctrlset{1}\cup \ctrlset{2}} A \otimes B
+        \using{\otimes R}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A, B \Longrightarrow_{\ctrlset{}} C
+        \justifies
+        \Gamma; \Delta, A \otimes B \Longrightarrow_{\ctrlset{}} C
+        \using{\otimes L}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+        \qquad
+        \Gamma; \Delta_2, B \Longrightarrow_{\ctrlset{2}} C
+        \justifies
+        \Gamma; \Delta_1, \Delta_2, A \limp B
+        \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2} \cup \ctrlset{A \rightarrow B}} C
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A \Longrightarrow_{\ctrlset{}} B
+        \justifies
+        \Gamma; \Delta \Longrightarrow_{\ctrlset{}} A \limp B
+        \using{\limp R}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{\label{myfig} Annotated backward sequent calculus.}
+\end{figure}
+
+
+
+\subsubsection{Checking}
+
+Consider the usual example of .... More precisely, we have
+an axiom $E\otimes S \rightarrow E \odot S$,
+with $\ctrlset{E\otimes S \rightarrow E \odot S} = \{I\}$, thus we expect
+$E \otimes S\otimes I \limp E \odot S \otimes I$ to \emph{not} be valid in our
+checked, annotated sequent calculus. The following is the annotated derivation,
+where $\Gamma \equiv E\otimes S \rightarrow E \odot S$:
+
+\[
+  \begin{prooftree}
+    \[
+      \[
+        \[ \justifies \Gamma; I \Longrightarrow_{\emptyset} I \using{\init} \]
+        \qquad
+        \[
+          \[
+            \[
+              \[
+                \justifies
+                \Gamma; E \Longrightarrow_{\emptyset} E
+                \using{\init}
+              \]\qquad
+              \[
+                \justifies
+                \Gamma; S \Longrightarrow_{\emptyset} S
+                \using{\init}
+              \]
+              \justifies
+              \Gamma; E , S \Longrightarrow_{\emptyset} E \otimes S
+              \using{\otimes R}
+            \]
+            \qquad
+            \[
+              \justifies \Gamma; E\odot S \Longrightarrow_{\emptyset} E \odot S
+              \using{\init}
+            \]
+            \justifies
+            \Gamma; E\otimes S \limp E\odot S, E , S \Longrightarrow_{\{I\}} E \odot S
+            \using{\limp L}
+          \]
+          \justifies
+          \Gamma; E , S \Longrightarrow_{\{I\}} E \odot S
+          \using{\copyrule}
+        \]
+        \justifies
+        \Gamma; E , S , I \Longrightarrow_{\{I\}} E \odot S \otimes I
+        \using{\otimes R}
+      \]
+      \justifies
+      \Gamma; E \otimes S \otimes I \Longrightarrow_{\{I\}}  E \odot S \otimes I
+      \using{\otimes L \times 3}
+    \]
+    \justifies
+    \Gamma; \cdot \Longrightarrow_{\{I\}} E \otimes S \otimes I \limp E \odot S \otimes
+   I
+   \using{\limp R}
+  \end{prooftree}
+\]
+
+Therefore, if we ignore the constraints of the control sets, the formula is
+actually derivable (since it is a theorem in Linear Logic). A first attempt to
+block this may be to impose a side condition to the applicability of the rule
+$\otimes R$, restricting it to conclusion sequents in which the context respects
+the control sets of both premises:
+
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+    \qquad
+    \Gamma; \Delta_2 \Longrightarrow_{\ctrlset{2}} B
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2}} A
+    \otimes B
+  \end{prooftree}
+  \quad
+  \respects{(\Gamma, \Delta_1, \Delta_2)}{(\ctrlset{1} \cup \ctrlset{2})}
+\]
+
+a similar addition can be done to $\limp L$, for the same reason:
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+    \qquad
+    \Gamma; \Delta_2, B \Longrightarrow_{\ctrlset{2}} C
+    \justifies
+    \Gamma; \Delta_1, \Delta_2, A \limp B
+    \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2} \cup \ctrlset{A \rightarrow B}} C
+  \end{prooftree}
+  \quad
+  \respects{(\Gamma, \Delta_1, \Delta_2)}{(\ctrlset{1} \cup \ctrlset{2})}
+\]
+
+It is immediate to notice that, with these new side conditions, the formula
+above is no longer derivable. This modification, however, turns out to be too
+restrictive. Suppose we have $\ctrlset{A \rightarrow B} = \{I\}$. The following
+is valid in Zsyntax:
+
+\[
+  I \rightarrow A, A \rightarrow B, I, A \models A \otimes B
+\]
+
+since we have the following derivation:
+
+\[
+  \begin{prooftree}
+    \[
+      \[
+        I \rightarrow A, A \rightarrow B, I, A
+        \justifies
+        A, A, A \rightarrow B
+        \using{\rightarrow \mathcal{E}}
+      \]
+      \justifies
+      A, B
+      \using{\rightarrow \mathcal{E}}
+    \]
+    \justifies
+    A \otimes B
+    \using{\otimes \mathcal{I}}
+  \end{prooftree}
+\]
+
+Notice that here we are indeed allowed to eliminate $A \rightarrow B$, because
+the inhibitor $I$ which may have blocked the reaction has already been
+eliminated in a previous stage of the deduction/reaction. An easy check can
+verify that, with the side conditions above, the sequent
+$\Gamma; \cdot \Longrightarrow I \otimes A \limp A \otimes B$, where $\Gamma$
+contains the axioms as usual, cannot be derived.
+
+The reason is that the side conditions, formulated as above, cannot capture the
+temporal differences in the reactions. In this example, the reaction starts with
+$I$, which is indeed an inhibitor for $A \rightarrow B$, but since the reaction
+between $A \rightarrow B$ and $A$ happens at a later stage, when $I$ has
+disappeared from the \emph{current state}, its presence in the control set of $A
+\rightarrow B$ causes no problem.
+
+In order to generalize this, consider the premises of $\limp L$, that is,
+$\Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A$ and
+$\Gamma; \Delta_2, B \Longrightarrow_{\ctrlset{2}} C$. These may be interpreted
+as having two deductions
+
+\[
+  \begin{prooftree}
+    A_1, \dots A_n, \Delta_1
+    \leadsto
+    A
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    A_{n+1}, \dots A_{n+m}, \Delta_2, B
+    \leadsto
+    C
+  \end{prooftree}
+\]
+
+where $\forall i \in \{1,\dots,n+m\}, A_i \in \Gamma$, and that result from
+rules that can be applied under a control set respectively $\ctrlset{1}$ and
+$\ctrlset{2}$.  Suppose now that we start from a Z-state
+$A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2, A\rightarrow B$. It
+is understood that we can reproduce the first deduction to get
+
+\[
+  \begin{prooftree}
+    A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B
+    \leadsto
+    A, A_{n+1}, \dots A_{n+m}, \Delta_2, B, A \rightarrow B
+  \end{prooftree}
+\]
+
+as long as all formulas in $A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B$
+respect the constraints imposed by the control set $\ctrlset{1}$. Then, as long
+as $A_{n+1}, \dots A_{n+m}, \Delta_2$ respect $\ctrlset{A\rightarrow B}$, we
+can eliminate the implication
+
+\[
+  \begin{prooftree}
+    \[
+      A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B
+      \leadsto
+      A, A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B
+    \]
+    \justifies
+    A_{n+1}, \dots A_{n+m}, \Delta_2, B
+    \using{\rightarrow \mathcal{E}}
+  \end{prooftree}
+\]
+
+now we can just reproduce the second derivation, to get
+
+
+\[
+  \begin{prooftree}
+    \[
+      \[
+        A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B
+        \leadsto
+        A, A_{n+1}, \dots A_{n+m}, \Delta_2, A \rightarrow B
+      \]
+      \justifies
+      A_{n+1}, \dots A_{n+m}, \Delta_2, B
+      \using{\rightarrow \mathcal{E}}
+    \]
+    \leadsto
+    C
+  \end{prooftree}
+\]
+
+We can relax the side conditions to allow for these kinds of deduction in the
+sequent calculus, as follows:
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+    \qquad
+    \Gamma; \Delta_2, B \Longrightarrow_{\ctrlset{2}} C
+    \justifies
+    \Gamma; \Delta_1, \Delta_2, A \limp B
+    \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2} \cup \ctrlset{A \rightarrow B}} C
+  \end{prooftree}
+  \quad \text{provided} \quad
+  \begin{cases}
+    \respects{(\Gamma, \Delta_2, A \rightarrow B)}{\ctrlset{1}} \\
+    \respects{(\Gamma, \Delta_2)}{\ctrlset{A \rightarrow B}}
+  \end{cases}
+\]
+
+A similar situation arises with the tensor product. Consider the premises of the
+rule $\otimes R$, i.e.,
+$\Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A$ and
+$\Gamma; \Delta_2 \Longrightarrow_{\ctrlset{2}} B$. This means that we have
+
+\[
+  \begin{prooftree}
+    A_1, \dots A_n, \Delta_1
+    \leadsto
+    A
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    A_{n+1}, \dots A_{n+m}, \Delta_2
+    \leadsto
+    B
+  \end{prooftree}
+\]
+
+where $\forall i \in \{1,\dots,n+m\}, A_i \in \Gamma$, and that result from
+rules that can be applied under a control set respectively $\ctrlset{1}$ and
+$\ctrlset{2}$.  Suppose now that we start from a Z-state
+$A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2$.  Then, if we view
+the two deductions above as monolithic, we have essentially three different
+ways to derive $A \otimes B$.
+
+\begin{enumerate}
+\item We may start by reproducing the first derivation, followed by the second:
+
+  \[
+    \begin{prooftree}
+      \[
+        \[
+          A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2
+          \leadsto
+          A, A_{n+1}, \dots A_{n+m}, \Delta_2
+        \]
+        \leadsto
+        A, B
+      \]
+      \justifies
+      A \otimes B
+    \end{prooftree}
+  \]
+
+  provided $A_{n+1}, \dots A_{n+m}, \Delta_2$ respects $\ctrlset{1}$ and
+  $A$ respects $\ctrlset{2}$.
+  
+\item We may start by reproducing the second derivation, followed by the first:
+
+  \[
+    \begin{prooftree}
+      \[
+        \[
+          A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2
+          \leadsto
+          A_1, \dots A_n, \Delta_1, B
+        \]
+        \leadsto
+        A, B
+      \]
+      \justifies
+      A \otimes B
+    \end{prooftree}
+  \]
+
+  provided $A_1, \dots A_n, \Delta_1$ respects $\ctrlset{2}$ and
+  $B$ respects $\ctrlset{1}$.
+
+\item We may reproduce the two derivations in parallel, as allowed by Zsyntax:
+
+  \[
+    \begin{prooftree}
+      \[
+        A_1, \dots A_n, \Delta_1, A_{n+1}, \dots A_{n+m}, \Delta_2
+        \leadsto
+        A, B
+      \]
+      \justifies
+      A \otimes B
+    \end{prooftree}
+  \]
+
+  provided both $\Delta_1$ and $\Delta_2$ respect $\ctrlset{1} \cup \ctrlset{2}$.
+\end{enumerate}
+
+We can relax the side conditions to allow for these kinds of deduction in the
+sequent calculus, as follows:
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+    \qquad
+    \Gamma; \Delta_2 \Longrightarrow_{\ctrlset{2}} B
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2}} A
+    \otimes B
+  \end{prooftree}\quad \text{provided} \quad
+  \begin{cases}
+    ((\Gamma, \Delta_2) || \ctrlset{1} \wedge (\Gamma, A) || \ctrlset{2}) \; \vee \\
+    ((\Gamma, \Delta_1) || \ctrlset{2} \wedge (\Gamma, B) || \ctrlset{1}) \; \vee \\
+    ((\Gamma, \Delta_1, \Delta_2) || \ctrlset{1} \cup \ctrlset{2})
+  \end{cases}
+\]
+
+Notice that, with these modifications, it does not hold that if
+$\Gamma; \Delta \Longrightarrow_{\ctrlset{}} C$ then
+$\respects{(\Gamma, \Delta)}{\ctrlset{}}$.  Nevertheless, this has no influence
+on the fact that we must do the union of the control sets of the premises in the
+conclusion sequent. In fact, the control set annotation in a sequent tells us
+what must be true externally, i.e., in a hypothetical additional context in
+which we may want to make the reaction happen, whereas the check condition tells
+us what must hold internally, i.e. in the starting context/state
+$\Gamma, \Delta$ itself, in order for the sequent to represent a biologically
+correct reaction. It follows that it makes sense for the check conditions to be
+less restrictive that the ones we may think of (and that we described as our
+first attempt), since they may take into account the order in which internal
+reactions, represented by the premise sequents, take place. Instead, the control
+set that annotates the conclusion sequent must account for all these conditions
+regardless of the order in which they occur
+internally. Figure~\ref{annotated-checked} shows the complete calculus with the
+updated side conditions.
+
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \Gamma; P \Longrightarrow^c_{\emptyset} P
+        \using{\init}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma, A; \Delta, A \Longrightarrow^c_{\ctrlset{}} C
+        \justifies
+        \Gamma, A; \Delta \Longrightarrow^c_{\ctrlset{}} C
+        \using{\copyrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta, A, B \Longrightarrow^c_{\ctrlset{}} C
+        \justifies
+        \Gamma; \Delta, A \otimes B \Longrightarrow^c_{\ctrlset{}} C
+        \using{\otimes L}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A \Longrightarrow^c_{\ctrlset{}} B
+        \justifies
+        \Gamma; \Delta \Longrightarrow^c_{\ctrlset{}} A \limp B
+        \using{\limp R}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+        \qquad
+        \Gamma; \Delta_2 \Longrightarrow_{\ctrlset{2}} B
+        \justifies
+        \Gamma; \Delta_1, \Delta_2 \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2}} A
+        \otimes B
+        \using{\otimes R}
+      \end{prooftree}\quad
+      \begin{cases}
+        ((\Gamma, \Delta_2) || \ctrlset{1} \wedge (\Gamma, A) || \ctrlset{2}) \; \vee \\
+        ((\Gamma, \Delta_1) || \ctrlset{2} \wedge (\Gamma, B) || \ctrlset{1}) \; \vee \\
+        ((\Gamma, \Delta_1, \Delta_2) || \ctrlset{1} \cup \ctrlset{2})
+      \end{cases}
+    \]
+    
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
+        \qquad
+        \Gamma; \Delta_2, B \Longrightarrow_{\ctrlset{2}} C
+        \justifies
+        \Gamma; \Delta_1, \Delta_2, A \limp B
+        \Longrightarrow_{\ctrlset{1} \cup \ctrlset{2} \cup \ctrlset{A
+            \rightarrow B}} C
+        \using{\limp L}
+      \end{prooftree}
+      \quad
+      \begin{cases}
+        \respects{(\Gamma, \Delta_2, A \rightarrow B)}{\ctrlset{1}} \\
+        \respects{(\Gamma, \Delta_2)}{\ctrlset{A \rightarrow B}}
+      \end{cases}
+    \]
+    
+  \end{mdframed}
+  \caption{\label{annotated-checked} Annotated checked backward sequent calculus.}
+\end{figure}
+
+\begin{definition}
+  We augment the notation $\Gamma \vdash \Delta$ w.r.t. theorems of Zsyntax with
+  the notation $\Gamma \vdash_{\ctrlset{}} \Delta$ for a control set
+  $\ctrlset{}$, to mean that it is possible to derive
+
+  \[
+    \begin{prooftree}
+      \nabla, \Gamma
+      \leadsto
+      \nabla, \Delta
+    \end{prooftree}
+  \]
+
+  for every $\nabla$ such that $\respects{\nabla}{\ctrlset{}}$.
+\end{definition}
+
+\begin{theorem}[Soundness]
+  If $\Gamma; \Delta \Longrightarrow^c_{\ctrlset{}} C$, then
+  $A_1, \dots, A_n, \Delta \vdash_{\ctrlset{}} C$ where $A_i \in \Gamma$ for
+  all $i \in \{ 1, \dots, n\}$.
+\end{theorem}
+\begin{proof}
+  By induction on the height of the derivation.
+
+  \begin{enumerate}
+  \item The last rule is $\init$. Then, the sequent is $\Gamma; P
+    \Longrightarrow_{\emptyset} P$, and $P \models_{\emptyset} P$ by reflexivity
+    of the $\models$ relation.
+
+  \item The last rule is $\copyrule$. Then, by inductive hypothesis, there is a
+    derivation $\mathcal{D}$ such that
+
+    \[
+      \begin{prooftree}
+        A_1, \dots, A_n, \Delta, A
+        \leadsto
+        C
+      \end{prooftree}
+    \]
+
+    where $A \in \Gamma$ and $A_i \in \Gamma$ for all $i \in \{ 1, \dots, n\}$.
+    But then $\mathcal{D}$ satisfies the thesis.
+
+  \item The last rule is $\otimes L$. Then, by inductive hypothesis, we have a
+    derivation
+    
+    \[
+      \begin{prooftree}
+        A_1, \dots, A_n, \Delta, A, B
+        \leadsto
+        C
+      \end{prooftree}
+    \]
+
+    where $A_i \in \Gamma$ for all $i \in \{ 1, \dots, n\}$.
+    Then, by $\otimes \mathcal{E}$, we get
+
+    \[
+      \begin{prooftree}
+        \[
+          A_1, \dots, A_n, \Delta, A \otimes B
+          \justifies
+          A_1, \dots, A_n, \Delta, A, B
+          \using{\otimes \mathcal{E}}
+        \]
+        \leadsto
+        C
+      \end{prooftree}
+    \]
+    
+    since $\otimes \mathcal{E}$ does not introduce any additional constraints,
+    we can conclude the thesis, i.e., $A_1, \dots, A_n, \Delta, A \otimes B
+    \models_{\ctrlset{}} C$.
+
+  \item The last rule is $\limp R$. Then, by inductive hypothesis, we have a
+    derivation
+
+    \[
+      \begin{prooftree}
+        A_1, \dots, A_n, \Delta, A
+        \leadsto
+        B
+      \end{prooftree}
+    \]
+
+    where $A_i \in \Gamma$ for all $i \in \{ 1, \dots, n\}$.
+    Then, by $\rightarrow \mathcal{I}$, we may deduce $A \rightarrow B$ from
+    $A_1, \dots, A_n, \Delta$, without adding additional constraints to those of
+    the above derivation. Hence, $A_1, \dots, A_n, \Delta \models_{\ctrlset{}} A
+    \rightarrow B$.
+
+  \item The last rule is $\otimes R$. Then, by inductive hypothesis
+
+    
+    \[
+      \begin{prooftree}
+        A_1, \dots, A_n, \Delta_1
+        \leadsto
+        A
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        A_{n+1}, \dots, A_{n+m}, \Delta_2
+        \leadsto
+        B
+      \end{prooftree}
+    \]
+
+    where $A_i \in \Gamma$ for all $i \in \{ 1, \dots, n+m\}$.
+    We now distinguish the three cases in which the check condition can be
+    satisfied:
+
+    \begin{enumerate}
+    \item Case
+      $\respects{\Gamma, \Delta_2}{\ctrlset{1}} \wedge \respects{\Gamma,
+        A}{\ctrlset{2}}$. Then, we can derive
+
+      \[
+        \begin{prooftree}
+          \[
+            \[
+              A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2
+              \leadsto
+              A, A_{n+1}, \dots, A_{n+m}, \Delta_2
+            \]
+            \leadsto
+            A, B
+          \]
+          \justifies
+          A \otimes B
+        \end{prooftree}
+      \]
+
+      which holds for any additional context as long as it respects the control
+      set involved in the two intermediate derivations, namely $\ctrlset{1},
+      \ctrlset{2}$. Hence,
+      $A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m},
+      \Delta_2 \models_{\ctrlset{1} \cup \ctrlset{2}} A \otimes B$.
+      
+    \item Case
+      $\respects{\Gamma, \Delta_1}{\ctrlset{2}} \wedge \respects{\Gamma,
+        B}{\ctrlset{1}}$. Then, we can derive
+
+      \[
+        \begin{prooftree}
+          \[
+            \[
+              A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2
+              \leadsto
+              A_1, \dots, A_n, \Delta_1, B
+            \]
+            \leadsto
+            A, B
+          \]
+          \justifies
+          A \otimes B
+        \end{prooftree}
+      \]
+
+      As above, from this we may conclude
+
+      \[
+        A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m},
+        \Delta_2 \vdash_{\ctrlset{1} \cup \ctrlset{2}} A \otimes B
+      \]
+
+    \item Case
+      $\respects{(\Gamma, \Delta_1,
+        \Delta_2)}{(\ctrlset{1}\cup\ctrlset{2})}$. Since Zsyntax allows for
+      simultaneous application of inference rules, given the check condition we
+      can derive
+
+      \[
+        \begin{prooftree}
+          \[
+            A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2
+            \leadsto
+            A, B
+          \]
+          \justifies
+          A \otimes B
+        \end{prooftree}
+      \]
+    \end{enumerate}
+    
+  \item The last rule is $\limp L$. Then, by inductive hypothesis, we have
+
+        
+    \[
+      \begin{prooftree}
+        A_1, \dots, A_n, \Delta_1
+        \leadsto
+        A
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        A_{n+1}, \dots, A_{n+m}, \Delta_2, B
+        \leadsto
+        C
+      \end{prooftree}
+    \]
+
+    where $A_i \in \Gamma$ for all $i \in \{ 1, \dots, n+m\}$.
+    By hypothesis the check condition is satisfied, hence
+    $\respects{(\Gamma, \Delta_2, A \limp B)}{\ctrlset{1}}$ and
+    $\respects{(\Gamma, \Delta_2)}{\ctrlset{A \rightarrow B}}$.
+    Then, we may derive
+
+    \[
+      \begin{prooftree}
+        \[
+          \[
+            A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2, A
+            \rightarrow B
+            \leadsto
+            A_{n+1}, \dots, A_{n+m}, \Delta_2, A, A \rightarrow B
+          \]
+          \justifies
+          A_{n+1}, \dots, A_{n+m}, \Delta_2, B
+          \using{\rightarrow \mathcal{E}}
+        \]
+        \leadsto
+        C
+      \end{prooftree}
+    \]
+    
+    which justifies the thesis
+
+    \[
+      A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2, A \rightarrow
+      B \vdash_{\ctrlset{1}\cup\ctrlset{2}\cup\ctrlset{A \rightarrow B}} C
+    \]
+    
+  \end{enumerate}
+\end{proof}
 
 \subsection{From natural deduction to sequent calculus}
 
@@ -438,50 +1184,131 @@ zone, we can treat $\Gamma$ as a set.
   \end{prooftree}
 \]
 
-\begin{definition}
-  \begin{enumerate}
-  \item A forward sequent is of the form $\Gamma; \Delta
-    \longrightarrow C$, where $\Gamma$ and $\Delta$ are the
-    unrestricted and linear resources respectively;
-  \item The correspondence relation $\prec$ between forward and
-    backward sequents is defined as follows:
-    $(\Gamma; \Delta \longrightarrow C) \prec
-    (\Gamma';\Delta\Longrightarrow C) \; \text{iff} \; \Gamma \subseteq
-    \Gamma'$. The forward sequent $s$ is sound if for every backward
-    sequent $s'$ such that $s \prec s'$, $s'$ is derivable in the
-    backward calculus;
-  \item The symbol $\prec$ is overloaded to represent the \emph{subsumption}
-    relation between forward sequents, as the smallest relation to satisfy:
-
-    \[
-      (\Gamma; \Delta \longrightarrow C) \prec (\Gamma'; \Delta
-      \longrightarrow C) \; \text{iff} \; \Gamma \subseteq \Gamma'
-    \]
-  \end{enumerate}
-\end{definition}
-
-\begin{definition}
-  A rule with conclusion $s$ and premises $s_1, \dots, s_n$ is said to
-  satisfy the irredundancy property if for no $i \in \{1, \dots, n\}$,
-  $s_i \leq s$.
-\end{definition}
-
-\begin{proposition}
-  All forward rules satisfy the irredundancy property.
-\end{proposition}
-
 \begin{theorem}[Soundness]
-  If $\Gamma; \Delta \longrightarrow C$ is derivable, then it is
-  sound.
+  If $\Gamma ; \Delta \longrightarrow C$, then
+  $\Gamma ; \Delta \Longrightarrow C$.
 \end{theorem}
+\begin{proof}
+  Just notice that every forward derivation is also a backward derivation, with
+  the difference that in the latter unrestricted contexts are copied in all
+  the premises. The details are a straightforward induction on the height of a
+  forward derivation, plus weakening for the backward calculus.
+\end{proof}
 
 \begin{theorem}[Completeness]
-  If $\Gamma; \Delta \Longrightarrow C$ is derivable, then there
-  exists a derivable forward sequent
-  $\Gamma'; \Delta' \longrightarrow C$ such that
-  $(\Gamma'; \Delta' \longrightarrow C) \prec (\Gamma; \Delta
-  \Longrightarrow C)$.
+  If $\Gamma ; \Delta \Longrightarrow C$, then
+  $\Gamma' ; \Delta \longrightarrow C$ for some $\Gamma' \subseteq \Gamma$.
 \end{theorem}
+\begin{proof}
+  Straightforward induction on the backward derivation.
+\end{proof}
+
+\begin{example}
+  The following is an example derivation of
+
+  $$\frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}$$
+
+  where $R_1 \equiv n \otimes n \limp d$ and
+  $R_3 \equiv q \limp d \otimes d \otimes n$.
+
+  \[
+    \begin{prooftree}
+      \[
+        \[
+          \[
+            \frwdseq{\cdot}{q}{q}
+            \[
+              \[
+                \[
+                  \frwdseq{}{d}{d}
+                  \quad
+                  \frwdseq{}{d}{d}
+                  \justifies
+                  \frwdseq{}{d, d}{d \otimes d}
+                \]
+                \quad
+                \[
+                  \[
+                    \frwdseq{}{d}{d}
+                    \quad
+                    \[
+                      \frwdseq{}{n}{n}
+                      \quad
+                      \frwdseq{}{n}{n}
+                      \justifies
+                      \frwdseq{}{n, n}{n \otimes n}
+                    \]
+                    \justifies
+                    \frwdseq{}{n, n, n \otimes n \limp d}{d}
+                  \]
+                  \justifies
+                  \frwdseq{R_1}{n, n}{d}
+                \]
+                \justifies
+                \frwdseq{R_1}{n, d, d, n}{d \otimes d \otimes d}
+              \]
+              \justifies
+              \frwdseq{R_1}{n, d \otimes d \otimes n}{d \otimes d \otimes d}
+            \]
+            \justifies
+            \frwdseq{R_1}{q, n, q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
+          \]
+          \justifies
+          \frwdseq{R_1, R_3}{q, n}{d \otimes d \otimes d}
+        \]
+        \justifies
+        \frwdseq{R_1, R_3}{q \otimes n}{d \otimes d \otimes d}
+      \]
+      \justifies
+      \frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}
+    \end{prooftree}
+  \]
+\end{example}
+
+% \begin{definition}
+%   \begin{enumerate}
+%   \item A forward sequent is of the form $\Gamma; \Delta
+%     \longrightarrow C$, where $\Gamma$ and $\Delta$ are the
+%     unrestricted and linear resources respectively;
+%   \item The correspondence relation $\prec$ between forward and
+%     backward sequents is defined as follows:
+%     $(\Gamma; \Delta \longrightarrow C) \prec
+%     (\Gamma';\Delta\Longrightarrow C) \; \text{iff} \; \Gamma \subseteq
+%     \Gamma'$. The forward sequent $s$ is sound if for every backward
+%     sequent $s'$ such that $s \prec s'$, $s'$ is derivable in the
+%     backward calculus;
+%   \item The symbol $\prec$ is overloaded to represent the \emph{subsumption}
+%     relation between forward sequents, as the smallest relation to satisfy:
+
+%     \[
+%       (\Gamma; \Delta \longrightarrow C) \prec (\Gamma'; \Delta
+%       \longrightarrow C) \; \text{iff} \; \Gamma \subseteq \Gamma'
+%     \]
+%   \end{enumerate}
+% \end{definition}
+
+% \begin{definition}
+%   A rule with conclusion $s$ and premises $s_1, \dots, s_n$ is said to
+%   satisfy the irredundancy property if for no $i \in \{1, \dots, n\}$,
+%   $s_i \leq s$.
+% \end{definition}
+
+% \begin{proposition}
+%   All forward rules satisfy the irredundancy property.
+% \end{proposition}
+
+% \begin{theorem}[Soundness]
+%   If $\Gamma; \Delta \longrightarrow C$ is derivable, then it is
+%   sound.
+% \end{theorem}
+
+% \begin{theorem}[Completeness]
+%   If $\Gamma; \Delta \Longrightarrow C$ is derivable, then there
+%   exists a derivable forward sequent
+%   $\Gamma'; \Delta' \longrightarrow C$ such that
+%   $(\Gamma'; \Delta' \longrightarrow C) \prec (\Gamma; \Delta
+%   \Longrightarrow C)$.
+% \end{theorem}
 
 \section{The Inverse Method}
 
@@ -489,8 +1316,23 @@ zone, we can treat $\Gamma$ as a set.
 
 \subsection{Subformula property}
 
-...
+The key technical property that makes the inverse method possible is the
+\emph{subformula property}. This property means, pragmatically, that we only
+need to consider sequents composed of subformulas of the goal sequent when
+searching for a cut-free proof.
 
+We formalize this idea in terms of a \emph{subformula relation} for
+propositions. To do so, we decorate subformulas with certain marks:
+
+\begin{itemize}
+\item \emph{Polarity}, written as a superscript + or - symbol;
+\item \emph{Availability}, written as a superscript ! (for ``unrestricted'') or
+  . (``linear''). Subformulas of an unrestricted formula \emph{do not} inherit
+  the decoration.
+\end{itemize}
+
+The availability signs determine whether the formula is allowed to occur in the
+unrestricted context, and thus serve as a guide for the copy rule.
 
 \begin{definition}
   A decorated sequent is of the form $\Gamma^-_! ; \Delta^-_. \Longrightarrow
@@ -512,14 +1354,21 @@ zone, we can treat $\Gamma$ as a set.
   \]
 \end{definition}
 
+We assume the standard pointwise extension of this relation to sets of decorated
+propositions:
+
+\[
+  S \leq T \equiv \forall A \in S, \exists B \in T : A \leq B
+\]
+
 \begin{definition}
   A decorated sequent $s_1 \equiv \Gamma^-_! ; \Delta^-_. \Longrightarrow C^+_.$
   is a subsequent of the decorated sequent
   $\Gamma'^-_! ; \Delta'^-_. \Longrightarrow C'^+_.$, written $s_1 \leq s_2$ if
 
   \[
-    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
-    \Delta^-_. \cup C^+_.
+    \subsequent{\Gamma'^-_! \cup \Delta'^-_. \cup C'^+_.}
+    {\Gamma^-_! \cup \Delta^-_. \cup C^+_.}
   \]
 \end{definition}
 
@@ -528,8 +1377,8 @@ zone, we can treat $\Gamma$ as a set.
   $\Gamma; \Delta \Longrightarrow C$, then
 
   \[
-    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
-    \Delta^-_. \cup C^+_.
+    \subsequent{\Gamma'; \Delta' \Longrightarrow C'}
+    {\Gamma; \Delta \Longrightarrow C}
   \]
 \end{theorem}
 \begin{proof}
@@ -548,18 +1397,24 @@ zone, we can treat $\Gamma$ as a set.
   transitivity of the subformula relation.
 \end{proof}
 
-Since sequents in the forward calculus contain a subset of formulas in the
-backward calculus, it follows that
+The same reasoning holds for the forward calculus, where the subsequent relation
+is extended to forward sequents in the obvious way.
 
 \begin{corollary}
   If $\Gamma'; \Delta' \longrightarrow C'$ appears in a proof of
   $\Gamma; \Delta \longrightarrow C$, then
 
   \[
-    \Gamma'^-_! \cup \Delta'^-_. \cup C'^+_. \leq \Gamma^-_! \cup
-    \Delta^-_. \cup C^+_.
+    \subsequent{
+      \Gamma'; \Delta' \longrightarrow C'
+    }{
+      \Gamma; \Delta \longrightarrow C
+    }
   \]
 \end{corollary}
+\begin{proof}
+  Immediate.
+\end{proof}
 
 \subsection{Sequent representation}
 
@@ -574,20 +1429,22 @@ backward calculus, it follows that
 
 ...
 
+\subsection{Subsumption}
+
 In the saturation-based search that we use in the forward direction, there is a
 form of non-determinism in selecting sequents for applying rules. It is
 therefore important that the database of sequents available as candidates is as
-less redundant as possible. We therefore need to check for sequent subsumption
-whenever a new sequent is created (\emph{forward subsumption}. In implementing
-subsumption checks, it is important to detect failures as early as possible,
-because the vast majority of checks it likely to fail. The usual strategy is to
-perform a sequence of hierarchical tests that imply subsumption if they all
-succeed. Performing these checks in sequence allows us to stop as soon as one of
-them fails.
+less redundant as possible. We therefore need to check for \emph{sequent
+  subsumption} whenever a new sequent is created (\emph{forward
+  subsumption}). In implementing subsumption checks, it is important to detect
+failures as early as possible, because the vast majority of checks it likely to
+fail. The usual strategy is to perform a sequence of hierarchical tests that
+imply subsumption if they all succeed. Performing these checks in sequence
+allows us to stop as soon as one of them fails.
 
 \begin{definition}[Hierarchical subsumption tests]
-  A decorated forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does
-  not subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
+  A forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does not
+  subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
 
   \begin{enumerate}
   \item $C \neq C'$, or
@@ -596,12 +1453,14 @@ them fails.
   \item $s_1 \not \prec s_2$.
   \end{enumerate}
 
-  Where $\Gamma \subseteq \Gamma'$ if for every $l \in \mathrm{dom}(\Gamma)$,
+  Where $C = C'$ compares both formulas and labels, $\Gamma \subseteq \Gamma'$
+  if for every $l \in \mathrm{dom}(\Gamma)$,
   $\mathrm{mult}(\Gamma, l) \leq \mathrm{mult}(\Gamma', l)$, and similarly for
   $\Delta$.
 \end{definition}
 
-Add Theorem 4.12 of the thesis...
+It is trivial to verify that a sequent subsumes another sequent if and only if
+the subsumption test above fails.
 
 \section{Focused derivations}
 
@@ -618,10 +1477,12 @@ synchronous and asynchronous connectives.
   \begin{tabular}{|l|l|}
     \hline
     \textbf{symbol} & \textbf{meaning} \\
+    \hline
     $P$ & left-synchronous ($\limp$) \\
     $Q$ & right-synchronous ($\otimes$) \\
     $L$ & left-asynchronous ($\otimes$) \\
-    $R$ & right-asynchronous ($\limp$)
+    $R$ & right-asynchronous ($\limp$) \\
+    \hline
   \end{tabular}
 \end{table}
 
@@ -635,13 +1496,15 @@ The backward focusing calculus consists of the following kinds of sequents:
 
 \begin{table}[h]
   \centering
-  \begin{tabular}{ll}
+  \begin{tabular}{|l|l|}
     \hline
     \textbf{symbol} & \textbf{meaning} \\
+    \hline
     $\Gamma; \Delta \gg A$ & right-focal sequent with $A$ under focus \\
     $\Gamma; \Delta; A \ll Q$ & left-focal sequent with $A$ under focus \\
     $\Gamma; \Delta; \Omega \Longrightarrow C; \cdot$ & right-active sequent \\
-    $\Gamma; \Delta; \Omega \Longrightarrow \cdot; Q$ & left-active sequent
+    $\Gamma; \Delta; \Omega \Longrightarrow \cdot; Q$ & left-active sequent \\
+    \hline
   \end{tabular}
 \end{table}
 
@@ -808,6 +1671,35 @@ proposition.
   \end{prooftree}
 \]
 
+\begin{theorem}[Soundness]
+  \begin{enumerate}
+  \item If $\rfocseq{\Gamma}{\Delta}{A}$, then $\Gamma; \Delta \Longrightarrow
+    A$;
+  \item If $\lfocseq{\Gamma}{\Delta}{A}{Q}$, then $\Gamma ; \Delta, A
+    \Longrightarrow Q$;
+  \item If $\btriseq{\Gamma}{\Delta}{\Omega}{C ; \cdot}$, then $\Gamma; \Delta,
+    \Omega \Longrightarrow C$;
+  \item If $\btriseq{\Gamma}{\Delta}{\Omega}{\cdot ; C}$, then $\Gamma; \Delta,
+    \Omega \Longrightarrow C$.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  The four assertions are proved simultaneously by straightforward induction on
+  the height of the derivation.
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\Gamma ; \Delta \Longrightarrow C$, then
+  $\Gamma; \cdot ; \Omega \Longrightarrow C ; \cdot$, where $\Omega$ is some
+  listing of $\Delta$.
+\end{theorem}
+\begin{proof}
+  This proof is much more involved than the one for soundness, and can be found
+  in [thesis] for the full intuitionistic linear logic. It can be easily adapted
+  to our small fragment since it does not rely on the presence of all
+  connectives.
+\end{proof}
+
 \subsection{Backward derived rules}
 
 The primary benefit of focusing is the ability to generate derived ``big step''
@@ -834,7 +1726,7 @@ The idea is to interpret a proposition itself as the derived rules that it
 embodies. Every propostiion is viewed as a relation between the conclusion of
 the rule and its premises at the leaves of the bipole. Both the conclusion and
 the premises are neutral sequents, which we indicate as
-$\neuseq{\Gamma}{\Delta}{Q}$.
+$\bneuseq{\Gamma}{\Delta}{Q}$.
 
 There are three classes of relational interpretations:
 
@@ -850,24 +1742,24 @@ There are three classes of relational interpretations:
   \begin{prooftree}
     p \; \text{right-biased}
     \justifies
-    \relj{\blfrel{p}}{\neuseq{\Gamma}{\cdot}{p}}{\cdot}
+    \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
     \using{linit}
   \end{prooftree}\qquad\qquad
   \begin{prooftree}
     p \; \text{left-biased}
     \justifies
-    \relj{\brfrel{p}}{\neuseq{\Gamma}{p}{\cdot}}{\cdot}
+    \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
     \using{rinit}
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
-    \relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+    \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
     \qquad
-    \relj{\brfrel{B}}{\neuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+    \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
     \justifies
-    \relj{\brfrel{A \otimes B}}{\neuseq{\Gamma}{\Delta_1,
+    \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
         \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
     \using{\otimes F}
   \end{prooftree}
@@ -884,17 +1776,17 @@ There are three classes of relational interpretations:
   \begin{prooftree}
     p \; \text{right-biased}
     \justifies
-    \relj{\brfrel{p}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\neuseq{\Gamma}{\Delta}{p}}
+    \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
     \using{conjecture^+}
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
-    \relj{\blfrel{B}}{\neuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
-    \relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+    \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+    \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
     \justifies
-    \relj{\blfrel{A \limp B}}{\neuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+    \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
       \cdot \Sigma_2}
     \using{\limp F}
   \end{prooftree}
@@ -911,7 +1803,7 @@ There are three classes of relational interpretations:
   \begin{prooftree}
     p \; \text{left-biased}
     \justifies
-    \relj{\blfrel{p}}{\neuseq{\Gamma}{\Delta}{Q}}{\neuseq{\Gamma}{\Delta, p}{Q}}
+    \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
     \using{conjecture^-}
   \end{prooftree}
 \]
@@ -955,9 +1847,9 @@ There are three classes of relational interpretations:
     \relj{
       \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
     }{
-      \neuseq{\Gamma'}{\Delta'}{Q}
+      \bneuseq{\Gamma'}{\Delta'}{Q}
     }{
-      \neuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+      \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
     }
     \using{match}
   \end{prooftree}
@@ -969,9 +1861,9 @@ There are three classes of relational interpretations:
     \relj{
       \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
     }{
-      \neuseq{\Gamma'}{\Delta'}{\cdot}
+      \bneuseq{\Gamma'}{\Delta'}{\cdot}
     }{
-      \neuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+      \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
     }
     \using{match'}
   \end{prooftree}
@@ -979,30 +1871,30 @@ There are three classes of relational interpretations:
 
 \[
   \begin{prooftree}
-    (\relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
+    (\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
     \quad s_1 \quad s_2 \quad \dots \quad s_n
     \justifies
-    \neuseq{\Gamma}{\Delta}{Q}
+    \bneuseq{\Gamma}{\Delta}{Q}
     \using{right-focus}
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
-    (\relj{\blfrel{Q}}{\neuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+    (\relj{\blfrel{Q}}{\bneuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
     \quad s_1 \quad s_2 \quad \dots \quad s_n
     \justifies
-    \neuseq{\Gamma}{\Delta, P}{Q}
+    \bneuseq{\Gamma}{\Delta, P}{Q}
     \using{left-focus}
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
-    (\relj{\blfrel{A}}{\neuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+    (\relj{\blfrel{A}}{\bneuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
     \quad s_1 \quad s_2 \quad \dots \quad s_n
     \justifies
-    \neuseq{\Gamma, A}{\Delta}{Q}
+    \bneuseq{\Gamma, A}{\Delta}{Q}
     \using{copy-focus}
   \end{prooftree}
 \]
@@ -1011,7 +1903,7 @@ There are three classes of relational interpretations:
   \begin{enumerate}
   \item If $\rfocseq{\Gamma}{\Delta}{A}$, then for some $\Sigma$
     \begin{enumerate}
-    \item $\relj{\brfrel{A}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
+    \item $\relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
     \item $\Sigma$ are all derivable
     \end{enumerate}
   \item ...
@@ -1056,23 +1948,23 @@ There are three classes of relational interpretations:
       \relj{
         \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\gamma_1}}
       }{
-        \neuseq{\cdot}{\cdot}{\gamma_2}
+        \bneuseq{\cdot}{\cdot}{\gamma_2}
       }{
-        \neuseq{\Gamma}{\Delta}{Q}
+        \bneuseq{\Gamma}{\Delta}{Q}
       }
     \]
 
     is derivable with either $\matchrule$ or $\matchprimerule$. We need to show
-    that $\neuseq{\Gamma}{\Delta}{Q}$ is derivable. By inductive hypothesis, we
-    have $\relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ for some
+    that $\bneuseq{\Gamma}{\Delta}{Q}$ is derivable. By inductive hypothesis, we
+    have $\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ for some
     $\Sigma$ all derivable. But then,
 
     \[
       \begin{prooftree}
-        \relj{\brfrel{Q}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
         \qquad \Sigma
         \justifies
-        \neuseq{\Gamma}{\Delta}{Q}
+        \bneuseq{\Gamma}{\Delta}{Q}
         \using{\rightfocusrule}
       \end{prooftree}
     \]
@@ -1091,15 +1983,15 @@ There are three classes of relational interpretations:
     \]
 
     By inductive hypothesis, we have
-    $\relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
+    $\relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
     where all $\Sigma$ are derivable. But
     then, we can apply the rule $\faplus$ to get the thesis
 
     \[
       \begin{prooftree}
-        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
         \justifies
-        \relj{\brfrel{R}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \relj{\brfrel{R}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
         \using{FA^+}
       \end{prooftree}
     \]
@@ -1117,11 +2009,11 @@ There are three classes of relational interpretations:
     \]
 
     By inductive hypothesis,
-    $\relj{\bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{p}}}{\neuseq{\cdot}{\cdot}{\cdot}}{\Sigma}$,
+    $\relj{\bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{p}}}{\bneuseq{\cdot}{\cdot}{\cdot}}{\Sigma}$,
     that must have been derived by $\matchprimerule$. Therefore, $\Sigma \equiv
-    \neuseq{\Gamma}{\Delta}{p}$, which is by hypothesis derivable.
+    \bneuseq{\Gamma}{\Delta}{p}$, which is by hypothesis derivable.
     Then, we can apply $\faplusstar$ to get
-    $\relj{\brfrel{p}}{\neuseq{\Gamma}{\Delta}{\cdot}}{\neuseq{\Gamma}{\Delta}{p}}$.
+    $\relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}$.
 
   \item Case $\lblurstar$ is dual to $\rblurstar$.
   \item Case $\copyrule$.
@@ -1141,15 +2033,15 @@ There are three classes of relational interpretations:
       \begin{prooftree}
         \justifies
         \relj{\bactrel{\btriseq{\Gamma,
-              A}{\Delta}{\cdot}{\cdot}}}{\neuseq{\cdot}{\cdot}{Q}}{\neuseq{\Gamma,
+              A}{\Delta}{\cdot}{\cdot}}}{\bneuseq{\cdot}{\cdot}{Q}}{\bneuseq{\Gamma,
             A}{\Delta}{Q}}
         \using{\matchrule}
       \end{prooftree}
     \]
 
-    and see that $\neuseq{\Gamma, A}{\Delta}{Q}$ is derivable by
+    and see that $\bneuseq{\Gamma, A}{\Delta}{Q}$ is derivable by
     the inductive hypothesis
-    $\relj{\blfrel{A}}{\neuseq{\Gamma,A}{\Delta}{Q}}{\Sigma}$ and an application
+    $\relj{\blfrel{A}}{\bneuseq{\Gamma,A}{\Delta}{Q}}{\Sigma}$ and an application
     of $\copyfocusrule$.
   \item The remaining rules of the connectives are straightforward application
     of the inductive hypothesis.
@@ -1158,17 +2050,225 @@ There are three classes of relational interpretations:
 
 \begin{theorem}[Completeness]
   If $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$, then
-  $\neuseq{\Gamma}{\Delta}{Q}$.
+  $\bneuseq{\Gamma}{\Delta}{Q}$.
 \end{theorem}
 \begin{proof}
   Straightforward application of Lemma~\ref{completeness-lemma}. The last rule
   used to derive $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$ is one of
   $\lfoc, \rfoc$ or $\copyrule$; correspondingly, by the Lemma, we have the
   derived rules to use as premises of $\rightfocusrule, \leftfocusrule$ and
-  $\copyfocusrule$ which derive $\neuseq{\Gamma}{\Delta}{Q}$.
+  $\copyfocusrule$ which derive $\bneuseq{\Gamma}{\Delta}{Q}$.
 \end{proof}
 
 \subsection{Forward focusing}
+
+\[
+  \begin{prooftree}
+    p \; \text{left-biased}
+    \justifies
+    \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
+    \using{\linit}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+    \qquad
+    \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+    \justifies
+    \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+        \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+    \using{\otimes F}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{
+      \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
+    }{
+      \Sigma
+    }{
+      s
+    }
+    \justifies
+    \relj{\frfrel{R}}{\Sigma}{s}
+    \using{\faplus}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    p \; \text{right-based}
+    \justifies
+    \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+    \using{\rinit}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
+    \qquad
+    \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+    \justifies
+    \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+        \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
+    \using{\limp F}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+    \justifies
+    \relj{\flfrel{L}}{\Sigma}{s}
+    \using{\faminus}
+  \end{prooftree}
+\]
+
+\section{Search strategy}
+
+\subsection{Rules and rule application}
+
+% From 4.1.5
+Rules are precomputed to the specific labels of the subformulas of the goal
+sequent. If the positive proposition $\labels{r}{A \otimes B}$ occurs in the
+goal sequent, and $\labels{r_A}{A}, \labels{r_B}{B}$ are the labels of the
+operands, then the following rule will be generated for this label:
+
+\[
+  \begin{prooftree}
+    \Gamma_1; \Delta_1 \longrightarrow r_A
+    \qquad
+    \Gamma_2; \Delta_2 \longrightarrow r_B
+    \justifies
+    \Gamma_1, \Gamma_2; \Delta_1, \Delta_2 \rightarrow r
+    \using{\otimes R}
+  \end{prooftree}
+\]
+
+To apply a rule to a given input sequent, we have to first \emph{match} a
+premiss of the rule to the input sequent.
+
+\subsection{Search procedure}
+
+% From 4.1.6
+
+The search procedure is summarized as follows:
+
+\begin{enumerate}
+\item Label all subformulas of the goal sequent, and decorate using signs and
+  availabilities;
+\item Determine all initial sequents for atomic formulas with both signs;
+\item Specialize all left rules for negative subformulas, all right rules for
+  positive subformulas, and instances of the ``copy'' rule for unrestriced
+  subformulas;
+\item Starting from the initial sequents, apply the inference ruels in any order
+  that is guaranteed to saturate the search space. Add new facts to a database
+  used for forward subsumption;
+\item Stop when the goal sequent is matched, or if no rules apply.
+\end{enumerate}
+
+The procedure maintains two continually updated sequent databases:
+
+\begin{enumerate}
+\item The \strong{kept sequents} database contains new sequents that have not
+  been subsumed, but are not yet being considered for rule applications;
+\item The \strong{active sequents} database that contains all sequents that
+  should be considered for rule applications.
+\end{enumerate}
+
+At each loop iteration, a sequent $s$ is selected and removed from the kept
+sequents database and inserted into the active sequents database
+(``activation''). Then, all specialized rules are matched against $s$ as the
+first premise.... [continues, but does not say anything]
+
+Completeness of the loop is a well known property, requiring only the following
+properties of the implementation:
+
+\begin{enumerate}
+\item \strong{Fair selection}: every sequent in the kept sequents database is
+  eventually selected for insertion into the active sequents database;
+\item \strong{Fair application}: if a rule can be fully satisfied by sequents in
+  the active sequents database (in any order), then the conclusion of this rule
+  is eventually considered for insertion into the kept sequents database.
+\end{enumerate}
+
+\subsection{Search procedure 2}
+
+% Taken from 5.6
+
+We extend the approach by treating all rules as essentially unary rules that
+produce either a conclusion sequent or a partially instantiated rule. Hence we
+have a dynamically growing collection of (partially applied) rules in the rule
+database.
+
+The inner (?) loop of the search procedure performs the following \emph{lazy
+  activation} step until either the goal sequent is subsumed, or no further
+rules are applicable to the active sequents. Activation contains a closely
+related procedure called \emph{percolation}.
+
+\begin{definition}[Lazy activation]
+  In the activation of a sequent $s$, that is, the transferring of $s$ from the
+  kept sequents database to the active sequents database, the following steps
+  are performed:
+
+  \begin{enumerate}
+  \item The sequent is renamed (???) and inserted into the active sequents
+    database;
+  \item All available rules are applied to $s$. If these applications produced
+    new rules $R$, then percolation is performed on $R$ to obtain the full
+    collection of new partially instantiated rules;
+  \item The new rules are added to the rule database;
+  \item All sequents generated during the above rule applications and
+    percolation are tested for subsumption in the global index (forward
+    subsumption). All unsubsumed sequents are added to the kept sequents
+    database.
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}[Percolation]
+  To percolate a collection of rules $R$, the following two steps are performed
+  until there are no new additions to $R$:
+
+  \begin{enumerate}
+  \item For every sequent in the active set, every rule in $R$ is applied to it;
+  \item Any new rules generated are added to $R$.
+  \end{enumerate}
+\end{definition}
+
+A sequent is added to the kept sequents database if it is not globally subsumed
+by some sequent derived earlier.
+
+\subsection{The focused inverse method}
+
+% Taken from 6.3
+
+The primary issue in the forward direction is to enumerate the propositions for
+which we need to derive inference rules. As the calculus of derived rules has
+only neutral sequents as premisses and conclusions, we need only generate rules
+for propositions that occur in neutral sequents; we call them \emph{frontier
+  propositions}.
+
+In the preparatory phase for the inverse method, we calculate the frontier
+propositions of the goal sequent. There is no need to generate initial sequents
+separately, as the executions of negative atoms in the frontier directly give us
+the necessary initial sequents.
+
+It is possible for a new sequent to be stronger than some sequents already in
+the database. In this case, the old weaker sequents are no longer considered for
+new derivations (backward subsumption).
+
+\subsubsection{Implementation details}
+
+% Taken from 6.3.1
+
+Given a proposition in the frontier, the focusing phase of the derived rule for
+it is completely predictable, sincere there are no disjunctive choices to be
+made. The active phase is also predictable, since we do not have additive
+connectives.
 
 \end{document}
 
