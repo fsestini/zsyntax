@@ -2210,6 +2210,7 @@ The derived rule for positive subformulas is:
     (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
     \justifies
     \fneuseq{\Gamma}{\Delta}{Q}
+    \using{foc plus}
   \end{prooftree}
 \]
 
@@ -2221,6 +2222,7 @@ Similarly, for negative propositions, we have two rules:
     (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
     \justifies
     \fneuseq{\Gamma}{\Delta, P}{Q}
+    \using{foc minus}
   \end{prooftree}
 \]
 
@@ -2230,10 +2232,11 @@ Similarly, for negative propositions, we have two rules:
     (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
     \justifies
     \fneuseq{\Gamma, A}{\Delta}{Q}
+    \using{! foc minus}
   \end{prooftree}
 \]
 
-\begin{fact}
+\begin{fact}\label{forwardfact}
   \begin{enumerate}
   \item If $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}}{\Sigma}
     {\fneuseq{\Gamma'}{\Delta'}{\gamma}}$, then either
@@ -2252,14 +2255,14 @@ Similarly, for negative propositions, we have two rules:
   $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
 \end{definition}
 
-\begin{lemma}
+\begin{lemma}\label{fsoundnesslemma}
   If $\Sigma$ are sound, then
 
   \begin{enumerate}
   \item If $\relj{\frfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\cdot}}$,
-    then, $\btriseq{\Gamma}{\Delta}{\cdot}{A ; \cdot}$;
+    then, $\rfocseq{\Gamma}{\Delta}{A}$;
   \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{Q}}$,
-    then $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$;
+    then $\lfocseq{\Gamma}{\Delta}{A}{Q}$;
   \item If
     $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}}{\Sigma}
     {\fneuseq{\Gamma'}{\Delta'}{Q}}$, then
@@ -2267,11 +2270,9 @@ Similarly, for negative propositions, we have two rules:
   \item If
     $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{C}}}{\Sigma}
     {\fneuseq{\Gamma'}{\Delta'}{\cdot}}$, then
-    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$.
-  % \item If
-  %   $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\gamma}}}{\Sigma}
-  %   {\fneuseq{\Gamma'}{\Delta'}{C}}$, then $\gamma = C$ and
-  %   $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$.
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$ or
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; C}$, depending
+    on whether $C$ is right-asynchronous or right-synchronous, respectively.
   \end{enumerate}
 \end{lemma}
 \begin{proof}
@@ -2285,31 +2286,302 @@ Similarly, for negative propositions, we have two rules:
 
     \[
       \begin{prooftree}
-        \[
-          \[
-            p \; \text{left-biased}
-            \justifies
-            \rfocseq{\cdot}{p}{p}
-          \]
-          \justifies
-          \btriseq{\cdot}{p}{\cdot}{\cdot ; p}
-        \]
+        p \; \text{left-biased}
         \justifies
-        \btriseq{\cdot}{p}{\cdot}{p ; \cdot}
+        \rfocseq{\cdot}{p}{p}
+      \end{prooftree}
+    \]
+
+    By soundness of the backward focused calculus, $\bkwseq{\cdot}{p}{p}$. 
+
+  \item Case $\rinit$ is similar;
+  \item Case $\faplus{}$.
+
+    \[
+      \begin{prooftree}
+        \relj{
+          \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
+        }{
+          \Sigma
+        }{
+          s
+        }
+        \justifies
+        \relj{\frfrel{R}}{\Sigma}{s}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{forwardfact}, $s \equiv
+    \fneuseq{\Gamma'}{\Delta'}{\cdot}$ for some $\Gamma', \Delta'$, and by
+    inductive hypothesis $\btriseq{\Gamma'}{\Delta'}{\cdot}{R ; \cdot}$. Then,
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma'}{\Delta'}{\cdot}{R ; \cdot}
+        \justifies
+        \rfocseq{\Gamma'}{\Delta'}{R}
+        \using{\rblur}
       \end{prooftree}
     \]
     
-  \item Case $\rinit$ is similar;
-  \item Case $\faplus{}$. 
+  \item Case $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma}{s}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+    By Fact~\ref{forwardfact}, $s \equiv \fneuseq{\Gamma'}{\Delta'}{Q}$, then by
+    inductive hypothesis $\btriseq{\Gamma'}{\Delta'}{L}{\cdot ; Q}$. Then,
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma'}{\Delta'}{L}{\cdot ; Q}
+        \justifies
+        \lfocseq{\Gamma'}{\Delta'}{L}{Q}
+        \using{\lblur}
+      \end{prooftree}
+    \]
+        
+  \item Case $\limp F$.
+    
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    Then, by Fact~\ref{forwardfact} and inductive hypothesis
+
+    \[
+      \begin{array}{{}@c}
+        \lfocseq{\Gamma_1}{\Delta_1}{B}{Q} \\
+        \rfocseq{\Gamma_2}{\Delta_2}{A}
+      \end{array}
+    \]
+
+    for some right-synchronous $Q$. Then, by weakening and $\limp L$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \lfocseq{\Gamma_1}{\Delta_1}{B}{Q}
+          \justifies
+          \lfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{B}{Q}
+        \]
+        \qquad
+        \[
+          \rfocseq{\Gamma_2}{\Delta_2}{A}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{A}
+        \]
+        \justifies
+        \lfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \limp B}{Q}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes F$.
+    
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis
+
+    \[
+      \begin{array}{{}@c}
+        \rfocseq{\Gamma_1}{\Delta_1}{A} \\
+        \rfocseq{\Gamma_2}{\Delta_2}{B}
+      \end{array}
+    \]
+
+    Then, by weakening and $\otimes R$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \rfocseq{\Gamma_1}{\Delta_1}{A}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{A}
+        \]
+        \qquad
+        \[
+          \rfocseq{\Gamma_2}{\Delta_2}{B}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{B}
+        \]
+        \justifies
+        \rfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item Case $\limp A$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
+        \using{\limp A}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{forwardfact}, $s \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$ for
+    some $\Gamma', \Delta'$. By inductive hypothesis $\btriseq{\Gamma,
+      \Gamma'}{\Delta, \Delta'}{\Omega \cdot A}{B ; \cdot}$ (if $B$ is
+    right-synchronous, it sufficies to apply $\ract$). Then, by $\limp R$
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma,
+          \Gamma'}{\Delta, \Delta'}{\Omega \cdot A}{B ; \cdot}
+        \justifies
+        \btriseq{\Gamma,
+          \Gamma'}{\Delta, \Delta'}{\Omega}{A \limp B ; \cdot}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes A$ is analogous.
+  \item Case $act$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \using{act}
+      \end{prooftree}
+    \]
+
+    \begin{enumerate}
+    \item Case $\xi = \cdot$. Then, by Fact~\ref{forwardfact},
+      $s \equiv \fneuseq{\Gamma'}{\Delta'}{Q}$ for some $Q$. Then, by inductive
+      hypothesis,
+      $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta', P}{\Omega \cdot \Omega'}{\cdot
+        ; Q}$. The thesis follows by application of the $lact$ rule.
+      
+    \item Case $\xi = C$ for some $C$. Then, by Fact~\ref{forwardfact},
+      $s \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$. Then, by inductive
+      hypothesis,
+      $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta', P}{\Omega \cdot
+        \Omega'}{\gamma}$, where $\gamma$ is either $C ; \cdot$ and $\cdot ;
+      C$. The thesis follows again by application of the $lact$ rule.
+    \end{enumerate}
+
+  \item Case $match$.
+    \begin{enumerate}
+    \item Case $\xi = \cdot$. Then
+
+      \[
+        \begin{prooftree}
+          \justifies
+          \relj{
+            \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+          }{
+            \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+          }{
+            \fneuseq{\Gamma'}{\Delta'}{Q}
+          }
+          \using{match}
+        \end{prooftree}
+      \]
+
+      Then we need to prove the derivability of $\btriseq{\Gamma,
+        \Gamma'}{\Delta, \Delta'}{\cdot}{\cdot ; Q}$, but this comes from the
+      hypothesis that $\fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}$ be sound.
+
+    \item Case $\xi = C$. Then, $C \equiv Q$ and
+      
+      \[
+        \begin{prooftree}
+          \justifies
+          \relj{
+            \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+          }{
+            \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+          }{
+            \fneuseq{\Gamma'}{\Delta'}{\cdot}
+          }
+          \using{match}
+        \end{prooftree}
+      \]
+
+      The rest is as above.
+    \end{enumerate}
   \end{itemize}
 \end{proof}
 
 \begin{theorem}[Soundness]
-  If $\fneuseq{\Gamma}{\Delta}{Q}$, then $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot
-  ; Q}$.
+  If $\fneuseq{\Gamma}{\Delta}{Q}$, then it is sound.
 \end{theorem}
 \begin{proof}
-  TODO...
+  By induction on the height of the derivation of
+  $\fneuseq{\Gamma}{\Delta}{Q}$. We distinguish three cases
+
+  \begin{enumerate}
+  \item Case $focplus$
+    
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+        \justifies
+        \fneuseq{\Gamma}{\Delta}{Q}
+        \using{foc plus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\rfocseq{\Gamma}{\Delta}{Q}$. The thesis
+    follows by $\rfoc$.
+    
+  \item Case $focminus$.
+    
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+        \justifies
+        \fneuseq{\Gamma}{\Delta, P}{Q}
+        \using{foc minus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\lfocseq{\Gamma}{\Delta}{P}{Q}$. The thesis
+    follows by $\lfoc$.
+    
+  \item Case $!focminus$.
+    
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+        \justifies
+        \fneuseq{\Gamma, A}{\Delta}{Q}
+        \using{! foc minus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\lfocseq{\Gamma}{\Delta}{A}{Q}$. The thesis
+    follows by $copy$.
+  \end{enumerate}
 \end{proof}
 
 \section{Focused inverse method}
