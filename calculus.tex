@@ -4,13 +4,15 @@
 \usepackage{amssymb}
 \usepackage{dsfont}
 \usepackage{prooftree}
-\usepackage{amsthm}
+\usepackage{amsthm, thmtools}
 \usepackage{mathtools}
 \usepackage{mdframed}
 
+\theoremstyle{definition}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
-\newtheorem{definition}{Definition}
+\declaretheorem[name=Definition,qed={\lower-0.3ex\hbox{$\blacksquare$}}]{definition}
+%\newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 \newtheorem{example}{Example}
@@ -43,6 +45,14 @@
 % Relation judgement   rel[...] ~--> res
 \newcommand{\relj}[3]{#1 [#2] \hookrightarrow #3}
 
+% Relation + judgement
+\newcommand{\brfrelj}[3]{\relj{\brfrel{#1}}{#2}{#3}}
+\newcommand{\blfrelj}[3]{\relj{\blfrel{#1}}{#2}{#3}}
+\newcommand{\bactrelj}[3]{\relj{\bactrel{#1}}{#2}{#3}}
+\newcommand{\frfrelj}[3]{\relj{\frfrel{#1}}{#2}{#3}}
+\newcommand{\flfrelj}[3]{\relj{\flfrel{#1}}{#2}{#3}}
+\newcommand{\factrelj}[3]{\relj{\factrel{#1}}{#2}{#3}}
+
 % Three-place bold sequents     G, D, O ===> C
 \newcommand{\btriseq}[4]{#1; #2; #3 \Longrightarrow #4}
 
@@ -50,6 +60,7 @@
 \newcommand{\rfocseq}[3]{#1; #2 \gg #3}
 \newcommand{\lfocseq}[4]{#1; #2; #3 \ll #4}
 
+% Rule labels
 \newcommand{\init}{\textsc{init}}
 \newcommand{\rinit}{\textsc{rinit}}
 \newcommand{\linit}{\textsc{linit}}
@@ -58,6 +69,7 @@
 \newcommand{\bact}{\textsc{bact}}
 \newcommand{\rfoc}{\textsc{rfoc}}
 \newcommand{\lfoc}{\textsc{lfoc}}
+\newcommand{\actrule}{\textsc{act}}
 \newcommand{\matchrule}{\textsc{match}}
 \newcommand{\matchprimerule}{\textsc{match'}}
 \newcommand{\rightfocusrule}{\textsc{right-focus}}
@@ -72,6 +84,10 @@
 \newcommand{\faplusstar}{\textsc{FA}^{+*}}
 \newcommand{\faminusstar}{\textsc{FA}^{-*}}
 \newcommand{\copyrule}{\textsc{copy}}
+\newcommand{\focplusrule}{\textsf{foc}^+_{\Downarrow}}
+\newcommand{\focminusrule}{\textsf{foc}^-_{\Downarrow}}
+\newcommand{\foccopyrule}{\textsf{!foc}^-_{\Downarrow}}
+
 \newcommand{\ctrlset}[1]{\mathfrak{S}_{#1}}
 
 \newcommand{\respects}[2]{#1 \, || \, #2}
@@ -1145,72 +1161,77 @@ only is conservative:
   \end{enumerate}
 \end{proof}
 
-\section{Forward sequent calculus}
+\section{The Inverse Method}
+
+\subsection{Multiplicative non-determinism}
+
+... TODO. .... rationale for a forward calulus...
+
+... TODO ... description of the inverse method...
+
+
+.... blah blah we need a forward calculus .... blah...
+
+\subsection{Forward sequent calculus}
 
 Since weakening and contraction are admissible for the unrestricted
 zone, we can treat $\Gamma$ as a set.
 
-\[
-  \begin{prooftree}
-    \justifies
-    \cdot ; P \longrightarrow P
-    \using{init}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \Gamma; \Delta, A \longrightarrow C
-    \justifies
-    \Gamma \cup \{A\}; \Delta \longrightarrow C
-    \using{copy}
-  \end{prooftree}
-\]
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \cdot ; P \longrightarrow P
+        \using{\init}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A \longrightarrow C
+        \justifies
+        \Gamma \cup \{A\}; \Delta \longrightarrow C
+        \using{\copyrule}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \Gamma; \Delta \longrightarrow A
-    \qquad
-    \Gamma'; \Delta' \longrightarrow B
-    \justifies
-    \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \Gamma; \Delta, A, B \longrightarrow C
-    \justifies
-    \Gamma; \Delta, A \otimes B \longrightarrow C
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta \longrightarrow A
+        \qquad
+        \Gamma'; \Delta' \longrightarrow B
+        \justifies
+        \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
+        \using{\otimes R}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A, B \longrightarrow C
+        \justifies
+        \Gamma; \Delta, A \otimes B \longrightarrow C
+        \using{\otimes L}
+      \end{prooftree}
+    \]
 
-% \[
-%   \begin{prooftree}
-%     \justifies
-%     \cdot; \cdot \longrightarrow \textbf{1}  
-%   \end{prooftree}
-%   \qquad \qquad
-%   \begin{prooftree}
-%     \Gamma; \Delta \longrightarrow C
-%     \justifies
-%     \Gamma; \Delta, \textbf{1} \longrightarrow C
-%   \end{prooftree}
-% \]
-
-\[
-  \begin{prooftree}
-    \Gamma; \Delta \longrightarrow A
-    \qquad
-    \Gamma'; \Delta', B \longrightarrow C
-    \justifies
-    \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
-    \using{\limp L}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \Gamma; \Delta, A \longrightarrow B
-    \justifies
-    \Gamma; \Delta \longrightarrow A \limp B
-    \using{\limp R}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta \longrightarrow A
+        \qquad
+        \Gamma'; \Delta', B \longrightarrow C
+        \justifies
+        \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
+        \using{\limp L}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \Gamma; \Delta, A \longrightarrow B
+        \justifies
+        \Gamma; \Delta \longrightarrow A \limp B
+        \using{\limp R}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward sequent calculus}
+\end{figure}
 
 \begin{theorem}[Soundness]
   If $\Gamma ; \Delta \longrightarrow C$, then
@@ -1293,64 +1314,19 @@ zone, we can treat $\Gamma$ as a set.
   \]
 \end{example}
 
-% \begin{definition}
-%   \begin{enumerate}
-%   \item A forward sequent is of the form $\Gamma; \Delta
-%     \longrightarrow C$, where $\Gamma$ and $\Delta$ are the
-%     unrestricted and linear resources respectively;
-%   \item The correspondence relation $\prec$ between forward and
-%     backward sequents is defined as follows:
-%     $(\Gamma; \Delta \longrightarrow C) \prec
-%     (\Gamma';\Delta\Longrightarrow C) \; \text{iff} \; \Gamma \subseteq
-%     \Gamma'$. The forward sequent $s$ is sound if for every backward
-%     sequent $s'$ such that $s \prec s'$, $s'$ is derivable in the
-%     backward calculus;
-%   \item The symbol $\prec$ is overloaded to represent the \emph{subsumption}
-%     relation between forward sequents, as the smallest relation to satisfy:
-
-%     \[
-%       (\Gamma; \Delta \longrightarrow C) \prec (\Gamma'; \Delta
-%       \longrightarrow C) \; \text{iff} \; \Gamma \subseteq \Gamma'
-%     \]
-%   \end{enumerate}
-% \end{definition}
-
-% \begin{definition}
-%   A rule with conclusion $s$ and premises $s_1, \dots, s_n$ is said to
-%   satisfy the irredundancy property if for no $i \in \{1, \dots, n\}$,
-%   $s_i \leq s$.
-% \end{definition}
-
-% \begin{proposition}
-%   All forward rules satisfy the irredundancy property.
-% \end{proposition}
-
-% \begin{theorem}[Soundness]
-%   If $\Gamma; \Delta \longrightarrow C$ is derivable, then it is
-%   sound.
-% \end{theorem}
-
-% \begin{theorem}[Completeness]
-%   If $\Gamma; \Delta \Longrightarrow C$ is derivable, then there
-%   exists a derivable forward sequent
-%   $\Gamma'; \Delta' \longrightarrow C$ such that
-%   $(\Gamma'; \Delta' \longrightarrow C) \prec (\Gamma; \Delta
-%   \Longrightarrow C)$.
-% \end{theorem}
-
-\section{The Inverse Method}
-
 ...
 
 \subsection{Subformula property}
 
 The key technical property that makes the inverse method possible is the
-\emph{subformula property}. This property means, pragmatically, that we only
-need to consider sequents composed of subformulas of the goal sequent when
-searching for a cut-free proof.
+\emph{subformula property}. Logical calculi with the subformula property are
+such that derivations only contain subformulas of the conclusion formula. This
+property means, in our case, that we only need to consider sequents composed of
+subformulas of the goal sequent when searching for a cut-free proof.
 
-We formalize this idea in terms of a \emph{subformula relation} for
-propositions. To do so, we decorate subformulas with certain marks:
+We show that such property holds for our calculi by formalizing the idea in
+terms of a \emph{subformula relation} for propositions. To do so, we decorate
+subformulas with certain marks:
 
 \begin{itemize}
 \item \emph{Polarity}, written as a superscript + or - symbol;
@@ -2093,114 +2069,119 @@ There are three classes of relational interpretations:
 In the following rules, $\gamma \setminus \xi$ is defined as $\gamma$ if $\xi = \cdot$,
 and as $\cdot$ if $\gamma = \xi$.
 
-\[
-  \begin{prooftree}
-    p \; \text{left-biased}
-    \justifies
-    \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
-    \using{\linit}
-  \end{prooftree}
-  \qquad\qquad
-  \begin{prooftree}
-    p \; \text{right-based}
-    \justifies
-    \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
-    \using{\rinit}
-  \end{prooftree}
-\]
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
+        \using{\linit}
+      \end{prooftree}
+      \qquad\qquad
+      \begin{prooftree}
+        p \; \text{right-based}
+        \justifies
+        \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+        \using{\rinit}
+      \end{prooftree}
+    \]
 
 
-\[
-  \begin{prooftree}
-    \relj{
-      \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
-    }{
-      \Sigma
-    }{
-      s
-    }
-    \justifies
-    \relj{\frfrel{R}}{\Sigma}{s}
-    \using{\faplus}
-  \end{prooftree}
-  \qquad \qquad
-    \begin{prooftree}
-    \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
-    \justifies
-    \relj{\flfrel{L}}{\Sigma}{s}
-    \using{\faminus}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{
+          \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
+        }{
+          \Sigma
+        }{
+          s
+        }
+        \justifies
+        \relj{\frfrel{R}}{\Sigma}{s}
+        \using{\faplus}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma}{s}
+        \using{\faminus}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
-    \qquad
-    \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
-    \justifies
-    \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
-        \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
-    \using{\limp F}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
-    \qquad
-    \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
-    \justifies
-    \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
-        \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
-    \using{\otimes F}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
-    \justifies
-    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
-    \using{\limp A}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
+        \using{\limp A}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\factrel{
-        \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
-    }{\Sigma}{s}
-    \justifies
-    \relj{\factrel{
-        \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
-    }{\Sigma}{s}
-    \using{\otimes A}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
+        }{\Sigma}{s}
+        \justifies
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
+        }{\Sigma}{s}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
-    \justifies
-    \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
-    \using{act}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \using{\actrule}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \xi \subseteq \gamma
-    \justifies
-    \relj{
-      \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\xi}}
-    }{
-      \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\gamma}
-    }{
-      \fneuseq{\Gamma'}{\Delta'}{\gamma \setminus \xi}
-    }
-    \using{match}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \xi \subseteq \gamma
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\xi}}
+        }{
+          \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\gamma}
+        }{
+          \fneuseq{\Gamma'}{\Delta'}{\gamma \setminus \xi}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus}
+\end{figure}
 
 The derived rule for positive subformulas is:
 
@@ -2210,7 +2191,7 @@ The derived rule for positive subformulas is:
     (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
     \justifies
     \fneuseq{\Gamma}{\Delta}{Q}
-    \using{foc plus}
+    \using{\focplusrule}
   \end{prooftree}
 \]
 
@@ -2222,7 +2203,7 @@ Similarly, for negative propositions, we have two rules:
     (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
     \justifies
     \fneuseq{\Gamma}{\Delta, P}{Q}
-    \using{foc minus}
+    \using{\focminusrule}
   \end{prooftree}
 \]
 
@@ -2232,7 +2213,7 @@ Similarly, for negative propositions, we have two rules:
     (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
     \justifies
     \fneuseq{\Gamma, A}{\Delta}{Q}
-    \using{! foc minus}
+    \using{\foccopyrule}
   \end{prooftree}
 \]
 
@@ -2364,10 +2345,8 @@ Similarly, for negative propositions, we have two rules:
     Then, by Fact~\ref{forwardfact} and inductive hypothesis
 
     \[
-      \begin{array}{{}@c}
-        \lfocseq{\Gamma_1}{\Delta_1}{B}{Q} \\
-        \rfocseq{\Gamma_2}{\Delta_2}{A}
-      \end{array}
+      \lfocseq{\Gamma_1}{\Delta_1}{B}{Q} \qquad \qquad
+      \rfocseq{\Gamma_2}{\Delta_2}{A}
     \]
 
     for some right-synchronous $Q$. Then, by weakening and $\limp L$:
@@ -2407,10 +2386,8 @@ Similarly, for negative propositions, we have two rules:
     Then, by inductive hypothesis
 
     \[
-      \begin{array}{{}@c}
-        \rfocseq{\Gamma_1}{\Delta_1}{A} \\
-        \rfocseq{\Gamma_2}{\Delta_2}{B}
-      \end{array}
+      \rfocseq{\Gamma_1}{\Delta_1}{A} \qquad \qquad
+      \rfocseq{\Gamma_2}{\Delta_2}{B}
     \]
 
     Then, by weakening and $\otimes R$:
@@ -2583,6 +2560,18 @@ Similarly, for negative propositions, we have two rules:
     follows by $copy$.
   \end{enumerate}
 \end{proof}
+
+% Completeness is easily established with respect to the backward calculus of
+% derived rules. The details can be found in [thesis].
+
+\begin{lemma}\label{fdercompllemma}
+  
+\end{lemma}
+
+\begin{theorem}[Completeness]
+  If $\bneuseq{\Gamma}{\Delta}{Q}$, then $\fneuseq{\Gamma'}{\Delta}{Q}$ for some
+  $\Gamma' \subseteq \Gamma$.
+\end{theorem}
 
 \section{Focused inverse method}
 
@@ -2864,4 +2853,3 @@ set and the inactive set is exhausted (in which case the search saturates).
 \end{proof}
 
 \end{document}
-
