@@ -1742,166 +1742,179 @@ There are three classes of relational interpretations:
   $\cdot$ or a proposition $C$.
 \end{enumerate}
 
-\[
-  \begin{prooftree}
-    p \; \text{right-biased}
-    \justifies
-    \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
-    \using{linit}
-  \end{prooftree}\qquad\qquad
-  \begin{prooftree}
-    p \; \text{left-biased}
-    \justifies
-    \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
-    \using{rinit}
-  \end{prooftree}
-\]
 
-\[
-  \begin{prooftree}
-    \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
-    \qquad
-    \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
-    \justifies
-    \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
-        \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
-    \using{\otimes F}
-  \end{prooftree}
-\]
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
+        \using{\linit}
+      \end{prooftree}\qquad\qquad
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
+        \using{\rinit}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
-    \justifies
-    \relj{\brfrel{R}}{s}{\Sigma}
-    \using{FA^+}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    p \; \text{right-biased}
-    \justifies
-    \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
-    \using{conjecture^+}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+        \qquad
+        \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
+            \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
-    \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
-    \justifies
-    \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
-      \cdot \Sigma_2}
-    \using{\limp F}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{FA^+}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
-    \justifies
-    \relj{\blfrel{L}}{s}{\Sigma}
-    \using{FA^-}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    p \; \text{left-biased}
-    \justifies
-    \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
-    \using{conjecture^-}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+          \cdot \Sigma_2}
+        \using{\limp F}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
-          \Omega'}{\xi}}}{s}{\Sigma}
-    \justifies
-    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
-          \Omega'}{\xi}}}{s}{\Sigma}
-    \using{\otimes A}
-  \end{prooftree}\qquad \qquad
-  \begin{prooftree}
-    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot
-          \Omega'}{B}}}{s}{\Sigma}
-    \justifies
-    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot
-          \Omega'}{A \limp B}}}{s}{\Sigma}
-    \using{\limp A}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{FA^-}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \relj{
-      \bactrel{
-        \btriseq{\Gamma}{\Delta,P}{\Omega \cdot \Omega'}{\xi}
-      }
-    }{s}{\Sigma}
-    \justifies
-    \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot
-          \Omega'}{\xi}}}{s}{\Sigma}
-    \using{bact}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot
+              \Omega'}{B}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot
+              \Omega'}{A \limp B}}}{s}{\Sigma}
+        \using{\limp A}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \justifies
-    \relj{
-      \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
-    }{
-      \bneuseq{\Gamma'}{\Delta'}{Q}
-    }{
-      \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
-    }
-    \using{match}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \relj{
+          \bactrel{
+            \btriseq{\Gamma}{\Delta,P}{\Omega \cdot \Omega'}{\xi}
+          }
+        }{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{bact}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \justifies
-    \relj{
-      \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
-    }{
-      \bneuseq{\Gamma'}{\Delta'}{\cdot}
-    }{
-      \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
-    }
-    \using{match'}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{Q}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{match}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    (\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
-    \quad s_1 \quad s_2 \quad \dots \quad s_n
-    \justifies
-    \bneuseq{\Gamma}{\Delta}{Q}
-    \using{right-focus}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{\cdot}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{match'}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Backward relations for derived rules}
+\end{figure}
 
-\[
-  \begin{prooftree}
-    (\relj{\blfrel{Q}}{\bneuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
-    \quad s_1 \quad s_2 \quad \dots \quad s_n
-    \justifies
-    \bneuseq{\Gamma}{\Delta, P}{Q}
-    \using{left-focus}
-  \end{prooftree}
-\]
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        (\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma}{\Delta}{Q}
+        \using{right-focus}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    (\relj{\blfrel{A}}{\bneuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
-    \quad s_1 \quad s_2 \quad \dots \quad s_n
-    \justifies
-    \bneuseq{\Gamma, A}{\Delta}{Q}
-    \using{copy-focus}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        (\relj{\blfrel{Q}}{\bneuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma}{\Delta, P}{Q}
+        \using{left-focus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        (\relj{\blfrel{A}}{\bneuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma, A}{\Delta}{Q}
+        \using{copy-focus}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Backward calculus of derived rules}
+\end{figure}
 
 \begin{lemma}\label{completeness-lemma}
   \begin{enumerate}
@@ -2064,7 +2077,7 @@ There are three classes of relational interpretations:
   $\copyfocusrule$ which derive $\bneuseq{\Gamma}{\Delta}{Q}$.
 \end{proof}
 
-\subsection{Forward focusing}
+\subsection{Forward derived rules}
 
 In the following rules, $\gamma \setminus \xi$ is defined as $\gamma$ if $\xi = \cdot$,
 and as $\cdot$ if $\gamma = \xi$.
@@ -2083,20 +2096,14 @@ and as $\cdot$ if $\gamma = \xi$.
         p \; \text{right-based}
         \justifies
         \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
-        \using{\rinit}
+        \using{\linit}
       \end{prooftree}
     \]
 
 
     \[
       \begin{prooftree}
-        \relj{
-          \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
-        }{
-          \Sigma
-        }{
-          s
-        }
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\Sigma}{s}
         \justifies
         \relj{\frfrel{R}}{\Sigma}{s}
         \using{\faplus}
@@ -2561,17 +2568,382 @@ Similarly, for negative propositions, we have two rules:
   \end{enumerate}
 \end{proof}
 
-% Completeness is easily established with respect to the backward calculus of
-% derived rules. The details can be found in [thesis].
+Completeness is established with respect to the backward calculus of derived
+rules.
+
+\begin{definition}[Stronger forms]
+  A forward sequent $\fneuseq{\Gamma}{\Delta}{G}$ is said to be stronger than a
+  backward derived sequent $\bneuseq{\Gamma'}{\Delta'}{G'}$, written as a
+  relation $\preceq$, if $\Gamma \subseteq \Gamma'$, $\Delta = \Delta'$, and
+  $G = G'$.
+\end{definition}
+
+The above relation is assumed to be extended point-wise to ordered sequences of
+sequents.
 
 \begin{lemma}\label{fdercompllemma}
-  
+  \begin{enumerate}
+  \item If $\brfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence of
+    sequents $\Sigma' \preceq \Sigma$ for which $\frfrelj{A}{\Sigma'}{s'}$, then
+    $s' \preceq s$;
+  \item If $\blfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence
+    $\Sigma' \preceq \Sigma$ for which $\flfrelj{A}{\Sigma'}{s'}$, then $s'
+    \preceq s$;
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{s}{\Sigma}$ and
+    there exists a derivable sequence $\Sigma' \preceq \Sigma$ for which
+    $\factrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{\Sigma'}{s'}$, then
+    $s' \preceq s$.
+  \end{enumerate}
 \end{lemma}
+\begin{proof}
+  All points proved simultaneously by induction on the height of the backward
+  relation derivation.
+
+  \begin{enumerate}
+  \item Case $\linit$.
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
+        \using{\linit}
+      \end{prooftree}
+    \]
+
+    Suppose there exists a derivable sequence $\Sigma' \preceq \cdot$ such that
+    $\relj{\flfrel{p}}{\Sigma'}{s'}$ is derivable. Then, it must have been an
+    application of the corresponding forward $\linit$ rule:
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-based}
+        \justifies
+        \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+        \using{\linit}
+      \end{prooftree}
+    \]
+
+    where indeed $\Sigma' \equiv \cdot$ and $s' \equiv
+    \fneuseq{\cdot}{\cdot}{p}$. The thesis follows immediately.
+
+  \item Case $\rinit$. That is, we have a derivation
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    and suppose there are $\Sigma' \preceq \cdot$ and a derivation of
+    $\relj{\frfrel{p}}{\Sigma'}{s'}$. Then, it must be that $\Sigma' = \cdot$ and
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    Then $s' \equiv \fneuseq{\cdot}{p}{\cdot}$, which clearly satisfies the
+    thesis.
+
+  \item Case $\faplus$. Then
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+    
+    Suppose there are $\Sigma' \preceq \Sigma$ such that
+    $\frfrelj{R}{\Sigma'}{s'}$. Then, it must have been derived with an
+    application of the rule $\faplus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\Sigma'}{s'}
+        \justifies
+        \relj{\frfrel{R}}{\Sigma'}{s'}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    The thesis follows immediately from the inductive hypothesis.
+    
+  \item Case $conj+$. Then, 
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
+
+    where $\Sigma \equiv \bneuseq{\Gamma}{\Delta}{p}$ and
+    $s \equiv \bneuseq{\Gamma}{\Delta}{\cdot}$. Suppose there is some $\Sigma'
+    \preceq \Sigma$ and $s'$ such that $\frfrelj{p}{\Sigma'}{s'}$.
+    Then, it must have been derived by an application of $conj+$, hence
+    $\Sigma' \equiv \fneuseq{\Gamma'}{\Delta'}{p}$ and
+    $s' \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$.
+
+    By hypothesis, $\Sigma' \preceq \Sigma$ hence $\Gamma' \subseteq \Gamma$ and
+    $\Delta = \Delta'$. It follows that $s' \preceq s$.
+
+      \item Case $\otimes F$:
+
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+        \qquad
+        \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
+            \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    By hypothesis, there is $(\Sigma_1' \cdot \Sigma_2') \preceq (\Sigma_1 \cdot
+    \Sigma_2)$ such that
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1'}{\fneuseq{\Gamma_1'}{\Delta_1'}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2'}{\fneuseq{\Gamma_2'}{\Delta_2'}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1' \cdot \Sigma_2'}{\fneuseq{\Gamma_1',
+            \Gamma_2'}{\Delta_1', \Delta_2'}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    For some $\Gamma_1', \Gamma_2', \Delta_1', \Delta_2'$. By inductive
+    hypothesis, $\Gamma_1' \subseteq \Gamma$, $\Gamma_2' \subseteq \Gamma$,
+    $\Delta_1 = \Delta_1'$, $\Delta_2 = \Delta_2'$. It follows that $\Gamma_1,
+    \Gamma_2 \subseteq \Gamma$ and $\Delta_1, \Delta_2 = \Delta_1', \Delta_2'$.
+    
+  \item Case $\limp F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+          \cdot \Sigma_2}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    Suppose $(\Sigma_1' \cdot \Sigma_2') \preceq (\Sigma_1 \cdot \Sigma_2)$ such
+    that $\relj{\flfrel{A \limp B}}{\Sigma_1' \cdot \Sigma_2'}{s'}$. Then, it
+    must have been derived by an application of the corresponding $\limp F$
+    rule.
+
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1'}{\fneuseq{\Gamma_1'}{\Delta_1'}{Q'}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2'}{\fneuseq{\Gamma_2'}{\Delta_2'}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1' \cdot \Sigma_2'}{\fneuseq{\Gamma_1'
+            \cup \Gamma_2'}{\Delta_1', \Delta_2'}{Q'}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, $\Gamma_1' \subseteq \Gamma, \Gamma_2' \subseteq
+    \Gamma, \Delta_1' = \Delta_1, \Delta_2' = \Delta_2, Q = Q'$. Therefore,
+    $\Gamma_1' \cup \Gamma_2 \subseteq \Gamma$ and
+    $\Delta_1', \Delta_2' = \Delta_1, \Delta_2$. The thesis follows immediately.
+    
+  \item Case $\otimes A$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{\factrel{ \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+          \Omega'}{\xi}} }{\Sigma'}{s'}$. Then, it must have been derived by an
+    application of the corresponding $\otimes A$ rule:
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
+        }{\Sigma'}{s'}
+        \justifies
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
+        }{\Sigma'}{s'}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    The thesis follows immediately from the inductive hypothesis.
+    
+  \item Cases $\limp A$ and $bact$ are treated similarly.
+    
+  \item Case $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{FA^-}
+      \end{prooftree}
+    \]
+
+    Suppose there exists $\Sigma' \preceq \Sigma$ such that
+    $\relj{\flfrel{L}}{\Sigma'}{s'}$. Then, it must have been derived with a
+    corresponding application of $\faminus$:
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma'}{s'}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma'}{s'}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, $s' \preceq s$.
+    
+  \item Case $conj-$.
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ for which
+    $\flfrelj{p}{\Sigma'}{s'}$. Then, it must have been derived by an
+    application of the corresponding $conj-$:
+
+    \[
+      \begin{prooftree}
+        p~\text{left-biased}
+        \justifies
+        \flfrelj{p}{\fneuseq{\Gamma'}{\Delta', p}{Q'}}{\fneuseq{\Gamma'}{\Delta'}{Q'}}        
+      \end{prooftree}
+    \]
+
+    By hypothesis, $\Gamma' \subseteq \Gamma, \Delta = \Delta', Q = Q'$. Hence
+    $s' \preceq s$.
+
+  \item Case $\matchrule$.
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{Q}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{ \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}} }{ \Sigma' }{ s'
+    }$. Then, it must have been an application of the $\matchrule$ rule such that:
+    
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \fneuseq{\Gamma, \Gamma''}{\Delta, \Delta''}{Q'}
+        }{
+          \fneuseq{\Gamma''}{\Delta''}{Q'}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    remembering that $\Gamma, \Gamma''$ is supposed to be a partitioning of the
+    unrestricted context of the input sequent, hence
+    $\Gamma \cap \Gamma'' = \empty$.  From $\Sigma' \preceq \Sigma$ it follows
+    that $Q \equiv Q'$ and $\Delta, \Delta' = \Delta, \Delta''$, hence $\Delta'
+    = \Delta''$.
+    Moreover, we have $\Gamma \cup \Gamma'' \subseteq \Gamma \cup
+    \Gamma'$, implying $\Gamma'' \subseteq \Gamma'$. Therefore, $s' \preceq s$.
+    
+  \item Case $\matchprimerule$.
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{\cdot}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{\matchprimerule}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{Q}{\cdot}} }{ \Sigma' }{ s'
+    }$. Then, it must have been an application of the $\matchrule$ rule such that:
+    
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \fneuseq{\Gamma, \Gamma''}{\Delta, \Delta''}{Q}
+        }{
+          \fneuseq{\Gamma''}{\Delta''}{\cdot}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    The rest is as in the $\matchrule$ case.
+  \end{enumerate}
+\end{proof}
 
 \begin{theorem}[Completeness]
   If $\bneuseq{\Gamma}{\Delta}{Q}$, then $\fneuseq{\Gamma'}{\Delta}{Q}$ for some
   $\Gamma' \subseteq \Gamma$.
 \end{theorem}
+\begin{proof}
+  Induction on the derivation of $\bneuseq{\Gamma}{\Delta}{Q}$ and
+  Lemma~\ref{fdercompllemma}.
+\end{proof}
 
 \section{Focused inverse method}
 
