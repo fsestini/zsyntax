@@ -105,6 +105,7 @@
 \newcommand{\decunrestr}[1]{#1_!}
 \newcommand{\decpluslinear}[1]{\decplus{\declinear{#1}}}
 \newcommand{\decminuslinear}[1]{\decminus{\declinear{#1}}}
+\newcommand{\decminusunrestr}[1]{\decminus{\decunrestr{#1}}}
 \newcommand{\decplusminus}[1]{#1^{\pm}}
 \newcommand{\decminusplus}[1]{#1^{\mp}}
 
@@ -3088,20 +3089,140 @@ propositions of the goal sequent. There is no need to generate initial sequents
 separately, as the executions of negative atoms in the frontier directly give us
 the necessary initial sequents.
 
+\begin{example}
+  Example... where $d$ is right-biased and all other atoms are left-biased, and
+  $\Gamma \equiv R_1, R_2$.
+
+  \[
+    \begin{prooftree}
+      \[
+        \[ q \text{ left-biased} \justifies \rfocseq{\Gamma}{q}{q}\]
+        \[
+          \[
+            \[
+              \[
+                \[
+                  \[
+                    \[
+                      \[ d \text{ right-biased} \justifies \lfocseq{\Gamma}{\cdot}{d}{d} \]
+                      \justifies
+                      \btriseq{\Gamma}{d}{\cdot}{\cdot ; d}
+                    \]
+                    \justifies
+                    \rfocseq{\Gamma}{d}{d}
+                  \]
+                  \[
+                    \[
+                      \[ d \text{ right-biased} \justifies \lfocseq{\Gamma}{\cdot}{d}{d} \]
+                      \justifies
+                      \btriseq{\Gamma}{d}{\cdot}{\cdot ; d}
+                    \]
+                    \justifies
+                    \rfocseq{\Gamma}{d}{d}
+                  \]
+                  \justifies
+                  \rfocseq{\Gamma}{d,d}{d \otimes d}
+                \]
+                \[
+                  \[
+                    \[
+                      \[
+                        \[ n \text{ left-biased} \justifies \rfocseq{\Gamma}{n}{n}\]
+                        \[ n \text{ left-biased} \justifies \rfocseq{\Gamma}{n}{n}\]
+                        \justifies
+                        \rfocseq{\Gamma}{n,n}{n \otimes n}
+                      \]
+                      \[
+                        d \text{ right-biased}
+                        \justifies
+                        \lfocseq{\Gamma}{\cdot}{d}{d}
+                      \]
+                      \justifies
+                      \lfocseq{\Gamma}{n,n}{n \otimes n \limp d}{d}
+                    \]
+                    \justifies
+                    \btriseq{\Gamma}{n,n}{\cdot}{\cdot ; d}
+                    \using{\copyrule}
+                  \]
+                  \justifies
+                  \rfocseq{\Gamma}{n,n}{d}
+                \]
+                \justifies
+                \rfocseq{\Gamma}{n,d,d,n}{d \otimes d \otimes d}
+              \]
+              \justifies
+              \btriseq{\Gamma}{n, d, d, n}{\cdot}{\cdot ; d \otimes d \otimes d}
+              \using{\rfoc}
+            \]
+            \justifies
+            \btriseq{\Gamma}{n}{d \otimes d \otimes n}{\cdot ; d \otimes d \otimes d}
+            \using{\otimes L \times 3, \lact \times 3}
+          \]
+          \justifies
+          \lfocseq{\Gamma}{n}{d \otimes d \otimes n}{d \otimes d \otimes d}
+          \using{\lblur}
+        \]
+        \justifies
+        \lfocseq{\Gamma}{q,n}{q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
+        \using{\limp L}
+      \]
+      \justifies
+      \btriseq{\Gamma}{q,n}{\cdot}{\cdot ; d \otimes d \otimes d}
+      \using{\copyrule}
+    \end{prooftree}
+  \]
+\end{example}
+
+The frontier of the full goal sequent
+
+\[
+  \fneuseq{q \limp d\otimes d\otimes n, n \otimes n \limp d}{q,n}{d \otimes d
+    \otimes d}
+\]
+
+is given by the top-level decorations
+
+\[
+  \decminusunrestr{(q \limp d \otimes d \otimes n)},
+  \decminusunrestr{(n \otimes n \limp d)},
+  \decminuslinear{q}, \decminuslinear{n},
+  \decpluslinear{(d \otimes d \otimes d)}
+\]
+
+together with the additionally computed subformulas
+$\decminuslinear{d}, \decminuslinear{n}, \decpluslinear{d}$.
+
 \section{Search strategy}
 
 \subsection{Sequent representation}
 
-\begin{definition}
+% Taken from 4.1.1 of the thesis, and adapted to forward neutral sequents.
+
+The subformula property gives us the core of the inverse method procedure. We
+start with initial sequents of the form $\fneuseq{\cdot}{p}{p}$, where the atom
+$p$ occurs as both a positive and a negative subformula of the decorated goal
+sequent. Since we need some way to refer to subformulas of the goal sequent, we
+label all subformulas with new fresh labels.
+We write $l \# A$ to denote that $l$ is the label for the formula
+$A$. Given a goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we define
+the following top-level labels: $\labels{u_i}{A_i}$, $\labels{l_j}{B_j}$ and
+$\labels{r}{Q}$. Furthermore, we label every non-atomic subformula of the
+sequent using a unique label. During inference, we refer to labelled sequents
+only. Hence, all derived and partially applied rules refer to labelled sequents.
+
+Represented sequents consist of a collection of labels of resources and the
+label of the goal. The labels of the unrestricted context are organized in a
+set, whereas the labels of the linear context are organized in a binary map
+between labels and their multiplicities.
+
+\begin{definition}[Represented sequent]
   A forward sequent is represented as follows:
 
   \[
     u_1 \# A_1, \dots, u_m \# A_n ; l_1^{k_1} \# B_1, \dots, l_n^{k_n} \# B_k
-    \longrightarrow r \# C
+    \fneuseqsymb r \# Q
   \]
 \end{definition}
-
-...
 
 \subsection{Subsumption}
 
@@ -3138,25 +3259,137 @@ the subsumption test above fails.
 
 \subsection{Rules and rule application}
 
-% From 4.1.5
-Rules are precomputed to the specific labels of the subformulas of the goal
-sequent. If the positive proposition $\labels{r}{A \otimes B}$ occurs in the
-goal sequent, and $\labels{r_A}{A}, \labels{r_B}{B}$ are the labels of the
-operands, then the following rule will be generated for this label:
+% % From 4.1.5
+% Rules are precomputed to the specific labels of the subformulas of the goal
+% sequent. If the positive proposition $\labels{r}{A \otimes B}$ occurs in the
+% goal sequent, and $\labels{r_A}{A}, \labels{r_B}{B}$ are the labels of the
+% operands, then the following rule will be generated for this label:
 
-\[
-  \begin{prooftree}
-    \Gamma_1; \Delta_1 \longrightarrow r_A
-    \qquad
-    \Gamma_2; \Delta_2 \longrightarrow r_B
-    \justifies
-    \Gamma_1, \Gamma_2; \Delta_1, \Delta_2 \rightarrow r
-    \using{\otimes R}
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \Gamma_1; \Delta_1 \longrightarrow r_A
+%     \qquad
+%     \Gamma_2; \Delta_2 \longrightarrow r_B
+%     \justifies
+%     \Gamma_1, \Gamma_2; \Delta_1, \Delta_2 \rightarrow r
+%     \using{\otimes R}
+%   \end{prooftree}
+% \]
 
-To apply a rule to a given input sequent, we have to first \emph{match} a
-premiss of the rule to the input sequent.
+% To apply a rule to a given input sequent, we have to first \emph{match} a
+% premiss of the rule to the input sequent.
+
+Derived rules are precomputed to specific frontier subformulas, or rather, to
+the labels associated to frontier subformulas. Derived rules can be applied to
+input sequents in different ways, as long as the input sequents satisfy the
+sufficient requirements in order to be used with that rule. That is, to apply a
+rule to an input sequent, we have to first \emph{match} a premise of the rule to
+the input sequent. We formalize this in a notion of \emph{sequent schema}.
+
+\begin{definition}[Sequent schema]
+  A sequent schema is of the form
+
+  \[
+    u_1, \dots, u_m ; l_1^{k_1}, \cdot, l_n^{k_n} \fneuseqsymb \gamma
+  \]
+
+  where $\gamma$ is either a label $r$ or $\cdot$.
+\end{definition}
+
+\begin{definition}[Matching]
+  We say that a schema $\sigma = \fneuseq{\Gamma_s}{\Delta_s}{\gamma_s}$ matches
+  an input sequent $s = \fneuseq{\Gamma}{\Delta}{r}$ if
+
+  \begin{enumerate}
+  \item $\Gamma_s \subseteq \Gamma$;
+  \item $\Delta_s \subseteq \Delta$;
+  \item $\gamma_s \subseteq r$.
+  \end{enumerate}
+\end{definition}
+\begin{definition}[Match result]
+  A result of the match, written $\sigma | s$, is a sequent-like structure
+  $\fneuseq{\Gamma_r}{\Delta_r}{\gamma_r}$, for which
+  
+  \begin{enumerate}
+  \item $\Gamma_r = \Gamma \setminus \Gamma_s$;
+  \item $\Delta_r = \Delta \setminus \Delta_s$;
+  \item $\gamma_r =
+    \begin{cases}
+      \cdot, & \text{if } \gamma_s = r \\
+      r,     & \text{if } \gamma_s = \cdot
+    \end{cases}$
+  % \item Like this in the thesis: $\gamma_r = \gamma$.
+  \end{enumerate}
+\end{definition}
+
+\begin{example}
+  Suppose we are deriving the rule associated to the formula $q \limp d \otimes
+  d \otimes n$.
+
+  {
+    \scriptsize{
+      \[
+        \begin{prooftree}
+          \[
+            \[
+              \justifies
+              \factrelj{\btriseq{\cdot}{\cdot}{\cdot}{q}}{s_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+            \]
+            \justifies
+            \frfrelj{q}{s_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+          \]
+          \qquad
+          \[
+            \[
+              \[
+                \justifies
+                \factrelj{\btriseq{\cdot}{d,d,n}{\cdot}{\cdot}}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
+              \]
+              \justifies
+              \factrelj{\btriseq{\cdot}{\cdot}{d \otimes d \otimes n}{\cdot}}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
+            \]
+            \justifies
+            \flfrelj{d \otimes d \otimes n}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
+          \]
+          \justifies
+          \flfrelj{q \limp d \otimes d \otimes d}{s_1 \cdot s_2}{
+            \fneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{\gamma}
+          }
+        \end{prooftree}
+      \]
+    }
+  }
+
+  The above derivation tells us that $s_1$ is required to have $q$ as conclusion
+  formula. Morover, $s_2$ is required to include $d, d, n$ in its linear
+  context. The goal $\gamma$ of the second premise sequent becomes the goal of
+  the conclusion sequent of the derived rule, whatever that is. All this can be
+  expressed in terms of sequent schemas, by saying that the premises of the
+  above rule must be matched agains the two schemas
+
+  \[
+    \fneuseq{\cdot}{\cdot}{q}
+  \]
+  \[
+    \fneuseq{\cdot}{d,d,n}{\cdot}
+  \]
+
+  Given the following results of matching $s_1$ and $s_2$ against the schemas
+
+  \[
+    \fneuseq{\Gamma_1}{\Delta_1}{\cdot}
+  \]
+  \[
+    \fneuseq{\Gamma_2}{\Delta_2}{r}
+  \]
+
+  These are assembled to form the conclusion sequent of the entire rule, that is
+
+  \[
+    \fneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{r}
+  \]
+
+\end{example}
 
 \subsection{Search procedure}
 
