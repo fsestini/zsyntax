@@ -12,7 +12,6 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \declaretheorem[name=Definition,qed={\lower-0.3ex\hbox{$\blacksquare$}}]{definition}
-%\newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 \newtheorem{example}{Example}
@@ -1420,51 +1419,6 @@ is extended to forward sequents in the obvious way.
   Immediate.
 \end{proof}
 
-\subsection{Sequent representation}
-
-\begin{definition}
-  A forward sequent is represented as follows:
-
-  \[
-    u_1 \# A_1, \dots, u_m \# A_n ; l_1^{k_1} \# B_1, \dots, l_n^{k_n} \# B_k
-    \longrightarrow r \# C
-  \]
-\end{definition}
-
-...
-
-\subsection{Subsumption}
-
-In the saturation-based search that we use in the forward direction, there is a
-form of non-determinism in selecting sequents for applying rules. It is
-therefore important that the database of sequents available as candidates is as
-less redundant as possible. We therefore need to check for \emph{sequent
-  subsumption} whenever a new sequent is created (\emph{forward
-  subsumption}). In implementing subsumption checks, it is important to detect
-failures as early as possible, because the vast majority of checks it likely to
-fail. The usual strategy is to perform a sequence of hierarchical tests that
-imply subsumption if they all succeed. Performing these checks in sequence
-allows us to stop as soon as one of them fails.
-
-\begin{definition}[Hierarchical subsumption tests]
-  A forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does not
-  subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
-
-  \begin{enumerate}
-  \item $C \neq C'$, or
-  \item $\Delta \not \subseteq \Delta'$, or
-  \item $\Gamma \not \subseteq \Gamma'$, or
-  \item $s_1 \not \prec s_2$.
-  \end{enumerate}
-
-  Where $C = C'$ compares both formulas and labels, $\Gamma \subseteq \Gamma'$
-  if for every $l \in \mathrm{dom}(\Gamma)$,
-  $\mathrm{mult}(\Gamma, l) \leq \mathrm{mult}(\Gamma', l)$, and similarly for
-  $\Delta$.
-\end{definition}
-
-It is trivial to verify that a sequent subsumes another sequent if and only if
-the subsumption test above fails.
 
 \section{Focused derivations}
 
@@ -1724,10 +1678,8 @@ correspond to the frontier literals of the goal sequent.
 
 For any given proposition, we are interested in constructing a derived inference
 for the proposition corresponding to a single pair of focusing and inverse
-phases.
-
-The idea is to interpret a proposition itself as the derived rules that it
-embodies. Every propostiion is viewed as a relation between the conclusion of
+phases. The idea is to interpret a proposition itself as the derived rules that
+it embodies. Every propostiion is viewed as a relation between the conclusion of
 the rule and its premises at the leaves of the bipole. Both the conclusion and
 the premises are neutral sequents, which we indicate as
 $\bneuseq{\Gamma}{\Delta}{Q}$.
@@ -1742,6 +1694,12 @@ There are three classes of relational interpretations:
   $\cdot$ or a proposition $C$.
 \end{enumerate}
 
+The full set of relations is given in Figure~\ref{fig:bkwdrelations}. Each
+relation $R$ takes as input the conclusion sequent $s$, and produces a sequence
+of premise sequents $\Sigma = s_1, \dots, s_n$; we write this as
+$\relj{R}{s}{\Sigma}$. We use these relations to form a calculus of derived
+rules which acts on neutral sequents only, as given in
+Figure~\ref{fig:bkwdderivedcalculus}.
 
 \begin{figure}[ht]
   \begin{mdframed}
@@ -1879,6 +1837,7 @@ There are three classes of relational interpretations:
     \]
   \end{mdframed}
   \caption{Backward relations for derived rules}
+  \label{fig:bkwdrelations}
 \end{figure}
 
 \begin{figure}[ht]
@@ -1914,17 +1873,67 @@ There are three classes of relational interpretations:
     \]
   \end{mdframed}
   \caption{Backward calculus of derived rules}
+  \label{fig:bkwdderivedcalculus}
 \end{figure}
+
+\begin{definition}
+  A sequent of the backward derived rule calculus $\bneuseq{\Gamma}{\Delta}{Q}$
+  is sound if $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
+\end{definition}
+
+\begin{lemma}\label{bkwdder-soundness-lemma}
+  \begin{enumerate}
+  \item If $\brfrelj{A}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ and $\Sigma$
+    are sound, then $\rfocseq{\Gamma}{\Delta}{A}$.
+  \item If$\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$ and $\Sigma$
+    are sound, then $\lfocseq{\Gamma}{\Delta}{A}{Q}$. 
+  \item If
+    $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{\bneuseq{\Gamma'}{\Delta'}{Q}}{\Sigma}$
+    and $\Sigma$ are sound, then $\btriseq{\Gamma, \Gamma'}{\Delta,
+      \Delta'}{\Omega}{\cdot ; Q}$.
+  \item If
+    $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{\bneuseq{\Gamma'}{\Delta'}{\cdot}}{\Sigma}$
+    and $\Sigma$ are sound, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{R ; \cdot}$ or
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; Q}$, depending
+    on whether $\xi = R$ or $\xi = Q$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  TODO...
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\bneuseq{\Gamma}{\Delta}{Q}$ then $\bkwseq{\Gamma}{\Delta}{\cdot ; Q}$.  
+\end{theorem}
+\begin{proof}
+  TODO...
+\end{proof}
 
 \begin{lemma}\label{completeness-lemma}
   \begin{enumerate}
+    
   \item If $\rfocseq{\Gamma}{\Delta}{A}$, then for some $\Sigma$
     \begin{enumerate}
     \item $\relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
     \item $\Sigma$ are all derivable
     \end{enumerate}
-  \item ...
-  \item ...
+    
+  \item If $\lfocseq{\Gamma}{\Delta}{A}{Q}$, then for some $\Sigma$
+    \begin{enumerate}
+    \item $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$, and
+    \item $\Sigma$ are all derivable
+    \end{enumerate}
+    
+  \item If $\btriseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{\Omega}{\xi \uplus
+      \gamma}$ (where $\xi \uplus \gamma$ means either $\xi$ or $\gamma$ is
+    empty), then for some $\Sigma$
+    \begin{enumerate}
+    \item
+      $\bactrelj{\btriseq{\Gamma_1}{\Delta_1}{\Omega}{\xi}}{\bneuseq{\Gamma_2}{\Delta_2}{\gamma}}{\Sigma}$,
+      and
+    \item $\Sigma$ are all derivable.
+    \end{enumerate}
   \end{enumerate}
 \end{lemma}
 \begin{proof}
@@ -2099,7 +2108,6 @@ and as $\cdot$ if $\gamma = \xi$.
         \using{\linit}
       \end{prooftree}
     \]
-
 
     \[
       \begin{prooftree}
@@ -3008,6 +3016,52 @@ separately, as the executions of negative atoms in the frontier directly give us
 the necessary initial sequents.
 
 \section{Search strategy}
+
+\subsection{Sequent representation}
+
+\begin{definition}
+  A forward sequent is represented as follows:
+
+  \[
+    u_1 \# A_1, \dots, u_m \# A_n ; l_1^{k_1} \# B_1, \dots, l_n^{k_n} \# B_k
+    \longrightarrow r \# C
+  \]
+\end{definition}
+
+...
+
+\subsection{Subsumption}
+
+In the saturation-based search that we use in the forward direction, there is a
+form of non-determinism in selecting sequents for applying rules. It is
+therefore important that the database of sequents available as candidates is as
+less redundant as possible. We therefore need to check for \emph{sequent
+  subsumption} whenever a new sequent is created (\emph{forward
+  subsumption}). In implementing subsumption checks, it is important to detect
+failures as early as possible, because the vast majority of checks it likely to
+fail. The usual strategy is to perform a sequence of hierarchical tests that
+imply subsumption if they all succeed. Performing these checks in sequence
+allows us to stop as soon as one of them fails.
+
+\begin{definition}[Hierarchical subsumption tests]
+  A forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does not
+  subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
+
+  \begin{enumerate}
+  \item $C \neq C'$, or
+  \item $\Delta \not \subseteq \Delta'$, or
+  \item $\Gamma \not \subseteq \Gamma'$, or
+  \item $s_1 \not \prec s_2$.
+  \end{enumerate}
+
+  Where $C = C'$ compares both formulas and labels, $\Gamma \subseteq \Gamma'$
+  if for every $l \in \mathrm{dom}(\Gamma)$,
+  $\mathrm{mult}(\Gamma, l) \leq \mathrm{mult}(\Gamma', l)$, and similarly for
+  $\Delta$.
+\end{definition}
+
+It is trivial to verify that a sequent subsumes another sequent if and only if
+the subsumption test above fails.
 
 \subsection{Rules and rule application}
 
