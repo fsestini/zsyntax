@@ -1735,7 +1735,7 @@ Figure~\ref{fig:bkwdderivedcalculus}.
         \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
         \justifies
         \relj{\brfrel{R}}{s}{\Sigma}
-        \using{FA^+}
+        \using{\faplus}
       \end{prooftree}
       \qquad
       \begin{prooftree}
@@ -1876,6 +1876,18 @@ Figure~\ref{fig:bkwdderivedcalculus}.
   \label{fig:bkwdderivedcalculus}
 \end{figure}
 
+The following are some facts on the shape of the derivations for which we omit
+the easy proof.
+
+\begin{fact}\label{bkwdderfact}
+  \begin{enumerate}
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{s}{\Sigma}$, then
+    $s \equiv \bneuseq{\Gamma'}{\Delta'}{Q}$ for some $\Gamma', \Delta', Q$;
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{C}}{s}{\Sigma}$, then
+    $s \equiv \bneuseq{\Gamma'}{\Delta'}{\cdot}$ for some $\Gamma', \Delta'$.
+  \end{enumerate}
+\end{fact}
+
 \begin{definition}
   A sequent of the backward derived rule calculus $\bneuseq{\Gamma}{\Delta}{Q}$
   is sound if $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
@@ -1885,7 +1897,7 @@ Figure~\ref{fig:bkwdderivedcalculus}.
   \begin{enumerate}
   \item If $\brfrelj{A}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ and $\Sigma$
     are sound, then $\rfocseq{\Gamma}{\Delta}{A}$.
-  \item If$\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$ and $\Sigma$
+  \item If $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$ and $\Sigma$
     are sound, then $\lfocseq{\Gamma}{\Delta}{A}{Q}$. 
   \item If
     $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{\bneuseq{\Gamma'}{\Delta'}{Q}}{\Sigma}$
@@ -1900,14 +1912,75 @@ Figure~\ref{fig:bkwdderivedcalculus}.
   \end{enumerate}
 \end{lemma}
 \begin{proof}
-  TODO...
+  All points proved simultaneously by induction on the height of the
+  derivations. The cases are briefely sketched below.
+
+  \begin{enumerate}
+  \item Case the last rule was $\linit$. The thesis follows by immediate
+    application of the corresponding $\linit$ rule of the backward focused
+    calculus.
+    
+  \item The $\rinit$ case is dual.
+    
+  \item Case the last rule was $\otimes F$. The thesis follows immediately by
+    inductive hypothesis and application of the $\otimes R$ rule.
+    
+  \item Case the last rule was $\faplus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{bkwdderfact}, $s \equiv \bneuseq{\Gamma}{\Delta}{\cdot}$ for
+    some $\Gamma, \Delta$. By inductive hypothesis,
+    $\btriseq{\Gamma}{\Delta}{\cdot}{R ; \cdot}$. The thesis follows immediately
+    from an application of the $rblur$ rule.
+    
+  \item Case the last rule is conj+. The thesis follows immediately by
+    hypothesis of soundness of the resulting sequents, and an application of
+    $\rblurstar$.
+    
+  \item Case the last rule is $\limp F$. The thesis follows immediately by
+    inductive hypothesis and an application of $\limp L$.
+    
+  \item Case the last rule is $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{bkwdderfact}, $s \equiv \bneuseq{\Gamma}{\Delta}{Q}$. The
+    thesis follows immediately by inductive hypothesis and an application of $lblur$.
+    
+  \item Case the last rule is $conj-$. The thesis follows immediately from
+    the hypothesis of soundness of the result sequents, and an application of
+    $\lblurstar$.
+    
+  \item The cases $\otimes A, \limp A, \bact$ are a straightforward application
+    of the inductive hypothesis.
+    
+  \item In the base cases $\matchrule, \matchprimerule$, the thesis follows
+    immediately from the hypothesis of $\Sigma$ being sound.
+
+  \end{enumerate}
 \end{proof}
 
 \begin{theorem}[Soundness]
   If $\bneuseq{\Gamma}{\Delta}{Q}$ then $\bkwseq{\Gamma}{\Delta}{\cdot ; Q}$.  
 \end{theorem}
 \begin{proof}
-  TODO...
+  Straightforward induction on the derivation, and
+  Lemma~\ref{bkwdder-soundness-lemma}.
 \end{proof}
 
 \begin{lemma}\label{completeness-lemma}
