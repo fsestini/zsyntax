@@ -3919,7 +3919,6 @@ set and the inactive set is exhausted (in which case the search saturates).
     \justifies
     \seqpt{\limp L (\mathcal{D}, u.\mathcal{D'} ; \tyj{v}{A \limp B})}{
       \bkwseq{\Gamma}{\Delta, \Delta', \tyj{v}{A \limp B}}{C}}
-    }
   \end{prooftree}
 \]
 
@@ -3998,6 +3997,188 @@ set and the inactive set is exhausted (in which case the search saturates).
       \fwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta',
         \labels{l^{k_l}}{B}, \labels{s^{k_s + 1}}{A \limp B}}{C}
     }
+  \end{prooftree}
+\]
+
+\subsection{Derivation terms assignement for rule calculus}
+
+The relations can be extended to relate not only premise sequents to conclusion
+sequents, but also derivation terms of those premises to the corresponding
+derivation term of the conclusion. The extension regarding derivation terms in
+shown in Figure~\ref{fig:dertermrules}. We therefore consider relations of the
+form $\relj{\frfrel{C}}{\seqpt{\mathcal{D}_1}{s_1} \cdots
+  \seqpt{\mathcal{D}_n}{s_n}}{\seqpt{\mathcal{D}}{s}}$.
+
+\begin{figure}[ht]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\dtinit{p}}
+        \using{\linit}
+      \end{prooftree}
+      \qquad\qquad
+      \begin{prooftree}
+        p \; \text{right-based}
+        \justifies
+        \relj{\flfrel{p}}{\cdot}{\dtinit{p}}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\Sigma}{\mathcal{D}}
+        \justifies
+        \relj{\frfrel{R}}{\Sigma}{\mathcal{D}}
+        \using{\faplus}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{\mathcal{D}}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma}{\mathcal{D}}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        p \text{ right-biased}
+        \justifies
+        \frfrelj{p}{\seqpt{\mathcal{D}}{s}}{\mathcal{D}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        p \text{ left-biased}
+        \justifies
+        \flfrelj{p}{\seqpt{\mathcal{D}}{s}}{\mathcal{D}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_2}{\mathcal{D}}
+        \qquad
+        \relj{\flfrel{\labels{l}{B}}}{\Sigma_1}{\mathcal{D'}}
+        \justifies
+        \relj{\flfrel{\labels{r}{A \limp B}}}{\Sigma_1 \cdot \Sigma_2}{
+          \dtlimpl{\mathcal{D}}{\mathcal{D'}}{l}{B}{r}{A \limp B}
+        }
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\mathcal{D}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\mathcal{D'}}
+        \justifies
+        \relj{\frfrel{\labels{r}{A \otimes B}}}{\Sigma_1 \cdot \Sigma_2}{
+          \dtotimesr{\mathcal{D}}{\mathcal{D'}}{r}{A \otimes B}
+        }
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot \labels{l}{A}}{B}}}{\Sigma}{\mathcal{D}}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\labels{r}{A \limp
+                B}}}}{\Sigma}{
+          \dtlimpr{\mathcal{D}}{l}{A}{r}{A \limp B}
+        }
+        \using{\limp A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot \labels{l_A}{A} \cdot \labels{l_B}{B}}{\xi}}
+        }{\Sigma}{\mathcal{D}}
+        \justifies
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot \labels{l}{A \otimes B}}{\xi}}
+        }{\Sigma}{
+          \dtotimesl{\mathcal{D}}{l_A}{A}{l_B}{B}{l}{A \otimes B}
+        }
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega}{\xi}}}{\Sigma}{\mathcal{D}}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P}{\xi}}}{\Sigma}{\mathcal{D}}
+        \using{\actrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \xi \subseteq \gamma
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\xi}}
+        }{
+          \seqpt{\mathcal{D}}{\fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\gamma}}
+        }{
+          \mathcal{D}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Derivation term assignment for forward rule calculus}
+  \label{fig:dertermrules}
+\end{figure}
+
+The derived rule for positive subformulas is:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\frfrel{Q}}{s_1 \dots s_n}{
+      \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{\cdot}}
+    })
+    \justifies
+    \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{Q}}
+    \using{\focplusrule}
+  \end{prooftree}
+\]
+
+Similarly, for negative propositions, we have two rules:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{P}}{s_1 \dots s_n}{
+      \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{Q}}
+    })
+    \justifies
+    \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta, P}{Q}}
+    \using{\focminusrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{\labels{l}{A}}}{s_1 \dots s_n}{
+      \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{Q}}
+    })
+    \justifies
+    \seqpt{\dtcopy{\mathcal{D}}{l}{A}}{\fneuseq{\Gamma, A}{\Delta}{Q}}
+    \using{\foccopyrule}
   \end{prooftree}
 \]
 
