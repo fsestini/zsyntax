@@ -22,6 +22,9 @@
 % Standard backward sequents
 \newcommand{\bkwseq}[3]{#1 ; #2 \Longrightarrow #3}
 
+% Standard forward sequents
+\newcommand{\fwdseq}[3]{#1 ; #2 \longrightarrow #3}
+
 % backward and forward neutral sequents symbols and macros
 \newcommand{\bneuseqsymb}{
   \mathrel{\Longrightarrow\!\!\!\!\!\!\!\!\Longrightarrow}}
@@ -98,6 +101,9 @@
 \newcommand{\subsequent}[2]{#1 \leq #2}
 \newcommand{\frwdseq}[3]{#1 ; #2 \longrightarrow #3}
 
+\newcommand{\tyj}[2]{#1 : #2}
+\newcommand{\seqpt}[2]{#1 \, :: \, #2}
+
 % Formula decoration
 \newcommand{\decplus}[1]{#1^+}
 \newcommand{\decminus}[1]{#1^-}
@@ -108,6 +114,16 @@
 \newcommand{\decminusunrestr}[1]{\decminus{\decunrestr{#1}}}
 \newcommand{\decplusminus}[1]{#1^{\pm}}
 \newcommand{\decminusplus}[1]{#1^{\mp}}
+
+% Derivation terms
+\newcommand{\dtinit}[1]{\textsf{init}(#1)}
+\newcommand{\dtcopy}[3]{\textsf{copy}(#1, \labels{#2}{#3})}
+\newcommand{\dtotimesr}[4]{\otimes \textsf{R}(#1, #2 ; \labels{#3}{#4})}
+\newcommand{\dtotimesl}[7]{\otimes
+  \textsf{L}(#1, \labels{#2}{#3}, \labels{#4}{#5} ; \labels{#6}{#7})}
+\newcommand{\dtlimpr}[5]{\limp \textsf{R}(#1, \labels{#2}{#3}
+  ; \labels{#4}{#5})}
+\newcommand{\dtlimpl}[6]{\limp \textsf{L}(#1, #2, \labels{#3}{#4} ; \labels{#5}{#6})}
 
 \title{A forward focused calculus for Zsyntax}
 \author{Filippo Sestini}
@@ -3840,6 +3856,149 @@ set and the inactive set is exhausted (in which case the search saturates).
   \end{itemize}
 \end{proof}
 
-\include{implementation}
+% \include{implementation}
+
+\section{Proof terms}
+
+\subsection{Backward sequent calculus derivation terms}
+
+\[
+  \begin{prooftree}
+    \justifies
+    \seqpt{init(\tyj{u}{p})}{\bkwseq{\Gamma}{\tyj{u}{p}}{p}}
+  \end{prooftree}
+  \qquad\qquad
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \bkwseq{\Gamma, \tyj{u}{A}}{\Delta, \tyj{v}{A}}{C}
+    }
+    \justifies
+    \seqpt{copy(u.\mathcal{D}; \tyj{v}{A})}{
+      \bkwseq{\Gamma, \tyj{u}{A}}{\Delta}{C}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\bkwseq{\Gamma}{\Delta}{A}}
+    \quad
+    \seqpt{\mathcal{D'}}{\bkwseq{\Gamma}{\Delta'}{B}}
+    \justifies
+    \seqpt{\otimes R(\mathcal{D},\mathcal{D'} ; A \otimes B)}{
+      \bkwseq{\Gamma}{\Delta, \Delta'}{A \otimes B}
+    }
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \bkwseq{\Gamma}{\Delta, \tyj{u}{A}, \tyj{v}{B}}{C}
+    }
+    \justifies
+    \seqpt{\otimes L (u.v.\mathcal{D} ; \tyj{w}{A \otimes B})}{
+      \bkwseq{\Gamma}{\Delta, \tyj{w}{A \otimes B}}{C}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \bkwseq{\Gamma}{\Delta, \tyj{u}{A}}{B}
+    }
+    \justifies
+    \seqpt{\limp R (u.\mathcal{D} ; A \limp B)}{
+      \bkwseq{\Gamma}{\Delta}{A \limp B}
+    }
+  \end{prooftree}
+  \qquad
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\bkwseq{\Gamma}{\Delta}{A}}
+    \qquad
+    \seqpt{\mathcal{D'}}{\bkwseq{\Gamma'}{\Delta, \tyj{u}{B}}{C}}
+    \justifies
+    \seqpt{\limp L (\mathcal{D}, u.\mathcal{D'} ; \tyj{v}{A \limp B})}{
+      \bkwseq{\Gamma}{\Delta, \Delta', \tyj{v}{A \limp B}}{C}}
+    }
+  \end{prooftree}
+\]
+
+\subsection{Derivation terms for forward labelled sequent calculus}
+
+\[
+  \begin{prooftree}
+    \justifies
+    \seqpt{\dtinit{p}}{\fwdseq{\cdot}{\labels{p}{p}}{p}}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \fwdseq{\Gamma}{\Delta, \labels{l^{k+1}}{A}}{C}}
+    \justifies
+    \seqpt{\dtcopy{\mathcal{D}}{l}{A}}{
+      \fwdseq{\Gamma \cup \labels{l}{A}}{\Delta, \labels{l^k}{A}}{C}}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\fwdseq{\Gamma}{\Delta}{A}}
+    \quad
+    \seqpt{\mathcal{D'}}{\fwdseq{\Gamma'}{\Delta'}{B}}
+    \justifies
+    \seqpt{
+      \dtotimesr{\mathcal{D}}{\mathcal{D'}}{r}{A \otimes B}
+    }{
+      \fwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta'}{A \otimes B}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{
+      \mathcal{D}
+    }{
+      \fwdseq{\Gamma}{\Delta, \labels{l_1^{k_1 + 1}}{A}, \labels{l_2^{k_2 +
+            1}}{B}, \labels{l^k}{A \otimes B}}{C}
+    }
+    \justifies
+    \seqpt{
+      \dtotimesl{\mathcal{D}}{l_1}{A}{l_2}{B}{l}{A \otimes B}
+    }{
+      \fwdseq{\Gamma}{\Delta, l_1^{k_1}, l_2^{k_2}, l^{k+1}}{C}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\fwdseq{\Gamma}{\Delta, \labels{l^{k+1}}{A}}{B}}
+    \justifies
+    \seqpt{
+      \dtlimpr{\mathcal{D}}{l}{A}{r}{A \limp B}
+    }{
+      \fwdseq{\Gamma}{\Delta, \labels{l^k}{A}}{\labels{r}{A \limp B}}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\fwdseq{\Gamma}{\Delta}{\labels{r}{A}}}
+    \quad
+    \seqpt{\mathcal{D'}}{\fwdseq{\Gamma'}{\Delta', \labels{l^{k_l+1}}{B}, \labels{s^{k_s}}{A
+          \limp B}}{C}}
+    \justifies
+    \seqpt{
+      \dtlimpl{\mathcal{D}}{\mathcal{D'}}{l}{B}{s}{A \limp B}
+    }{
+      \fwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta',
+        \labels{l^{k_l}}{B}, \labels{s^{k_s + 1}}{A \limp B}}{C}
+    }
+  \end{prooftree}
+\]
 
 \end{document}
