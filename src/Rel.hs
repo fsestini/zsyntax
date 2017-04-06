@@ -9,6 +9,7 @@ module Rel
   , liftFun
   , filterPartitionRel
   , liftMaybeToRel
+  , unRel
   ) where
 
 import Filterable

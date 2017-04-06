@@ -5,6 +5,7 @@ module Rule where
 
 import Formula
 import Relation
+import Rel
 
 type Rule l a = (LabelledSequent l a) -> RuleRes l a
 
