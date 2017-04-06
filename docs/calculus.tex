@@ -3922,6 +3922,106 @@ set and the inactive set is exhausted (in which case the search saturates).
   \end{prooftree}
 \]
 
+\subsection{Forward sequent calculus with derivation terms}
+
+We first define the following utility functions. By abuse of notation, we treat
+sets of unrestricted assumptions $\Gamma$ as lists in which elements appear at
+most once.
+
+\begin{align*}
+  \textsf{triples}([], \Gamma) & = \emptyset \\
+  \textsf{triples}(\tyj{x}{A} : \Gamma, \Gamma') & =
+    \begin{cases}
+      (w, x, y, A) : \textsf{triples}(\Gamma, \Gamma'),
+      & \text{if}\ w\ \text{fresh, and}\ \tyj{y}{A} \in \Gamma' \\
+      \textsf{triples}(\Gamma, \Gamma'), & \text{otherwise}
+    \end{cases}
+\end{align*}
+
+\[
+  \begin{align*}
+    & \textsf{factor}(\Gamma, \Gamma') =
+    ((\Gamma \cup \Gamma') \setminus \\
+    & \quad \{ \tyj{x}{A} :
+    (\star, x, \star, A) \in \textsf{triples}(\Gamma, \Gamma') \vee
+    (\star, \star, x, A) \in \textsf{triples}(\Gamma, \Gamma') \}) \\
+    & \quad \cup
+    \{ \tyj{w}{A} : (w, \star, \star, A) \in \textsf{triples}(\Gamma, \Gamma') \}
+  \end{align*}
+\]
+
+\paragraph{Init and copy}
+
+\[
+  \begin{prooftree}
+    \justifies
+    \seqpt{init(\tyj{u}{p})}{\fwdseq{\cdot}{\tyj{u}{p}}{p}}
+  \end{prooftree}
+  \qquad\qquad
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \fwdseq{\Gamma}{\Delta, \tyj{u}{A}}{C}
+    }
+    \justifies
+    \seqpt{copy(u.\mathcal{D}; \tyj{u}{A})}{
+      \fwdseq{\Gamma \sqcup \tyj{u}{A}}{\Delta}{C}
+    }
+  \end{prooftree}
+\]
+
+where $\Gamma \sqcup \tyj{u}{A} = \Gamma$ if $\exists w : (\tyj{w}{A} \in
+\Gamma)$, and $\Gamma, \tyj{u}{A}$ otherwise.
+
+\paragraph{Tensor product}
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\bkwseq{\Gamma}{\Delta}{A}}
+    \quad
+    \seqpt{\mathcal{D'}}{\bkwseq{\Gamma'}{\Delta'}{B}}
+    \justifies
+    \seqpt{\otimes R(\mathcal{D},\mathcal{D'} ; A \otimes B)}{
+      \bkwseq{\Gamma, \Gamma'}{\Delta, \Delta'}{A \otimes B}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \bkwseq{\Gamma}{\Delta, \tyj{u}{A}, \tyj{v}{B}}{C}
+    }
+    \justifies
+    \seqpt{\otimes L (u.v.\mathcal{D} ; \tyj{w}{A \otimes B})}{
+      \bkwseq{\Gamma}{\Delta, \tyj{w}{A \otimes B}}{C}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{
+      \bkwseq{\Gamma}{\Delta, \tyj{u}{A}}{B}
+    }
+    \justifies
+    \seqpt{\limp R (u.\mathcal{D} ; A \limp B)}{
+      \bkwseq{\Gamma}{\Delta}{A \limp B}
+    }
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \seqpt{\mathcal{D}}{\bkwseq{\Gamma}{\Delta}{A}}
+    \qquad
+    \seqpt{\mathcal{D'}}{\bkwseq{\Gamma'}{\Delta, \tyj{u}{B}}{C}}
+    \justifies
+    \seqpt{\limp L (\mathcal{D}, u.\mathcal{D'} ; \tyj{v}{A \limp B})}{
+      \bkwseq{\Gamma}{\Delta, \Delta', \tyj{v}{A \limp B}}{C}}
+  \end{prooftree}
+\]
+
+
 \subsection{Derivation terms for forward labelled sequent calculus}
 
 \[
