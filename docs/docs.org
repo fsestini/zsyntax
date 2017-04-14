@@ -1,0 +1,225 @@
+* Introduction
+** TODO Zsyntax
+** TODO Controlled monotonicity
+** TODO Automated deduction
+
+   - Simple yet effective approach: linear logic + external controlset checking
+
+* COMMENT An alternative natural deduction calculus
+*** Rules
+**** Proof terms: Curry-Howard
+*** Annotation
+*** Checking
+**** Soundness (and completeness?)
+* TODO From Zsyntax to sequent calculus
+
+  # The reason to initially present the formal development of Zsyntax with a
+  # natural deduction-style calculus is twofold:
+
+  # - The calculus in [zsyntax2005] is presented, although rather informally, is
+  #   natural deduction-style. Since any attempt to formalize such calculus in a
+  #   theorem prover must have a clear connection with this original calculus, it
+  #   seemed reasonable to start from one that shares the largest amount of
+  #   proof-theoretical properties;
+  # - A treatment of proof-terms in order to establish a connection between proofs
+  #   of the calculus and biological reactions is simpler and much more elegant if
+  #   carried out in the setting of natural deduction.
+
+  # The sequent calculus, being in essence a formal treatise of the proof theory
+  # of natural deduction and its deducibility relation, is very good for
+  # machines but not so for humans (for which natural deduction appears more
+  # "natural".) Nevertheless, since the ultimate goal is to develop a theorem
+  # prover, we are going to move to sequent calculus sooner or later.
+
+  # As previously explained, the plan is to develop the automated deduction in the
+  # setting of plain linear logic, so our reference sequent calculus will be just
+  # a traditional (i.e. backward) calculus for our selected fragment of linear
+  # logic. The control-set-checking phase will happen after translating the
+  # eventual sequent calculus derivation back to a natural deduction proof.
+
+  # A cut-free calculus is essential in order to have a subformula property and
+  # hence develop any form of automated deduction. Section [cut elim] provides a
+  # cut-elimination proof for the backward calculus, which is just an adaptation
+  # of the proof in [thesis].
+
+** Rules of the backward calculus
+
+   Γ∆
+
+   cut
+
+   Γ ; ∆ ===>_C1 A     Γ ; ∆', A ===>_C2 B
+   --------------------------------------- { ∆' || C1
+       Γ ; ∆, ∆' ===>_{C1 u C2} B
+
+   init and copy as usual
+
+   Γ ; ∆ ===>_C1 A       Γ ; ∆' ===>_C2 B
+   --------------------------------------  { (∆' || C1) or (∆ || C2)
+       Γ ; ∆, ∆' ===>_{C1 u C2} A o B
+
+
+
+   Γ ; ∆ ===>_C1 A o B    Γ ; ∆', A, B ===>_C2 C
+   ---------------------------------------------
+	 Γ ; ∆, ∆' ===>_{C1 u C2} C
+
+   which becomes this by cut:
+
+   Γ ; ∆, A, B ===>_C C
+   ---------------------
+   Γ ; ∆, A o B ===>_C C
+
+
+   Γ ; ∆, A ===>_C1 B     Γ ; ∆', A -o B ===>_C2 C
+   ------------------------------------------------- { ∆' || C1
+       Γ ; ∆, ∆' ===>_{C1 u C2} C
+
+   which becomes this by cut:
+
+    Γ ; ∆, A ===>_C B
+   -------------------
+   Γ ; ∆ ===>_C A -o B
+
+
+
+   Γ ; ∆ ===>_C1 A -o B       Γ ; ∆' ===>_C2 A
+   -------------------------------------------
+	 Γ ; ∆, ∆' ===>_{C1 u C2} B
+
+   which becomes this by cut
+
+     Γ ; ∆ ===>_C1 A    Γ ; ∆', B ===>_C2 C
+   ------------------------------------------ { ∆', A -o B || C1
+    Γ ; ∆, ∆', A -o B ===>_{C1 u C2 u CAB} C  { ∆' || CAB
+
+
+** Weak cut-elimination theorem
+
+   It shouldn't be possible to eliminate cuts of the form
+
+   ∆ ==> A      ∆', A ==> B
+   -----------------------
+       ∆, ∆' ==> B
+
+   where A contains only tensor products and atoms, but I can try.
+   Instead, it should be possible to eliminate cuts such as
+
+   ∆ ==> A      ∆', A ==> B
+   -----------------------
+       ∆, ∆' ==> B
+
+   where A is as before, and also ∆' it composed only of tensor products of
+   atoms.
+
+** Cut elimination (of the annotation-free calculus)
+** Automated deduction of Zsyntax
+
+   Explain what I want to do, that is
+
+   - Every sequent SCZ (Sequent Calculus of Zsyntax) proof is, without
+     annotations, a cut-free linear logic proof;
+   - Of course, not every cut-free LL proof is a valid SCZ proof. But if there
+     exists a SCZ proof of a goal sequent, then we are sure to find it by
+     enumerating all cut-free LL proofs of that sequent, and then checking it
+     against the annotations, which can be added a posteriori to the derivation
+     in a deterministic way.
+
+   So the plan is:
+
+   1. Get the goal sequent;
+   2. Find a cut-free derivation in LL with the focused inverse method;
+   3. Check it. If passes, return the SCZ derivation; Otherwise, go to (2);
+   4. If there are no more LL derivations, exit declaring we did not find a
+      proof (not sure it is unprovable, since we are sound but not complete)
+
+* The Inverse Method
+** TODO Multiplicative non-determinism
+
+   "The source of [the resource management] problem is the lack of structural
+   weakening and contraction, which makes even propositional linear logic
+   undecidable."
+
+   "The resource management problem in the backward direction turns out to be
+   entirely absent in the forward direction."
+
+   "Multiplicative non-determinism, which arises from multiplicative rules with
+   more than one premise, for example for $\otimes R$:
+
+   [... rule here ...]
+
+   "Absent weakening, in the backward direction such rules must infer a division
+   (into \Delta and \Delta' above) of the linear resources of the conclusion to
+   distribute into the premises. Note that this kind of non-determinism does not
+   exist in a forward reading, where we simply conjoin the resources of the
+   premises to construct the conclusion."
+
+*** TODO Rationale for a forward calculus
+*** TODO Description of the inverse method
+
+    "The particular forward search strategy we use is the inverse method. The
+    inverse method is a generalization of resulution, that applies to a wide
+    variety of logics, with very minimal requirements: a sequent calculus with
+    the subformula property. The method works as follows: first, the given goal
+    sequent is fixed, and initial sequents for atomic propositions that occur
+    both as positive and negative subformulas of the goal sequent. Next, the
+    inference rules of the logic are specialized to the subformulas of the goal
+    sequent, such that the principal formula in all inference rules is a
+    subformula of the goal sequent. These rules are then used to construct new
+    sequents by matching the premises against previously derived sequents. New
+    sequents that are not simply instances of sequents derived earlier are
+    themselves then used in the inference rules to derive newer
+    sequents. Eventually, assuming the search strategy is complete, either the
+    goal sequent is derived, or the search space is saturated and the goal
+    sequent is found to be unprovable. The inverse method is thus a member of a
+    general class of /saturation-based/ search procedures."
+
+** Forward sequent calculus
+** Subformula property
+* Focused derivations
+** (Introduction)
+
+   The idea, thoroughly developed in [thesis], is "to combine the inverse
+   method with the notion of focused derivations. Focused derivations arose in
+   the context of logic programming as a way of refining proof search into
+   phases. Each phase of the search consisted either of only asynchronous steps
+   where non-determinism was immaterial, or of only synchronous steps where key
+   choices have to be made. Focusing was thus a way of making "big step"
+   derivations: pairs of synchronous and asynchronous steps could be thought of
+   as a large derived rule. [...] There derived inference rules constructed by
+   focusing can also be used to do forward search in big steps. Thus, the
+   intermediate results that are internal to the phases of a focused
+   derivations do not have to be explicitly constructed or stored in a sequent
+   database. This reduces the size of the sequent database, which is the main
+   bottleneck in the inverse method. Because a focusing inverse method prover
+   is able to make much larger inferences in much fewer steps, it is able to
+   explore the search space much more efficiently."
+
+** Backward focused calculus
+** Backward derived rules
+
+   Not really going to use this, but useful to understand and develop the theory
+   of focused derived rules. We will adapt all of this to the forward direction
+   in the next section.
+
+** Forward derived rules
+
+   Notice: We don't develop a forward focused calculus, but instead directly go
+   by adapting the backward calculus of derived rules to the forward direction,
+   and directly establishing soundness of this calculus with respect to the
+   backward focused calculus.
+
+** Focused inverse method
+*** (frontier propositions)
+
+* Search strategy
+** Sequent representation
+** Subsumption
+** Rules and rule application
+** Search procedure
+
+* Proof terms
+** Natural deduction
+** (from labelled forward sequent calculus derivations to natural deduction derivations)
+** Derivation terms for forward labelled sequent calculus
+** Derivation term assignment for rule calculus
