@@ -482,7 +482,7 @@ ways to derive $A \otimes B$.
 
   provided $A_{n+1}, \dots A_{n+m}, \Delta_2$ respects $\ctrlset{1}$ and
   $A$ respects $\ctrlset{2}$.
-  
+
 \item We may start by reproducing the second derivation, followed by the first:
 
   \[
@@ -558,7 +558,7 @@ regardless of the order in which they occur
 internally. Figure~\ref{annotated-checked} shows the complete calculus with the
 updated side conditions.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -607,7 +607,7 @@ updated side conditions.
         ((\Gamma, \Delta_1, \Delta_2) || \ctrlset{1} \cup \ctrlset{2})
       \end{cases}
     \]
-    
+
     \[
       \begin{prooftree}
         \Gamma; \Delta_1 \Longrightarrow_{\ctrlset{1}} A
@@ -625,7 +625,7 @@ updated side conditions.
         \respects{(\Gamma, \Delta_2)}{\ctrlset{A \rightarrow B}}
       \end{cases}
     \]
-    
+
   \end{mdframed}
   \caption{\label{annotated-checked} Annotated checked backward sequent calculus.}
 \end{figure}
@@ -675,7 +675,7 @@ updated side conditions.
 
   \item The last rule is $\otimes L$. Then, by inductive hypothesis, we have a
     derivation
-    
+
     \[
       \begin{prooftree}
         A_1, \dots, A_n, \Delta, A, B
@@ -699,7 +699,7 @@ updated side conditions.
         C
       \end{prooftree}
     \]
-    
+
     since $\otimes \mathcal{E}$ does not introduce any additional constraints,
     we can conclude the thesis, i.e., $A_1, \dots, A_n, \Delta, A \otimes B
     \models_{\ctrlset{}} C$.
@@ -723,7 +723,7 @@ updated side conditions.
 
   \item The last rule is $\otimes R$. Then, by inductive hypothesis
 
-    
+
     \[
       \begin{prooftree}
         A_1, \dots, A_n, \Delta_1
@@ -768,7 +768,7 @@ updated side conditions.
       \ctrlset{2}$. Hence,
       $A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m},
       \Delta_2 \models_{\ctrlset{1} \cup \ctrlset{2}} A \otimes B$.
-      
+
     \item Case
       $\respects{\Gamma, \Delta_1}{\ctrlset{2}} \wedge \respects{\Gamma,
         B}{\ctrlset{1}}$. Then, we can derive
@@ -814,10 +814,10 @@ updated side conditions.
         \end{prooftree}
       \]
     \end{enumerate}
-    
+
   \item The last rule is $\limp L$. Then, by inductive hypothesis, we have
 
-        
+
     \[
       \begin{prooftree}
         A_1, \dots, A_n, \Delta_1
@@ -855,14 +855,14 @@ updated side conditions.
         C
       \end{prooftree}
     \]
-    
+
     which justifies the thesis
 
     \[
       A_1, \dots, A_n, \Delta_1, A_{n+1}, \dots, A_{n+m}, \Delta_2, A \rightarrow
       B \vdash_{\ctrlset{1}\cup\ctrlset{2}\cup\ctrlset{A \rightarrow B}} C
     \]
-    
+
   \end{enumerate}
 \end{proof}
 
@@ -1017,7 +1017,7 @@ only is conservative:
     \]
 
     then, just take $\mathcal{D}$.
-    
+
   \item (Principal cuts) The cut formula is introduced by a right rule
     in the left premise, and eliminated by a left rule in the right
     premise... TODO.
@@ -1029,7 +1029,7 @@ only is conservative:
 
     \begin{enumerate}
     \item The last rule is $copy$:
-      
+
       \[
         \begin{prooftree}
           \[
@@ -1062,10 +1062,10 @@ only is conservative:
         \end{prooftree}
       \]
 
-      
+
     \item The last rule was...
     \end{enumerate}
-    
+
   \item (Right-commutative cases) The cut formula is a side formula in
     the right premise. Then, the cut is just routinely moved to the
     premises of the last rule that has been used to derive the right
@@ -1131,10 +1131,10 @@ only is conservative:
         \Gamma; P \Longrightarrow P
       \end{prooftree}
     \]
-    
+
     but then also $\Gamma; P \Longrightarrow P$ is an identity axiom,
     and can be derived without cut.
-    
+
   \item All other cases are treated as right-commutative cuts, except
     for the case where the last rule in the right premise is
     $copy$. In this case, the cut is
@@ -1195,7 +1195,7 @@ only is conservative:
 Since weakening and contraction are admissible for the unrestricted
 zone, we can treat $\Gamma$ as a set.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -1720,7 +1720,7 @@ $\relj{R}{s}{\Sigma}$. We use these relations to form a calculus of derived
 rules which acts on neutral sequents only, as given in
 Figure~\ref{fig:bkwdderivedcalculus}.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -1859,7 +1859,7 @@ Figure~\ref{fig:bkwdderivedcalculus}.
   \label{fig:bkwdrelations}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -1917,7 +1917,7 @@ the easy proof.
   \item If $\brfrelj{A}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ and $\Sigma$
     are sound, then $\rfocseq{\Gamma}{\Delta}{A}$.
   \item If $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$ and $\Sigma$
-    are sound, then $\lfocseq{\Gamma}{\Delta}{A}{Q}$. 
+    are sound, then $\lfocseq{\Gamma}{\Delta}{A}{Q}$.
   \item If
     $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{\bneuseq{\Gamma'}{\Delta'}{Q}}{\Sigma}$
     and $\Sigma$ are sound, then $\btriseq{\Gamma, \Gamma'}{\Delta,
@@ -1938,12 +1938,12 @@ the easy proof.
   \item Case the last rule was $\linit$. The thesis follows by immediate
     application of the corresponding $\linit$ rule of the backward focused
     calculus.
-    
+
   \item The $\rinit$ case is dual.
-    
+
   \item Case the last rule was $\otimes F$. The thesis follows immediately by
     inductive hypothesis and application of the $\otimes R$ rule.
-    
+
   \item Case the last rule was $\faplus$.
 
     \[
@@ -1959,14 +1959,14 @@ the easy proof.
     some $\Gamma, \Delta$. By inductive hypothesis,
     $\btriseq{\Gamma}{\Delta}{\cdot}{R ; \cdot}$. The thesis follows immediately
     from an application of the $rblur$ rule.
-    
+
   \item Case the last rule is conj+. The thesis follows immediately by
     hypothesis of soundness of the resulting sequents, and an application of
     $\rblurstar$.
-    
+
   \item Case the last rule is $\limp F$. The thesis follows immediately by
     inductive hypothesis and an application of $\limp L$.
-    
+
   \item Case the last rule is $\faminus$.
 
     \[
@@ -1980,14 +1980,14 @@ the easy proof.
 
     By Fact~\ref{bkwdderfact}, $s \equiv \bneuseq{\Gamma}{\Delta}{Q}$. The
     thesis follows immediately by inductive hypothesis and an application of $lblur$.
-    
+
   \item Case the last rule is $conj-$. The thesis follows immediately from
     the hypothesis of soundness of the result sequents, and an application of
     $\lblurstar$.
-    
+
   \item The cases $\otimes A, \limp A, \bact$ are a straightforward application
     of the inductive hypothesis.
-    
+
   \item In the base cases $\matchrule, \matchprimerule$, the thesis follows
     immediately from the hypothesis of $\Sigma$ being sound.
 
@@ -1995,7 +1995,7 @@ the easy proof.
 \end{proof}
 
 \begin{theorem}[Soundness]
-  If $\bneuseq{\Gamma}{\Delta}{Q}$ then $\bkwseq{\Gamma}{\Delta}{\cdot ; Q}$.  
+  If $\bneuseq{\Gamma}{\Delta}{Q}$ then $\bkwseq{\Gamma}{\Delta}{\cdot ; Q}$.
 \end{theorem}
 \begin{proof}
   Straightforward induction on the derivation, and
@@ -2004,19 +2004,19 @@ the easy proof.
 
 \begin{lemma}\label{completeness-lemma}
   \begin{enumerate}
-    
+
   \item If $\rfocseq{\Gamma}{\Delta}{A}$, then for some $\Sigma$
     \begin{enumerate}
     \item $\relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
     \item $\Sigma$ are all derivable
     \end{enumerate}
-    
+
   \item If $\lfocseq{\Gamma}{\Delta}{A}{Q}$, then for some $\Sigma$
     \begin{enumerate}
     \item $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$, and
     \item $\Sigma$ are all derivable
     \end{enumerate}
-    
+
   \item If $\btriseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{\Omega}{\xi \uplus
       \gamma}$ (where $\xi \uplus \gamma$ means either $\xi$ or $\gamma$ is
     empty), then for some $\Sigma$
@@ -2049,7 +2049,7 @@ the easy proof.
   \item Case $\lact$. Straightforward use of the $\bact$ rule for derived
     relations.
   \item Case $\rfoc$.
-    
+
     \[
       \begin{prooftree}
         \Gamma; \Delta \gg Q \qquad Q\; \text{right-focusable}
@@ -2113,7 +2113,7 @@ the easy proof.
         \using{FA^+}
       \end{prooftree}
     \]
-    
+
   \item Case $\lblur$ is dual to $\rblur$.
   \item Case $\rblurstar$.
 
@@ -2183,7 +2183,7 @@ the easy proof.
 In the following rules, $\gamma \setminus \xi$ is defined as $\gamma$ if $\xi = \cdot$,
 and as $\cdot$ if $\gamma = \xi$.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -2350,7 +2350,7 @@ Similarly, for negative propositions, we have two rules:
     \item $\xi = \cdot$ and $\gamma = Q$ for some right-synchronous $Q$;
     \item $\xi = C$ and $\gamma = \cdot$ for some $C$.
     \end{enumerate}
-    
+
   \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\gamma}}$, then
     $\gamma = Q$ for some right-synchronous $Q$.
   \end{enumerate}
@@ -2398,7 +2398,7 @@ Similarly, for negative propositions, we have two rules:
       \end{prooftree}
     \]
 
-    By soundness of the backward focused calculus, $\bkwseq{\cdot}{p}{p}$. 
+    By soundness of the backward focused calculus, $\bkwseq{\cdot}{p}{p}$.
 
   \item Case $\rinit$ is similar;
   \item Case $\faplus{}$.
@@ -2430,7 +2430,7 @@ Similarly, for negative propositions, we have two rules:
         \using{\rblur}
       \end{prooftree}
     \]
-    
+
   \item Case $\faminus$.
 
     \[
@@ -2452,9 +2452,9 @@ Similarly, for negative propositions, we have two rules:
         \using{\lblur}
       \end{prooftree}
     \]
-        
+
   \item Case $\limp F$.
-    
+
     \[
       \begin{prooftree}
         \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
@@ -2495,7 +2495,7 @@ Similarly, for negative propositions, we have two rules:
     \]
 
   \item Case $\otimes F$.
-    
+
     \[
       \begin{prooftree}
         \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
@@ -2579,7 +2579,7 @@ Similarly, for negative propositions, we have two rules:
       hypothesis,
       $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta', P}{\Omega \cdot \Omega'}{\cdot
         ; Q}$. The thesis follows by application of the $lact$ rule.
-      
+
     \item Case $\xi = C$ for some $C$. Then, by Fact~\ref{forwardfact},
       $s \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$. Then, by inductive
       hypothesis,
@@ -2611,7 +2611,7 @@ Similarly, for negative propositions, we have two rules:
       hypothesis that $\fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}$ be sound.
 
     \item Case $\xi = C$. Then, $C \equiv Q$ and
-      
+
       \[
         \begin{prooftree}
           \justifies
@@ -2640,7 +2640,7 @@ Similarly, for negative propositions, we have two rules:
 
   \begin{enumerate}
   \item Case $focplus$
-    
+
     \[
       \begin{prooftree}
         s_1 \quad \dots \quad s_n \quad
@@ -2653,9 +2653,9 @@ Similarly, for negative propositions, we have two rules:
 
     By Lemma~\ref{fsoundnesslemma}, $\rfocseq{\Gamma}{\Delta}{Q}$. The thesis
     follows by $\rfoc$.
-    
+
   \item Case $focminus$.
-    
+
     \[
       \begin{prooftree}
         s_1 \quad \dots \quad s_n \quad
@@ -2668,9 +2668,9 @@ Similarly, for negative propositions, we have two rules:
 
     By Lemma~\ref{fsoundnesslemma}, $\lfocseq{\Gamma}{\Delta}{P}{Q}$. The thesis
     follows by $\lfoc$.
-    
+
   \item Case $!focminus$.
-    
+
     \[
       \begin{prooftree}
         s_1 \quad \dots \quad s_n \quad
@@ -2781,7 +2781,7 @@ sequents.
         \using{FA^+}
       \end{prooftree}
     \]
-    
+
     Suppose there are $\Sigma' \preceq \Sigma$ such that
     $\frfrelj{R}{\Sigma'}{s'}$. Then, it must have been derived with an
     application of the rule $\faplus$.
@@ -2796,8 +2796,8 @@ sequents.
     \]
 
     The thesis follows immediately from the inductive hypothesis.
-    
-  \item Case $conj+$. Then, 
+
+  \item Case $conj+$. Then,
 
     \[
       \begin{prooftree}
@@ -2851,7 +2851,7 @@ sequents.
     hypothesis, $\Gamma_1' \subseteq \Gamma$, $\Gamma_2' \subseteq \Gamma$,
     $\Delta_1 = \Delta_1'$, $\Delta_2 = \Delta_2'$. It follows that $\Gamma_1,
     \Gamma_2 \subseteq \Gamma$ and $\Delta_1, \Delta_2 = \Delta_1', \Delta_2'$.
-    
+
   \item Case $\limp F$.
 
     \[
@@ -2886,7 +2886,7 @@ sequents.
     \Gamma, \Delta_1' = \Delta_1, \Delta_2' = \Delta_2, Q = Q'$. Therefore,
     $\Gamma_1' \cup \Gamma_2 \subseteq \Gamma$ and
     $\Delta_1', \Delta_2' = \Delta_1, \Delta_2$. The thesis follows immediately.
-    
+
   \item Case $\otimes A$.
 
     \[
@@ -2919,9 +2919,9 @@ sequents.
     \]
 
     The thesis follows immediately from the inductive hypothesis.
-    
+
   \item Cases $\limp A$ and $bact$ are treated similarly.
-    
+
   \item Case $\faminus$.
 
     \[
@@ -2947,7 +2947,7 @@ sequents.
     \]
 
     By inductive hypothesis, $s' \preceq s$.
-    
+
   \item Case $conj-$.
 
     \[
@@ -2967,7 +2967,7 @@ sequents.
       \begin{prooftree}
         p~\text{left-biased}
         \justifies
-        \flfrelj{p}{\fneuseq{\Gamma'}{\Delta', p}{Q'}}{\fneuseq{\Gamma'}{\Delta'}{Q'}}        
+        \flfrelj{p}{\fneuseq{\Gamma'}{\Delta', p}{Q'}}{\fneuseq{\Gamma'}{\Delta'}{Q'}}
       \end{prooftree}
     \]
 
@@ -2993,7 +2993,7 @@ sequents.
     Suppose $\Sigma' \preceq \Sigma$ such that
     $\relj{ \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}} }{ \Sigma' }{ s'
     }$. Then, it must have been an application of the $\matchrule$ rule such that:
-    
+
     \[
       \begin{prooftree}
         \justifies
@@ -3015,7 +3015,7 @@ sequents.
     = \Delta''$.
     Moreover, we have $\Gamma \cup \Gamma'' \subseteq \Gamma \cup
     \Gamma'$, implying $\Gamma'' \subseteq \Gamma'$. Therefore, $s' \preceq s$.
-    
+
   \item Case $\matchprimerule$.
 
     \[
@@ -3035,7 +3035,7 @@ sequents.
     Suppose $\Sigma' \preceq \Sigma$ such that
     $\relj{\factrel{\btriseq{\Gamma}{\Delta}{Q}{\cdot}} }{ \Sigma' }{ s'
     }$. Then, it must have been an application of the $\matchrule$ rule such that:
-    
+
     \[
       \begin{prooftree}
         \justifies
@@ -3339,7 +3339,7 @@ formulas give rise to the initial derived rules as follows
 
   \[
     \begin{prooftree}
-      \fneuseq{\Gamma}{\Delta, d, d, n}{Q}      
+      \fneuseq{\Gamma}{\Delta, d, d, n}{Q}
       \justifies
       \fneuseq{\Gamma, R_3}{\Delta, q}{Q}
     \end{prooftree}
@@ -3583,7 +3583,7 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
 \begin{definition}[Match result]
   A result of the match, written $\sigma | s$, is a sequent-like structure
   $\fneuseq{\Gamma_r}{\Delta_r}{\gamma_r}$, for which
-  
+
   \begin{enumerate}
   \item $\Gamma_r = \Gamma \setminus \Gamma_s$;
   \item $\Delta_r = \Delta \setminus \Delta_s$;
@@ -3846,7 +3846,7 @@ set and the inactive set is exhausted (in which case the search saturates).
     percolation phase ensures that $r'$ is also matched against
     $s_{n+1}$. Therefore, $r$ is fully applied to $s_1, \dots, s_{n+1}$ during
     iteration $j$, where $j \geq i$ by hypothesis;
-    
+
   \item If $s_{n+1} \in S_i$ during iteration $j$, then $s_{n+1}$ is eventually
     selected for activation during some iteration $k > j$ and matched against
     all rules in the collection of rules at that moment. From the inductive
@@ -3996,7 +3996,7 @@ set and the inactive set is exhausted (in which case the search saturates).
         \using{hyp!}
       \end{prooftree}
     \]
-    
+
   \item Case $\otimes I$. Suppose $\tyj{v}{A}$ comes from the first branch (the
     other case is identical):
 
@@ -4028,7 +4028,7 @@ set and the inactive set is exhausted (in which case the search saturates).
     \]
 
     but $\langle M[u/v], N[u/v] \rangle \equiv \langle M,N \rangle [u/v]$.
-    
+
   \item Case $\otimes E$. Suppose $\tyj{v}{A}$ comes from the second premise
     (the other case is identical).
 
@@ -4046,7 +4046,7 @@ set and the inactive set is exhausted (in which case the search saturates).
 
     Again, $M$ does not contain $v$ free by Lemma, hence $M[u/v] \equiv M$. But
     then, by inductive hypothesis
-    
+
     \[
       \begin{prooftree}
         \Gamma, \tyj{u}{A}; \Delta_1 \vdash \tyj{M[u/v]}{B \otimes C}
@@ -4064,9 +4064,9 @@ set and the inactive set is exhausted (in which case the search saturates).
     N)[u/v]$ as long as $w_1, w_2$ do not capture $u$, that is, as long as they
     are different. But they are, since they appear in the same context in the
     second premise.
-    
+
   \item Case $\limp I$.
-    
+
     \[
       \begin{prooftree}
         \Gamma, \tyj{u}{A} ; \Delta, \tyj{v}{A}, \tyj{w}{B} \vdash \tyj{M}{C}
@@ -4077,7 +4077,7 @@ set and the inactive set is exhausted (in which case the search saturates).
     \]
 
     Then, by inductive hypothesis
-    
+
     \[
       \begin{prooftree}
         \Gamma, \tyj{u}{A} ; \Delta, \tyj{w}{B} \vdash \tyj{M[u/v]}{C}
@@ -4213,9 +4213,9 @@ as follows:
     \]
 
     where $u$ is a fresh variable.
-    
+
   \item Case $\copyrule$.
-    
+
     \[
       \begin{prooftree}
         \seqpt{\mathcal{D}}{
@@ -4245,7 +4245,7 @@ as follows:
 
     If $\Gamma$ does contain $A$ then the thesis follows in the same way just by
     a direct application of the copy rule.
-    
+
   \item Case $\otimes R$.
 
     \[
@@ -4307,7 +4307,7 @@ as follows:
 
   \item Case $\otimes L$
 
-    
+
     \[
       \begin{prooftree}
         \seqpt{
@@ -4346,7 +4346,7 @@ as follows:
 
   \item Case $\limp R$.
 
-    
+
     \[
       \begin{prooftree}
         \seqpt{\mathcal{D}}{\fwdseq{\Gamma}{\Delta, \labels{l^{k+1}}{A}}{B}}
@@ -4370,9 +4370,9 @@ as follows:
         \using{\limp I}
       \end{prooftree}
     \]
-    
+
   \item Case $\limp L$.
-    
+
     \[
       \begin{prooftree}
         \seqpt{\mathcal{D}}{\fwdseq{\Gamma}{\Delta}{\labels{r}{A}}}
@@ -4536,7 +4536,7 @@ shown in Figure~\ref{fig:dertermrules}. We therefore consider relations of the
 form $\relj{\frfrel{C}}{\seqpt{\mathcal{D}_1}{s_1} \cdots
   \seqpt{\mathcal{D}_n}{s_n}}{\seqpt{\mathcal{D}}{s}}$.
 
-\begin{figure}[ht]
+\begin{figure}[h]
   \begin{mdframed}
     \[
       \begin{prooftree}
@@ -4710,3 +4710,8 @@ Similarly, for negative propositions, we have two rules:
 \]
 
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
