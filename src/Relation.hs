@@ -60,12 +60,12 @@ match (Sch gamma delta schGoal) (LS gamma' delta' goal) = do
 
 type NFocMatchResult l a = MatchResult EmptyXiFullResult l a
 
--- | Dispatching of negative synchronous formulas. Notice the type that enforces
--- input formulas to be both left synchronous and non-atomic.
-negativeFocal
-  :: (Eq a, Eq l)
-  => LFormula LSRA l a -> Relation l a (NFocMatchResult l a)
-negativeFocal = negativeFocalDispatch
+-- {-| Dispatching of negative synchronous formulas. Notice the type that enforces
+--     input formulas to be both left synchronous and non-atomic. -}
+-- negativeFocal
+--   :: (Eq a, Eq l)
+--   => LFormula LSRA l a -> Relation l a (NFocMatchResult l a)
+-- negativeFocal = negativeFocalDispatch
 
 negativeFocalDispatch
   :: forall p l a.
