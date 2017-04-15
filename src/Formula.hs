@@ -11,7 +11,7 @@ module Formula where
     It is parameterized over the type of biological atoms. -}
 data BioFormula a  =  BioAtom a
                    |  BioInter (BioFormula a) (BioFormula a)
-                   deriving(Eq, Ord, Show)
+                   deriving (Eq, Ord, Show)
 
 -- | Type of biases of logical atoms in the focused calculus.
 data Bias = LeftBias | RightBias
