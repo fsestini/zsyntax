@@ -21,6 +21,7 @@ import Control.Applicative
 import Prelude hiding (fail)
 import Control.Monad.Fail
 import Formula
+import LabelledSequent
 import Control.Monad hiding (fail)
 import qualified Data.Set as S
 import Rel
