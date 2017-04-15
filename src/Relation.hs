@@ -17,12 +17,8 @@ module Relation
   , filterPartitionRel
   ) where
 
-import Data.Void
 import Formula
-import Data.Bifunctor
-import Control.Monad
 import qualified Data.Set as S
-import Filterable
 import Rel
 
 type Relation l a b = Rel (LabelledSequent l a) b
