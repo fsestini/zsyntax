@@ -17,7 +17,11 @@ module Relation
   , filterPartitionRel
   ) where
 
+import Control.Applicative
+import Prelude hiding (fail)
+import Control.Monad.Fail
 import Formula
+import Control.Monad hiding (fail)
 import qualified Data.Set as S
 import Rel
 
@@ -47,8 +51,8 @@ data MatchResult actcase l a =
        (GoalResult actcase l a)
 
 match
-  :: (Eq a, Eq l)
-  => SequentSchema c l a -> LabelledSequent l a -> Maybe (MatchResult c l a)
+  :: (Eq a, Eq l, MonadFail m, Alternative m)
+  => SequentSchema c l a -> LabelledSequent l a -> m (MatchResult c l a)
 match (Sch gamma delta schGoal) (LS gamma' delta' goal) = do
   gamma'' <- matchUnrestrCtxt (SUC gamma) gamma'
   delta'' <- matchLinearCtxt (SLC delta) delta'
