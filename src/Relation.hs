@@ -1,5 +1,4 @@
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
