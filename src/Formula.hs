@@ -1,6 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DataKinds, KindSignatures, GADTs #-}
 
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
+
 module Formula where
 
 import qualified Data.Map.Strict as M
