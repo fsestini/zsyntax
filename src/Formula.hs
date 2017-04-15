@@ -6,9 +6,6 @@
 {-| Formulae of Zsyntax. -}
 module Formula where
 
-import qualified Data.Map.Strict as M
-import qualified Data.Set as S
-
 {-| The type of biological (and non-logical) formulas, which constitute
     the logical atoms.
     It is parameterized over the type of biological atoms. -}
@@ -73,52 +70,6 @@ label (FAtom (LBAtom bf)) = A bf
 label (FAtom (RBAtom bf)) = A bf
 label (FConj _ _ l) = L l
 label (FImpl _ _ l) = L l
-
-type UnrestrCtxt l a = S.Set (Label l a)
-
-emptyUnrestrCtxt = S.empty
-
-data PosNat = One | Succ PosNat deriving(Eq, Show)
-
-toInt :: PosNat -> Int
-toInt One       =  1
-toInt (Succ n)  =  toInt n + 1
-
-type LinearCtxt l a = M.Map (Label l a) PosNat
-
-emptyLinearCtxt = M.empty
-
-addToLinCtxt :: (Label l a) -> LinearCtxt l a -> LinearCtxt l a
-addToLinCtxt = undefined
-
-addToUnrestrCtxt :: (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
-addToUnrestrCtxt = undefined
-
-mergeLinearCtxt :: LinearCtxt l a -> LinearCtxt l a -> LinearCtxt l a
-mergeLinearCtxt = undefined
-
-mergeUnrestrCtxt :: UnrestrCtxt l a -> UnrestrCtxt l a -> UnrestrCtxt l a
-mergeUnrestrCtxt = undefined
-
-singletonLinearCtxt :: Label l a -> LinearCtxt l a
-singletonLinearCtxt = undefined
-
-newtype SchemaUCtxt l a = SUC (UnrestrCtxt l a)
-newtype SchemaLCtxt l a = SLC (LinearCtxt l a)
-
-matchUnrestrCtxt :: SchemaUCtxt l a -> UnrestrCtxt l a -> Maybe (UnrestrCtxt l a)
-matchUnrestrCtxt (SUC suc) uc = undefined
-
-matchLinearCtxt :: SchemaLCtxt l a -> LinearCtxt l a -> Maybe (LinearCtxt l a)
-matchLinearCtxt (SLC slc) lc = undefined
-
-data LabelledSequent l a  =  LS (UnrestrCtxt l a) (LinearCtxt l a) (Label l a)
-
-instance Eq (LabelledSequent l a) where
-  (==) = undefined
-
-instance Ord (LabelledSequent l a) where
-  compare = undefined
 
 --------------------------------------------------------------------------------
 -- Decorated formulas
