@@ -14,6 +14,7 @@ module Rel
 
 import Filterable
 import Control.Monad
+import Control.Monad.Fail
 
 data Rel a b = Rel { unRel :: Maybe (Either b (a -> Rel a b)) }
 
@@ -40,3 +41,6 @@ instance Monad (Rel a) where
       Nothing -> Rel Nothing
       Just (Left x) -> f x
       Just (Right g) -> Rel . Just . Right $ \input -> g input >>= f
+
+instance MonadFail (Rel a) where
+  fail _ = Rel Nothing
