@@ -6,6 +6,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
+
 module Relation
   ( positiveFocal
   , positiveFocalDispatch
