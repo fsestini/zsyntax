@@ -4,16 +4,25 @@ module Prover.Class where
 
 import Control.Monad (forM_)
 import Formula
+import LabelledSequent
 import Rule
 import qualified Data.Set as S
+
+-- | An active sequent is a notable kind of labelled sequent.
+newtype ActiveSequent l a = AS (LabelledSequent l a)
+type ActiveSequents l a = S.Set (LabelledSequent l a)
+
+-- | Every active sequent is a labelled sequent.
+activeIsLabelled :: ActiveSequent l a -> LabelledSequent l a
+activeIsLabelled (AS s) = s
 
 class HasProverState l a m where
   getRules :: m ([Rule l a])
   addRule :: Rule l a -> m ()
   addInactive :: LabelledSequent l a -> m ()
-  popInactive :: m (Maybe (LabelledSequent l a))
-  getActives :: m (S.Set (LabelledSequent l a))
-  addActive :: LabelledSequent l a -> m ()
+  popInactive :: m (Maybe (ActiveSequent l a))
+  getActives :: m (ActiveSequents l a)
+  addActive :: ActiveSequent l a -> m ()
   isNotSubsumed :: LabelledSequent l a -> m Bool
   removeSubsumedBy :: LabelledSequent l a -> m ()
 
@@ -22,7 +31,7 @@ class HasProverEnvironment l a m where
 
 addActives
   :: (Traversable t, Monad m, HasProverState l a m)
-  => t (LabelledSequent l a) -> m ()
+  => t (ActiveSequent l a) -> m ()
 addActives = mapM_ addActive
 
 addInactives
