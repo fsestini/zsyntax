@@ -18,41 +18,16 @@ import Rel
 import Prover.Class
 import Prover.Transformer
 
-applyAll :: [Rule l a]
-         -> LabelledSequent l a
-         -> (S.Set (LabelledSequent l a), [Rule l a])
-applyAll rules sequent = partitionRuleRes . map ($ sequent) $ rules
-
-partitionRuleRes :: [RuleRes l a] -> (S.Set (LabelledSequent l a), [Rule l a])
-partitionRuleRes =
-  (S.fromList *** id) . fpartitionEithers . filterOut . fmap unRel
-
-applyToActives :: ActiveSequents l a
-               -> [Rule l a]
-               -> (S.Set (LabelledSequent l a), [Rule l a])
-applyToActives (AS actives) rules =
-  partitionRuleRes $ concatMap (mapper actives) rules
-  where
-    mapper actives rule = fmap rule . S.toList $ actives
-
-percolate :: ActiveSequents l a
-          -> [Rule l a]
-          -> (S.Set (LabelledSequent l a), [Rule l a])
-percolate actives [] = (S.empty, [])
-percolate actives rules = (resSeqs `S.union` recSeqs, resRules ++ recRules)
-  where
-    (resSeqs, resRules) = applyToActives actives rules
-    (recSeqs, recRules) = percolate actives resRules
 
 processNewActive
   :: (Monad m, HasProverState l a m)
-  => LabelledSequent l a -> m (S.Set (LabelledSequent l a), [Rule l a])
+  => LabelledSequent l a -> m (RuleAppRes l a)
 processNewActive sequent = do
   actives <- getActives
   rules <- getRules
-  let (seqs, newRules) = applyAll rules sequent
-      (moarSeqs, moarRules) = percolate actives newRules
-  return (seqs `S.union` moarSeqs, newRules ++ moarRules)
+  let r1 = applyAll rules sequent
+      r2 = percolate actives . resRules $ r1
+  return $ r1 `mappend` r2
 
 type Derivation l a = LabelledSequent l a
 
