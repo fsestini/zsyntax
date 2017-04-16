@@ -1,16 +1,22 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+{-# OPTIONS_GHC -Wall #-}
+
 module Prover where
+
 
 import Control.Arrow
 import Formula
+import LabelledSequent
 import Rule
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Filterable
 import Relation
 import Rel
+import Prover.Class
+import Prover.Transformer
 
 applyAll :: [Rule l a]
          -> LabelledSequent l a
