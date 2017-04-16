@@ -4,12 +4,22 @@
 module Rule where
 
 import Formula
+import LabelledSequent
 import Relation
 import Rel
 
-type Rule l a = (LabelledSequent l a) -> RuleRes l a
+{-| Type of elements that represent the result of applying an inference rule.
 
+    Such application may either fail, succeed with a value (when the rule has
+    been fully applied), or succeed with a function (when the rule is only
+    partially applied and has still some premises to match). -}
 type RuleRes l a = Rel (LabelledSequent l a) (LabelledSequent l a)
+
+{-| Type of inference rules.
+    Axioms are not considered rules in this case, so a rule takes at least one
+    premise. Hence the corresponding type is a function from a premise sequent
+    to a rule application result. -}
+type Rule l a = (LabelledSequent l a) -> RuleRes l a
 
 -- genRule
 --   :: (Eq a, Eq l)
