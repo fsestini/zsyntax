@@ -70,15 +70,3 @@ label (FAtom (LBAtom bf)) = A bf
 label (FAtom (RBAtom bf)) = A bf
 label (FConj _ _ l) = L l
 label (FImpl _ _ l) = L l
-
---------------------------------------------------------------------------------
--- Decorated formulas
-
-data DecLFormula :: * -> * -> * where
-  UnrestrDLF :: LFormula p l a -> DecLFormula l a
-  LinearNegativeDLF
-    :: (IsLeftSynchronous p)
-    => LFormula p l a -> DecLFormula l a
-  LinearPositiveDLF
-    :: (IsRightSynchronous p)
-    => LFormula p l a -> DecLFormula l a
