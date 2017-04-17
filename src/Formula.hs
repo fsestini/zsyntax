@@ -74,4 +74,14 @@ label (FImpl _ _ l) = L l
 --------------------------------------------------------------------------------
 -- Opaque formulas
 
+-- | Type of opaque formulas.
 data OLFormula l a = forall p . OLF (LFormula p l a)
+
+-- | Type of opaque left-synchronous labelled formulas.
+data OLSLFormula l a = forall p . (IsLeftSynchronous p) => OLSLF (LFormula p l a)
+
+olfLabel :: OLFormula l a -> Label l a
+olfLabel (OLF f) = label f
+
+olsfLabel :: OLSLFormula l a -> Label l a
+olsfLabel (OLSLF f) = label f
