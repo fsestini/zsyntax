@@ -43,25 +43,31 @@ data LFormula :: Pole -> * -> * -> * where
 
 -- | Class of right-synchronous poles, used as a predicate over poles.
 class IsRightSynchronous (p :: Pole) where
+  decideRS :: LFormula p l a -> Either (OAtom a) (LFormula LARS l a)
 
 -- | A formula which is left-asynchronous/right-synchronous is indeed
 -- right-synchronous.
 instance IsRightSynchronous LARS where
+  decideRS = Right
 
 -- | A formula with atomic pole is an atom, hence both a left- and right-
 -- synchronous formula by definition.
 instance IsRightSynchronous AtomPole where
+  decideRS (FAtom a) = Left (OA a)
 
 -- | Class of left-synchronous poles, used as a predicate over poles.
 class IsLeftSynchronous (p :: Pole) where
+  decideLS :: LFormula p l a -> Either (OAtom a) (LFormula LSRA l a)
 
 -- | A formula which is left-synchronous/right-asynchronous is indeed
 -- left-synchronous.
 instance IsLeftSynchronous LSRA where
+  decideLS = Right
 
 -- | A formula with atomic pole is an atom, hence both a left- and right-
 -- synchronous formula by definition.
 instance IsLeftSynchronous AtomPole where
+  decideLS (FAtom a) = Left (OA a)
 
 {-| Type of labels, which can either be pure labels of atomic formulas. -}
 data Label l a = L l | A (BioFormula a) deriving (Eq, Ord, Show)
