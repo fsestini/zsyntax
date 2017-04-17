@@ -4,7 +4,10 @@
     and functions. -}
 module LabelledSequent where
 
-import Formula (Label)
+import Data.List
+import qualified Data.List.NonEmpty as NE
+import Formula
+       (Label, Sequent(..), OLSLFormula(..), label, olfLabel, olsfLabel)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 
@@ -92,3 +95,20 @@ instance (Eq l, Ord l, Ord a, Eq a) =>
       else if s1 `subsumedBy` s2
              then LT
              else GT
+
+--------------------------------------------------------------------------------
+-- Conversion from fully-specified sequents to labelled sequents.
+
+toLabelledSequent
+  :: (Ord a, Ord l, Eq l, Eq a)
+  => Sequent l a -> LabelledSequent l a
+toLabelledSequent (SQ uc lc goal) =
+  LS (S.map olfLabel uc) (toLabelledLinearCtxt lc) (label goal)
+
+toLabelledLinearCtxt
+  :: (Eq a, Eq l, Ord a, Ord l)
+  => [OLSLFormula l a] -> LinearCtxt l a
+toLabelledLinearCtxt lc = M.fromList occurrences
+  where
+    labels = NE.groupBy (==) . sortBy compare . map olsfLabel $ lc
+    occurrences = map (\xs -> (NE.head xs, neLength xs)) labels
