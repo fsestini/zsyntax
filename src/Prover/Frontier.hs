@@ -41,30 +41,32 @@ instance Ord (DecLFormula l a) where
 toUnrestrNeg :: OLFormula l a -> DecLFormula l a
 toUnrestrNeg (OLF f) = UnrestrNegativeDLF f
 
+toLinearNeg :: OLSLFormula l a -> DecLFormula l a
+toLinearNeg (OLSLF f) = LinearNegativeDLF f
+
 --------------------------------------------------------------------------------
 -- Frontier computation
 
 -- | Computes the frontier of a labelled sequent.
-frontier
-  :: (IsLeftSynchronous p, IsRightSynchronous q)
-  => S.Set (OLFormula l a)
-  -> [LFormula p l a]
-  -> LFormula q l a
-  -> S.Set (DecLFormula l a)
-frontier uc lc goal =
-  S.map toUnrestrNeg uc `S.union` (S.fromList . map LinearNegativeDLF) lc `S.union`
+frontier :: Sequent l a -> S.Set (DecLFormula l a)
+frontier (S uc lc goal) =
+  S.map toUnrestrNeg uc `S.union` (S.fromList . map toLinearNeg) lc `S.union`
   S.singleton (LinearPositiveDLF goal) `S.union`
   unrestrFrontier `S.union`
   linearFrontier `S.union`
   goalFrontier
   where
     unrestrFrontier = S.foldr S.union S.empty (S.map ofn uc)
-    linearFrontier = foldr S.union S.empty (map frontierNegative lc)
+    linearFrontier = foldr S.union S.empty (map olsfn lc)
     goalFrontier = frontierPositive goal
 
 -- | Same as frontierNegative, but for opaque formulas.
 ofn :: OLFormula l a -> S.Set (DecLFormula l a)
 ofn (OLF f) = frontierNegative f
+
+-- | Same as frontierNegative, but for opaque left-synchronous formulas.
+olsfn :: OLSLFormula l a -> S.Set (DecLFormula l a)
+olsfn (OLSLF f) = frontierNegative f
 
 frontierNegative :: LFormula p l a -> S.Set (DecLFormula l a)
 frontierNegative (FAtom (RBAtom _)) = S.empty
