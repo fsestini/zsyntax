@@ -58,9 +58,8 @@ data LabelledSequent l a =
   LS { unrestrCtxt :: (UnrestrCtxt l a)
      , linearCtxt :: (LinearCtxt l a)
      , label :: (Label l a) }
+  deriving (Eq)
 
-instance Eq (LabelledSequent l a) where
-  (==) = undefined
 
 instance Ord (LabelledSequent l a) where
   compare = undefined
