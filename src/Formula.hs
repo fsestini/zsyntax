@@ -62,7 +62,7 @@ instance IsLeftSynchronous LSRA where
 instance IsLeftSynchronous AtomPole where
 
 {-| Type of labels, which can either be pure labels of atomic formulas. -}
-data Label l a = L l | A (BioFormula a) deriving (Eq)
+data Label l a = L l | A (BioFormula a) deriving (Eq, Ord, Show)
 
 -- | Returns the label of a given labelled formula.
 label :: LFormula p l a -> Label l a
