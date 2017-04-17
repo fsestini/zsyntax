@@ -7,7 +7,6 @@ module LabelledSequent where
 import Formula (Label)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
-import Control.Monad.Fail
 
 -- | Type of unrestricted contexts.
 type UnrestrCtxt l a = S.Set (Label l a)
