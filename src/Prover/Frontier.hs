@@ -2,8 +2,7 @@
 {-# LANGUAGE KindSignatures #-}
 
 module Prover.Frontier
-  ( frontierNegative
-  , frontierPositive
+  ( frontier
   , DecLFormula(..)
   ) where
 
@@ -41,6 +40,27 @@ instance Ord (DecLFormula l a) where
 
 toUnrestrNeg :: OLFormula l a -> DecLFormula l a
 toUnrestrNeg (OLF f) = UnrestrNegativeDLF f
+
+--------------------------------------------------------------------------------
+-- Frontier computation
+
+-- | Computes the frontier of a labelled sequent.
+frontier
+  :: (IsLeftSynchronous p, IsRightSynchronous q)
+  => S.Set (OLFormula l a)
+  -> [LFormula p l a]
+  -> LFormula q l a
+  -> S.Set (DecLFormula l a)
+frontier uc lc goal =
+  S.map toUnrestrNeg uc `S.union` (S.fromList . map LinearNegativeDLF) lc `S.union`
+  S.singleton (LinearPositiveDLF goal) `S.union`
+  unrestrFrontier `S.union`
+  linearFrontier `S.union`
+  goalFrontier
+  where
+    unrestrFrontier = S.foldr S.union S.empty (S.map ofn uc)
+    linearFrontier = foldr S.union S.empty (map frontierNegative lc)
+    goalFrontier = frontierPositive goal
 
 -- | Same as frontierNegative, but for opaque formulas.
 ofn :: OLFormula l a -> S.Set (DecLFormula l a)
