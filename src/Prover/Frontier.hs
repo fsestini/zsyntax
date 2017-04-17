@@ -39,6 +39,9 @@ instance Eq (DecLFormula l a) where
 instance Ord (DecLFormula l a) where
   compare = undefined
 
+toUnrestrNeg :: OLFormula l a -> DecLFormula l a
+toUnrestrNeg (OLF f) = UnrestrNegativeDLF f
+
 frontierNegative :: LFormula p l a -> S.Set (DecLFormula l a)
 frontierNegative (FAtom (RBAtom _)) = S.empty
 frontierNegative f@(FAtom (LBAtom _)) = S.singleton (LinearNegativeDLF f)
