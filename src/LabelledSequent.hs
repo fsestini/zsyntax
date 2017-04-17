@@ -60,6 +60,17 @@ data LabelledSequent l a =
      , label :: (Label l a) }
   deriving (Eq)
 
+subsumedBy
+  :: (Eq l, Ord l, Ord a)
+  => LabelledSequent l a -> LabelledSequent l a -> Bool
+subsumedBy (LS uc1 lc1 l1) (LS uc2 lc2 l2) =
+  lc1 == lc2 && l1 == l2 && (uc1 `S.isSubsetOf` uc2)
 
-instance Ord (LabelledSequent l a) where
-  compare = undefined
+instance (Eq l, Ord l, Ord a, Eq a) =>
+         Ord (LabelledSequent l a) where
+  compare s1 s2 =
+    if s1 == s2
+      then EQ
+      else if s1 `subsumedBy` s2
+             then LT
+             else GT
