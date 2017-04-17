@@ -70,3 +70,8 @@ label (FAtom (LBAtom bf)) = A bf
 label (FAtom (RBAtom bf)) = A bf
 label (FConj _ _ l) = L l
 label (FImpl _ _ l) = L l
+
+--------------------------------------------------------------------------------
+-- Opaque formulas
+
+data OLFormula l a = forall p . OLF (LFormula p l a)
