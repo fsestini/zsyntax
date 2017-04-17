@@ -24,7 +24,7 @@ import qualified Data.Set as S
 -- Decorated formulas
 
 data DecLFormula :: * -> * -> * where
-  UnrestrDLF :: LFormula p l a -> DecLFormula l a
+  UnrestrNegativeDLF :: LFormula p l a -> DecLFormula l a
   LinearNegativeDLF
     :: (IsLeftSynchronous p)
     => LFormula p l a -> DecLFormula l a
