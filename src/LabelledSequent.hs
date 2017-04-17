@@ -54,7 +54,10 @@ singletonLinearCtxt = undefined
 
     Contrary to a labelled formula, a labelled sequent contains labels only, and
     does not retain any information about actual formulas. -}
-data LabelledSequent l a  =  LS (UnrestrCtxt l a) (LinearCtxt l a) (Label l a)
+data LabelledSequent l a =
+  LS { unrestrCtxt :: (UnrestrCtxt l a)
+     , linearCtxt :: (LinearCtxt l a)
+     , label :: (Label l a) }
 
 instance Eq (LabelledSequent l a) where
   (==) = undefined
