@@ -6,6 +6,8 @@
 {-| Formulae of Zsyntax. -}
 module Formula where
 
+import qualified Data.Set as S
+
 {-| The type of biological (and non-logical) formulas, which constitute
     the logical atoms.
     It is parameterized over the type of biological atoms. -}
@@ -85,3 +87,17 @@ olfLabel (OLF f) = label f
 
 olsfLabel :: OLSLFormula l a -> Label l a
 olsfLabel (OLSLF f) = label f
+
+--------------------------------------------------------------------------------
+-- Sequents.
+--
+-- Although the search procedure uses labelled sequents, here we give the type
+-- of fully specified sequents.
+
+data Sequent l a where
+  SQ
+    :: (IsRightSynchronous p)
+    => S.Set (OLFormula l a)
+    -> [OLSLFormula l a]
+    -> LFormula p l a
+    -> Sequent l a
