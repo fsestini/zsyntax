@@ -23,6 +23,7 @@ import qualified Data.Set as S
 --------------------------------------------------------------------------------
 -- Decorated formulas
 
+-- TODO: Don't I have to include polarity in the type?
 data DecLFormula :: * -> * -> * where
   UnrestrNegativeDLF :: LFormula p l a -> DecLFormula l a
   LinearNegativeDLF
