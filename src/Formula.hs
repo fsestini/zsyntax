@@ -82,6 +82,8 @@ data OLFormula l a = forall p . OLF (LFormula p l a)
 -- | Type of opaque left-synchronous labelled formulas.
 data OLSLFormula l a = forall p . (IsLeftSynchronous p) => OLSLF (LFormula p l a)
 
+data OAtom a = forall b . OA (Atom b a)
+
 olfLabel :: OLFormula l a -> Label l a
 olfLabel (OLF f) = label f
 
