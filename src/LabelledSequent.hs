@@ -75,7 +75,7 @@ singletonLinearCtxt = undefined
 data LabelledSequent l a =
   LS { unrestrCtxt :: (UnrestrCtxt l a)
      , linearCtxt :: (LinearCtxt l a)
-     , label :: (Label l a) }
+     , goalLabel :: (Label l a) }
   deriving (Eq)
 
 subsumedBy
