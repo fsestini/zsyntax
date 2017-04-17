@@ -42,6 +42,10 @@ instance Ord (DecLFormula l a) where
 toUnrestrNeg :: OLFormula l a -> DecLFormula l a
 toUnrestrNeg (OLF f) = UnrestrNegativeDLF f
 
+-- | Same as frontierNegative, but for opaque formulas.
+ofn :: OLFormula l a -> S.Set (DecLFormula l a)
+ofn (OLF f) = frontierNegative f
+
 frontierNegative :: LFormula p l a -> S.Set (DecLFormula l a)
 frontierNegative (FAtom (RBAtom _)) = S.empty
 frontierNegative f@(FAtom (LBAtom _)) = S.singleton (LinearNegativeDLF f)
