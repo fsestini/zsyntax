@@ -14,6 +14,11 @@ type UnrestrCtxt l a = S.Set (Label l a)
 emptyUnrestrCtxt :: UnrestrCtxt l a
 emptyUnrestrCtxt = S.empty
 
+--------------------------------------------------------------------------------
+-- Numeric datatypes
+
+data Nat = Zero | NatSucc Nat
+
 -- | Type of positive natural numbers (hence excluding zero).
 data PosNat = One | Succ PosNat deriving (Eq, Show)
 
@@ -21,6 +26,19 @@ data PosNat = One | Succ PosNat deriving (Eq, Show)
 toInt :: PosNat -> Int
 toInt One       =  1
 toInt (Succ n)  =  toInt n + 1
+
+lLength :: [a] -> Nat
+lLength [] = Zero
+lLength (_ : xs) = NatSucc (lLength xs)
+
+succOfNat :: Nat -> PosNat
+succOfNat Zero = One
+succOfNat (NatSucc n) = Succ (succOfNat n)
+
+neLength :: NE.NonEmpty a -> PosNat
+neLength (_ NE.:| xs) = succOfNat (lLength xs)
+
+--------------------------------------------------------------------------------
 
 {-| Type of linear contexts.
 
