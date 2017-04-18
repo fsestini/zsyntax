@@ -9,8 +9,8 @@ import Rule
 import qualified Data.Set as S
 
 -- | An active sequent is a notable kind of labelled sequent.
-newtype ActiveSequent l a = AS (LabelledSequent l a)
 type ActiveSequents l a = S.Set (LabelledSequent l a)
+newtype ActiveSequent l a = AS (LabelledSequent l a) deriving (Eq, Ord)
 
 -- | Every active sequent is a labelled sequent.
 activeIsLabelled :: ActiveSequent l a -> LabelledSequent l a
