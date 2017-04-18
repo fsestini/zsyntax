@@ -16,6 +16,8 @@ type ActiveSequents l a = S.Set (LabelledSequent l a)
 activeIsLabelled :: ActiveSequent l a -> LabelledSequent l a
 activeIsLabelled (AS s) = s
 
+-- The prover state must include a global index of all sequents that have been
+-- added to the inactive set.
 class HasProverState l a m where
   getRules :: m ([Rule l a])
   addRule :: Rule l a -> m ()

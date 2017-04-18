@@ -21,6 +21,15 @@ type RuleRes l a = Rel (LabelledSequent l a) (LabelledSequent l a)
     to a rule application result. -}
 type Rule l a = (LabelledSequent l a) -> RuleRes l a
 
+{-
+
+We do not consider negative left-biased atoms (or positive right-biased atoms)
+when constructing derived rules from the formulas in the frontier.
+
+-}
+
+
+
 -- genRule
 --   :: (Eq a, Eq l)
 --   => DecLFormula l a -> Rule l a
