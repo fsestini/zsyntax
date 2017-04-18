@@ -1,6 +1,23 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Prover.Class where
+module Prover.Class
+  ( ActiveSequent
+  , activeIsLabelled
+  , HasProverEnvironment
+  , HasProverState
+  , haveGoal
+  , addActives
+  , addInactives
+  , addRules
+  , removeSubsumedByAll
+  , filterM
+  , filterUnsubsumed
+  , ProverT
+  ) where
 
 import Control.Monad (forM_)
 import Formula
@@ -75,3 +92,29 @@ filterUnsubsumed
   :: (HasProverState l a m, Monad m)
   => [LabelledSequent l a] -> m [LabelledSequent l a]
 filterUnsubsumed = filterM isNotSubsumed
+
+--------------------------------------------------------------------------------
+-- ProverT monad transformer
+
+type InactiveSequents l a = S.Set (LabelledSequent l a)
+
+data ProverState l a = PS
+  { rules :: [Rule l a]
+  , actives :: ActiveSequents l a
+  , inactives :: InactiveSequents l a
+  , globalIndex :: InactiveSequents l a
+  }
+data ProverEnvironment l a = PE
+  { goalSequent :: Sequent l a
+  , convertedGoalSequent :: LabelledSequent l a
+  }
+
+newtype ProverT l a m b = ProverT
+  { unProverT :: ReaderT (ProverEnvironment l a) (StateT (ProverState l a) m) b
+  }
+
+deriving instance (Functor m) => Functor (ProverT l a m)
+deriving instance (Monad m, Applicative m) => Applicative (ProverT l a m)
+deriving instance (Monad m) => Monad (ProverT l a m)
+deriving instance (Monad m) => MonadState (ProverState l a) (ProverT l a m)
+deriving instance (Monad m) => MonadReader (ProverEnvironment l a) (ProverT l a m)
