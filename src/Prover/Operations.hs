@@ -40,26 +40,26 @@ resRules (RAR r) = snd r
 
 --------------------------------------------------------------------------------
 
-partitionRuleRes :: [RuleRes l a] -> RuleAppRes l a
+partitionRuleRes :: (Ord l, Ord a) => [RuleRes l a] -> RuleAppRes l a
 partitionRuleRes =
   RAR . (S.fromList *** id) . fpartitionEithers . filterOut . fmap unRel
 
 --------------------------------------------------------------------------------
 
-applyAll :: [Rule l a] -> LabelledSequent l a -> RuleAppRes l a
+applyAll :: (Ord l, Ord a) => [Rule l a] -> LabelledSequent l a -> RuleAppRes l a
 applyAll rules sequent = partitionRuleRes . map ($ sequent) $ rules
 
-applyToActives :: ActiveSequents l a
-               -> [Rule l a]
-               -> RuleAppRes l a
+applyToActives
+  :: (Ord l, Ord a)
+  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
 applyToActives actives rules =
   partitionRuleRes $ concatMap mapper rules
   where
     mapper rule = fmap rule . S.toList $ actives
 
-percolate :: ActiveSequents l a
-          -> [Rule l a]
-          -> RuleAppRes l a
+percolate
+  :: (Ord l, Ord a)
+  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
 percolate _ [] = RAR (S.empty, [])
 percolate actives rules = r1 `mappend` r2
   where
