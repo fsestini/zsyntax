@@ -44,6 +44,11 @@ addRules
   => t (Rule l a) -> m ()
 addRules = mapM_ addRule
 
+removeSubsumedByAll
+  :: (Monad m, Traversable f, HasProverState l a m)
+  => f (LabelledSequent l a) -> m ()
+removeSubsumedByAll = mapM_ removeSubsumedBy
+
 filterM :: (Monad m) => (a -> m Bool) -> [a] -> m [a]
 filterM p [] = return []
 filterM p (x : xs) = do
