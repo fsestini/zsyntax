@@ -25,8 +25,8 @@ class HasProverState l a m where
   popInactive :: m (Maybe (ActiveSequent l a))
   getActives :: m (ActiveSequents l a)
   addActive :: ActiveSequent l a -> m ()
-  isNotSubsumed :: LabelledSequent l a -> m Bool
-  removeSubsumedBy :: LabelledSequent l a -> m ()
+  isNotSubsumed :: ActiveSequent l a -> m Bool
+  removeSubsumedBy :: ActiveSequent l a -> m ()
 
 class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
