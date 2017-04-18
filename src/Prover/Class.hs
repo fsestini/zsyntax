@@ -27,6 +27,7 @@ class HasProverState l a m where
   removeSubsumedBy :: LabelledSequent l a -> m ()
 
 class HasProverEnvironment l a m where
+  getGoal :: m (Sequent l a)
   subsumesGoal :: LabelledSequent l a -> m Bool
 
 addActives
