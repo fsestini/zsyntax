@@ -6,9 +6,10 @@
 
 module Prover.Class
   ( ActiveSequent
+  , ActiveSequents
   , activeIsLabelled
-  , HasProverEnvironment
-  , HasProverState
+  , HasProverEnvironment(..)
+  , HasProverState(..)
   , haveGoal
   , addActives
   , addInactives
