@@ -30,6 +30,16 @@ class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
   subsumesGoal :: LabelledSequent l a -> m Bool
 
+haveGoal
+  :: (Monad m, HasProverEnvironment l a m)
+  => [LabelledSequent l a] -> m (Maybe (LabelledSequent l a))
+haveGoal [] = return Nothing
+haveGoal (sequent:rest) = do
+  res <- subsumesGoal sequent
+  case res of
+    True -> return . Just $ sequent
+    False -> haveGoal rest
+
 addActives
   :: (Traversable t, Monad m, HasProverState l a m)
   => t (ActiveSequent l a) -> m ()
