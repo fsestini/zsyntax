@@ -52,10 +52,9 @@ applyAll rules sequent = partitionRuleRes . map ($ sequent) $ rules
 applyToActives
   :: (Ord l, Ord a)
   => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
-applyToActives actives rules =
-  partitionRuleRes $ concatMap mapper rules
+applyToActives actives rules = partitionRuleRes $ concatMap mapper rules
   where
-    mapper rule = fmap rule . S.toList $ actives
+    mapper rule = fmap (rule . activeIsLabelled) . S.toList $ actives
 
 percolate
   :: (Ord l, Ord a)
