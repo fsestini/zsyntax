@@ -14,7 +14,6 @@ import Prelude hiding (map)
 import Control.Applicative
 import Control.Arrow
 import qualified Data.Set as S
-import Prover.Frontier
 import LabelledSequent
 import TypeClasses
 import Rel
