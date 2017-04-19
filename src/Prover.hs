@@ -26,6 +26,7 @@ module Prover
   , extractSequent
   , foldActives
   , applyRule
+  , isGoal
   ) where
 
 import Prover.Structures

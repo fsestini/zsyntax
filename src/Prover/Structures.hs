@@ -29,6 +29,7 @@ module Prover.Structures
   , extractSequent
   , foldActives
   , Prover.Structures.initialSequentsAndRules
+  , isGoal
   ) where
 
 import Control.Arrow
@@ -125,9 +126,15 @@ foldActives
   -> b
 foldActives folder (AS actives) = folder actives
 
+isGoal
   :: (Ord l, Ord a)
   => SearchSequent Goal l a
+  -> SearchSequent FSChecked l a
   -> Maybe (LabelledSequent l a)
+isGoal (GoalSS goal) (FSCheckedSS fss) =
+  if fss `subsumes` goal
+    then Just fss
+    else Nothing
 
 activate
   :: (Ord l, Ord a)
