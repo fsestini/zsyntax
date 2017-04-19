@@ -3,7 +3,31 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 
-module Prover.Structures where
+module Prover.Structures
+  ( Stage(..)
+  , SearchSequent
+  , ActiveSequent
+  , InactiveSequent
+  , ActiveSequents
+  , InactiveSequents
+  , ConclSequent
+  , GlobalIndex
+  , RuleAppRes
+  , resRules
+  , resSequents
+  , applyAll
+  , percolate
+  , initialIsFSChecked
+  , initialIsBSChecked
+  , initialize
+  , subsumesGoalOp
+  , removeSubsumedByOp
+  , fwdSubsumes
+  , activate
+  , popInactiveOp
+  , addToInactives
+  , addToIndex
+  ) where
 
 import Filterable
 import Control.Arrow
