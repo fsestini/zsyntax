@@ -20,8 +20,9 @@ class HasProverState l a m where
   addInactive :: SearchSequent BSChecked l a -> m ()
   popInactive :: m (Maybe (ActiveSequent l a))
   getActives :: m (ActiveSequents l a)
-  isNotFwdSubsumed :: ConclSequent l a -> m (Maybe (SearchSequent FSChecked l a))
   removeSubsumedBy :: SearchSequent FSChecked l a -> m ()
+  isNotFwdSubsumed :: ConclSequent l a
+                   -> m (Maybe (SearchSequent FSChecked l a))
 
 class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
