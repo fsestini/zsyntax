@@ -25,6 +25,8 @@ type ActiveSequents l a = S.Set (ActiveSequent l a)
 -- | Every active sequent is a labelled sequent.
 activeIsLabelled :: ActiveSequent l a -> LabelledSequent l a
 activeIsLabelled (AS s) = s
+import Prover.Structures
+import Prover.Operations
 
 -- The prover state must include a global index of all sequents that have been
 -- added to the inactive set.
