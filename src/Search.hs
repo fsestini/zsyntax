@@ -6,7 +6,7 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Prover where
+module Search where
 
 import Control.Applicative
 import Control.Arrow
