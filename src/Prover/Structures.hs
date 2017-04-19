@@ -3,23 +3,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 
-module Prover.Structures
-  ( SearchSequent(..)
-  , Stage(..)
-  , initialize
-  , initialIsFSChecked
-  , initialIsBSChecked
-  , RuleAppRes(..)
-  , resSequents
-  , resRules
-  , partitionRuleRes
-  , extractSequent
-  , ActiveSequents
-  , ActiveSequent
-  , InactiveSequent
-  , InactiveSequents
-  , ConclSequent
-  ) where
+module Prover.Structures where
 
 import Filterable
 import Control.Arrow
