@@ -72,6 +72,8 @@ extractSequent (InactiveSS s) = s
 extractSequent (ConclSS s) = s
 extractSequent (BSCheckedSS s) = s
 extractSequent (FSCheckedSS s) = s
+extractSequent (GlIndexSS s) = s
+extractSequent (GoalSS s) = s
 
 instance (Eq a, Eq l) => Eq (SearchSequent s l a) where
   s1 == s2 = (extractSequent s1) == (extractSequent s2)
