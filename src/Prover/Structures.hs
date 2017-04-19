@@ -29,7 +29,6 @@ module Prover.Structures
   , addToIndex
   ) where
 
-import Filterable
 import Control.Arrow
 import LabelledSequent
 import qualified Data.Set as S

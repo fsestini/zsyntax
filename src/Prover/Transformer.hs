@@ -20,7 +20,6 @@ import Formula
 import Rule
 import Control.Monad.Trans.State.Strict hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
-import Filterable
 
 import Prover.Class
 import Prover.Structures

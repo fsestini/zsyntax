@@ -20,7 +20,7 @@ module Prover.Frontier
 -}
 
 import Prover.Structures
-import Filterable
+import TypeClasses (filterOut, partitionEithers)
 import LabelledSequent
 import Rule
 import Formula
@@ -200,5 +200,5 @@ initialSequentsAndRules =
   map genRuleFromValid >>>
   map unRel >>>
   filterOut >>>
-  fpartitionEithers >>>
   (S.fromList . map initialize *** id)
+  partitionEithers >>>

@@ -8,7 +8,7 @@ module Prover.Class where
 import Formula
 import LabelledSequent
 import Rule
-import Filterable
+import TypeClasses
 
 import Prover.Structures
 
