@@ -77,8 +77,8 @@ otterLoop = do
     Just sequent -> do
       res <- processNewActive @m @l @a sequent
       unsubSeqs <- filterUnsubsumed (S.toList . resSequents $ res)
-      removeSubsumedByAll unsubSeqs
-      addInactives unsubSeqs
+      unsubSeqs' <- removeSubsumedByAll unsubSeqs
+      addInactives unsubSeqs'
       addRules (resRules res)
       (<|>) <$> (haveGoal unsubSeqs) <*> otterLoop
 
