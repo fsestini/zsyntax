@@ -39,11 +39,6 @@ haveGoal (sequent:rest) = do
     True -> return . Just $ sequent
     False -> haveGoal rest
 
-addActives
-  :: (Traversable t, Monad m, HasProverState l a m)
-  => t (ActiveSequent l a) -> m ()
-addActives = mapM_ addActive
-
 addInactives
   :: (Traversable t, Monad m, HasProverState l a m)
   => t (SearchSequent BSChecked l a) -> m ()
