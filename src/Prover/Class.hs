@@ -50,8 +50,8 @@ addRules
 addRules = mapM_ addRule
 
 removeSubsumedByAll
-  :: (Monad m, Traversable f, HasProverState l a m)
-  => f (SearchSequent FSChecked l a) -> m (f (SearchSequent BSChecked l a))
+  :: (Monad m, Traversable t, HasProverState l a m)
+  => t (SearchSequent FSChecked l a) -> m (t (SearchSequent BSChecked l a))
 removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
