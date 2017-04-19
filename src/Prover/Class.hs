@@ -18,13 +18,6 @@ import Control.Monad.State.Class
 import Control.Monad.Reader.Class
 import Data.Maybe (listToMaybe)
 
--- | An active sequent is a notable kind of labelled sequent.
-newtype ActiveSequent l a = AS (LabelledSequent l a) deriving (Eq, Ord)
-type ActiveSequents l a = S.Set (ActiveSequent l a)
-
--- | Every active sequent is a labelled sequent.
-activeIsLabelled :: ActiveSequent l a -> LabelledSequent l a
-activeIsLabelled (AS s) = s
 import Prover.Structures
 import Prover.Operations
 
