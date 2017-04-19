@@ -54,6 +54,7 @@ newtype ActiveSequents l a = AS (S.Set (SearchSequent Active l a))
 type InactiveSequent l a = SearchSequent Inactive l a
 newtype InactiveSequents l a = IS (S.Set (InactiveSequent l a))
 type ConclSequent l a = SearchSequent Concl l a
+newtype GlobalIndex l a = GI (S.Set (SearchSequent GlIndex l a))
 
 --------------------------------------------------------------------------------
 
