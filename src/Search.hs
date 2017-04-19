@@ -11,10 +11,10 @@ module Search where
 import Control.Applicative
 import Control.Arrow
 import qualified Data.Set as S
-import Prover.Class
 import Prover.Frontier
 import LabelledSequent
-import Prover.Operations
+
+import Prover
 
 -- TODO: use the real thing
 type DerivationTerm l a = LabelledSequent l a
