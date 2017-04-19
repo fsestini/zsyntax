@@ -5,21 +5,12 @@
 
 module Prover.Class where
 
-import Control.Monad (forM_)
 import Formula
 import LabelledSequent
 import Rule
 import Filterable
-import qualified Data.Set as S
-
-import Control.Monad.Trans.State.Strict hiding (get, put)
-import Control.Monad.Trans.Reader hiding (ask)
-import Control.Monad.State.Class
-import Control.Monad.Reader.Class
-import Data.Maybe (listToMaybe)
 
 import Prover.Structures
-import Prover.Operations
 
 -- The prover state must include a global index of all sequents that have been
 -- added to the inactive set.
