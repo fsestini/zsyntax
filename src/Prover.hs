@@ -20,11 +20,6 @@ module Prover
   , Rule
   , RuleRes
   , initialSequentsAndRules
-  , RuleAppRes
-  , resRules
-  , resSequents
-  , applyAll
-  , percolate
   , haveGoal
   , initialIsFSChecked
   , initialIsBSChecked

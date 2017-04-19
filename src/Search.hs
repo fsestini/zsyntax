@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RankNTypes #-}
@@ -8,11 +9,14 @@
 
 module Search where
 
+import Data.Foldable
+import Prelude hiding (map)
 import Control.Applicative
 import Control.Arrow
 import qualified Data.Set as S
 import Prover.Frontier
 import LabelledSequent
+import TypeClasses
 import Rel
 import Prover
 
@@ -91,3 +95,40 @@ processNewActive sequent = do
   let r1 = applyAll rules sequent
       r2 = percolate actives . resRules $ r1
   return $ r1 `mappend` r2
+
+--------------------------------------------------------------------------------
+
+-- | Result type of matching a list of rules to an input sequent.
+type RuleAppRes l a = (S.Set (ConclSequent l a), [Rule l a])
+
+resSequents :: RuleAppRes l a -> S.Set (ConclSequent l a)
+resSequents r = fst r
+
+resRules :: RuleAppRes l a -> [Rule l a]
+resRules r = snd r
+
+partitionRuleRes
+  :: (CanMap f, CanPartitionEithers f, Foldable f, Ord l, Ord a)
+  => f (RuleRes l a) -> RuleAppRes l a
+partitionRuleRes =
+  (S.fromList . toList *** toList) . partitionEithers . filterOut . map unRel
+
+applyAll
+  :: (Ord a, Ord l, Foldable f, CanPartitionEithers f, CanMap f)
+  => f (Rule l a) -> ActiveSequent l a -> RuleAppRes l a
+applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
+
+applyToActives
+  :: (Ord l, Ord a, Foldable f)
+  => ActiveSequents l a -> f (Rule l a) -> RuleAppRes l a
+applyToActives actives rules = partitionRuleRes $ concatMap mapper rules
+  where
+    mapper rule = foldActives (foldMap (pure . applyRule rule)) actives
+
+percolate
+  :: (Ord l, Ord a, Foldable f)
+  => ActiveSequents l a -> f (Rule l a) -> RuleAppRes l a
+percolate actives rules = r1 `mappend` r2
+  where
+    r1 = applyToActives actives rules
+    r2 = percolate actives . resRules $ r1

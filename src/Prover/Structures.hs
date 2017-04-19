@@ -13,11 +13,6 @@ module Prover.Structures
   , InactiveSequents
   , ConclSequent
   , GlobalIndex
-  , RuleAppRes
-  , resRules
-  , resSequents
-  , applyAll
-  , percolate
   , Rule
   , RuleRes
   , applyRule
@@ -101,28 +96,13 @@ initialIsBSChecked (InitSS s) = BSCheckedSS s
 
 --------------------------------------------------------------------------------
 
--- | Result type of matching a list of rules to an input sequent.
-newtype RuleAppRes l a =
-  RAR (S.Set (SearchSequent Concl l a), [Rule l a])
-  deriving (Monoid)
 {-| Type of elements that represent the result of applying an inference rule.
 
-resSequents :: RuleAppRes l a -> S.Set (SearchSequent Concl l a)
-resSequents (RAR r) = fst r
     Such application may either fail, succeed with a value (when the rule has
     been fully applied), or succeed with a function (when the rule is only
     partially applied and has still some premises to match). -}
 type RuleRes l a = Rel (LabelledSequent l a) (ConclSequent l a)
 
-resRules :: RuleAppRes l a -> [Rule l a]
-resRules (RAR r) = snd r
-
-partitionRuleRes
-  :: (Ord l, Ord a)
-  => [RuleRes l a] -> RuleAppRes l a
-partitionRuleRes =
-  RAR .
-  (S.fromList . map ConclSS *** id) . fpartitionEithers . filterOut . fmap unRel
 {-| Type of inference rules.
     Axioms are not considered rules in this case, so a rule takes at least one
     premise. Hence the corresponding type is a function from a premise sequent
@@ -132,19 +112,11 @@ type Rule l a = (LabelledSequent l a) -> RuleRes l a
 --------------------------------------------------------------------------------
 -- Operations
 
-applyAll :: (Ord l, Ord a) => [Rule l a] -> ActiveSequent l a -> RuleAppRes l a
-applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
 applyRule :: Rule l a
           -> ActiveSequent l a
           -> RuleRes l a
 applyRule rule (ActiveSS s) = rule s
 
-applyToActives
-  :: (Ord l, Ord a)
-  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
-applyToActives (AS actives) rules = partitionRuleRes $ concatMap mapper rules
-  where
-    mapper rule = fmap (rule . extractSequent) . S.toList $ actives
 foldActives
   :: (forall f. (Foldable f) =>
                   f (ActiveSequent l a) -> b)
@@ -152,25 +124,9 @@ foldActives
   -> b
 foldActives folder (AS actives) = folder actives
 
-percolate
-  :: (Ord l, Ord a)
-  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
-percolate _ [] = RAR (S.empty, [])
-percolate actives rules = r1 `mappend` r2
-  where
-    r1 = applyToActives actives rules
-    r2 = percolate actives . resRules $ r1
-
-haveGoalOp
   :: (Ord l, Ord a)
   => SearchSequent Goal l a
-  -> [SearchSequent FSChecked l a]
   -> Maybe (LabelledSequent l a)
-haveGoalOp _ [] = Nothing
-haveGoalOp goal (s:ss) =
-  if (extractSequent s) `subsumes` (extractSequent goal)
-    then Just (extractSequent s)
-    else haveGoalOp goal ss
 
 activate
   :: (Ord l, Ord a)
