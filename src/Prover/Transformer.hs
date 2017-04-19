@@ -24,7 +24,6 @@ import Filterable
 
 import Prover.Class
 import Prover.Structures
-import Prover.Operations
 
 --------------------------------------------------------------------------------
 -- ProverT monad transformer
