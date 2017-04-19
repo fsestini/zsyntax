@@ -63,32 +63,27 @@ instance (Monad m, Ord l, Ord a) =>
     put (PS r as (addToInactives is i) (addToIndex gi i))
   popInactive = do
     (PS r as is gi) <- get
-    let newIs = S.fromList . tail . S.toList $ is
-        popped = listToMaybe . S.toList $ is
-    case popped of
-      Just sequent -> do
-        let (newActives, active) = activate as sequent
-        put (PS r newActives newIs gi)
+    case popInactiveOp is of
+      Just (newIs, inactive) -> do
+        let (newAs, active) = activate as inactive
+        put (PS r newAs newIs gi)
         return . Just $ active
       Nothing -> return Nothing
   getActives = do
     (PS _ as _ _) <- get
     return as
   isNotFwdSubsumed conclSeq = do
-    gi <- S.toList . globalIndex <$> get
-    let res = map (flip fwdSubsumes conclSeq) $ gi
-        res2 = filterOut res
-    if (length res) == (length res2)
-       then return . Just . head $ res2 -- !!!! TODO !!!! use non-empty lists!!
-       else return Nothing
+    gi <- globalIndex <$> get
+    return $ fwdSubsumes gi conclSeq
   removeSubsumedBy fschecked = do
     (PS r as is gi) <- get
-    let newIs = S.filter (\iseq -> not (fschecked `bwdSubsumes` iseq)) is
+    let (newIs, bschecked) = removeSubsumedByOp fschecked is
     put (PS r as newIs gi)
+    return bschecked
 
 instance (Monad m, Ord l, Ord a) =>
          HasProverEnvironment l a (ProverT l a m) where
   getGoal = goalSequent <$> ask
   subsumesGoal s = do
     gs <- convertedGoalSequent <$> ask
-    return $ s `Prover.Operations.subsumesGoal` gs
+    return (s `Prover.Structures.subsumesGoalOp` gs)
