@@ -56,7 +56,7 @@ addActives = mapM_ addActive
 
 addInactives
   :: (Traversable t, Monad m, HasProverState l a m)
-  => t (LabelledSequent l a) -> m ()
+  => t (SearchSequent BSChecked l a) -> m ()
 addInactives = mapM_ addInactive
 
 addRules
@@ -66,7 +66,7 @@ addRules = mapM_ addRule
 
 removeSubsumedByAll
   :: (Monad m, Traversable f, HasProverState l a m)
-  => f (LabelledSequent l a) -> m ()
+  => f (SearchSequent FSChecked l a) -> m ()
 removeSubsumedByAll = mapM_ removeSubsumedBy
 
 filterM :: (Monad m) => (a -> m Bool) -> [a] -> m [a]
@@ -80,5 +80,5 @@ filterM p (x : xs) = do
 
 filterUnsubsumed
   :: (HasProverState l a m, Monad m)
-  => [LabelledSequent l a] -> m [LabelledSequent l a]
-filterUnsubsumed = filterM isNotSubsumed
+  => [ConclSequent l a] -> m [SearchSequent FSChecked l a]
+filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed
