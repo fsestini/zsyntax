@@ -75,7 +75,6 @@ otterLoop = do
   case inactive of
     Nothing -> return Nothing
     Just sequent -> do
-      addActive sequent
       res <- processNewActive @m @l @a sequent
       unsubSeqs <- filterUnsubsumed (S.toList . resSequents $ res)
       removeSubsumedByAll unsubSeqs
