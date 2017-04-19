@@ -28,6 +28,8 @@ module Prover
   , haveGoal
   , initialIsFSChecked
   , initialIsBSChecked
+  , extractSequent
+  , foldActives
   , applyRule
   ) where
 

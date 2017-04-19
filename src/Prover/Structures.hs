@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
@@ -142,6 +143,12 @@ applyToActives
 applyToActives (AS actives) rules = partitionRuleRes $ concatMap mapper rules
   where
     mapper rule = fmap (rule . extractSequent) . S.toList $ actives
+foldActives
+  :: (forall f. (Foldable f) =>
+                  f (ActiveSequent l a) -> b)
+  -> ActiveSequents l a
+  -> b
+foldActives folder (AS actives) = folder actives
 
 percolate
   :: (Ord l, Ord a)
