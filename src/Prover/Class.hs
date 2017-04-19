@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
+
 module Prover.Class where
 
 import Control.Monad (forM_)
