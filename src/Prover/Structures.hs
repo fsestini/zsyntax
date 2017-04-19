@@ -86,3 +86,93 @@ partitionRuleRes
 partitionRuleRes =
   RAR .
   (S.fromList . map ConclSS *** id) . fpartitionEithers . filterOut . fmap unRel
+
+--------------------------------------------------------------------------------
+-- Operations
+
+applyAll :: (Ord l, Ord a) => [Rule l a] -> ActiveSequent l a -> RuleAppRes l a
+applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
+
+applyToActives
+  :: (Ord l, Ord a)
+  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
+applyToActives (AS actives) rules = partitionRuleRes $ concatMap mapper rules
+  where
+    mapper rule = fmap (rule . extractSequent) . S.toList $ actives
+
+percolate
+  :: (Ord l, Ord a)
+  => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
+percolate _ [] = RAR (S.empty, [])
+percolate actives rules = r1 `mappend` r2
+  where
+    r1 = applyToActives actives rules
+    r2 = percolate actives . resRules $ r1
+
+haveGoalOp
+  :: (Ord l, Ord a)
+  => SearchSequent Goal l a
+  -> [SearchSequent FSChecked l a]
+  -> Maybe (LabelledSequent l a)
+haveGoalOp _ [] = Nothing
+haveGoalOp goal (s:ss) =
+  if (extractSequent s) `subsumes` (extractSequent goal)
+    then Just (extractSequent s)
+    else haveGoalOp goal ss
+
+activate
+  :: (Ord l, Ord a)
+  => ActiveSequents l a
+  -> InactiveSequent l a
+  -> (ActiveSequents l a, ActiveSequent l a)
+activate (AS as) (InactiveSS s) = (AS (S.insert (ActiveSS s) as), ActiveSS s)
+
+popInactiveOp :: (Ord a, Ord l) => InactiveSequents l a
+              -> Maybe (InactiveSequents l a, InactiveSequent l a)
+popInactiveOp (IS is) =
+  case S.toList is of
+    [] -> Nothing
+    (x:xs) -> Just (IS . S.fromList $ xs, x)
+
+addToIndex
+  :: (Ord l, Ord a)
+  => GlobalIndex l a
+  -> SearchSequent BSChecked l a
+  -> GlobalIndex l a
+addToIndex (GI gi) (BSCheckedSS s) = GI (S.insert (GlIndexSS s) gi)
+
+addToInactives
+  :: (Ord l, Ord a)
+  => InactiveSequents l a
+  -> SearchSequent BSChecked l a
+  -> InactiveSequents l a
+addToInactives (IS ins) (BSCheckedSS s) = IS (S.insert (InactiveSS s) ins)
+
+fwdSubsumes
+  :: (Ord a, Ord l)
+  => GlobalIndex l a
+  -> SearchSequent Concl l a
+  -> Maybe (SearchSequent FSChecked l a)
+fwdSubsumes (GI globalIndex) (ConclSS s) =
+  if or . S.map (\gi -> (extractSequent gi) `subsumes` s) $ globalIndex
+    then Nothing
+    else Just (FSCheckedSS s)
+
+removeSubsumedByOp
+  :: (Ord a, Ord l)
+  => SearchSequent FSChecked l a
+  -> InactiveSequents l a
+  -> (InactiveSequents l a, SearchSequent BSChecked l a)
+removeSubsumedByOp (FSCheckedSS s) (IS is) =
+  ( IS (S.filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
+  , BSCheckedSS s)
+
+subsumesGoalOp
+  :: (Ord a, Ord l)
+  => SearchSequent FSChecked l a
+  -> SearchSequent Goal l a
+  -> Maybe (LabelledSequent l a)
+subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
+  if s1 `subsumes` s2
+    then Just s1
+    else Nothing
