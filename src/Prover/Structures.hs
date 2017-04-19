@@ -80,6 +80,9 @@ resSequents (RAR r) = fst r
 resRules :: RuleAppRes l a -> [Rule l a]
 resRules (RAR r) = snd r
 
-partitionRuleRes :: (Ord l, Ord a) => [RuleRes l a] -> RuleAppRes l a
+partitionRuleRes
+  :: (Ord l, Ord a)
+  => [RuleRes l a] -> RuleAppRes l a
 partitionRuleRes =
-  RAR . (S.fromList . map ConclSS *** id) . fpartitionEithers . filterOut . fmap unRel
+  RAR .
+  (S.fromList . map ConclSS *** id) . fpartitionEithers . filterOut . fmap unRel
