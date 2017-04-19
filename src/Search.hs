@@ -55,9 +55,9 @@ doSearch = do
   goal <- getGoal @l @a
   let (initialSequents, initialRules) =
         (S.toList *** id) . initialSequentsAndRules $ goal
-  addInactives initialSequents
+  addInactives (map initialIsBSChecked initialSequents)
   addRules initialRules
-  (<|>) <$> (haveGoal initialSequents) <*> otterLoop
+  (<|>) <$> (haveGoal (map initialIsFSChecked initialSequents)) <*> otterLoop
 
 otterLoop
   :: forall m l a.
