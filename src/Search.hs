@@ -13,7 +13,7 @@ import Control.Arrow
 import qualified Data.Set as S
 import Prover.Frontier
 import LabelledSequent
-
+import Rel
 import Prover
 
 -- TODO: use the real thing

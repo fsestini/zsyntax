@@ -19,10 +19,8 @@ module Prover.Frontier
 
 -}
 
-import Prover.Structures
 import TypeClasses (filterOut, partitionEithers)
 import LabelledSequent
-import Rule
 import Formula
 import qualified Data.Set as S
 import Relation
@@ -166,7 +164,9 @@ decideValid (ODF decf) =
     LinearPositiveAtom (LBAtom _) -> Just . VDF $ decf
     LinearPositive _ -> Just . VDF $ decf
 
-genRuleFromValid :: (Eq a, Eq l) => ValidDecFormula l a -> RuleRes l a
+genRuleFromValid
+  :: (Eq a, Eq l)
+  => ValidDecFormula l a -> Rel (LabelledSequent l a) (LabelledSequent l a)
 genRuleFromValid (VDF f) =
   case f of
     UnrestrNegativeAtom a -> unrestr (FAtom a)
@@ -191,7 +191,8 @@ genRuleFromValid (VDF f) =
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
-  => Sequent l a -> (S.Set (SearchSequent Initial l a), [Rule l a])
+  => Sequent l a
+  -> (S.Set (LabelledSequent l a), [(LabelledSequent l a -> Rel (LabelledSequent l a) (LabelledSequent l a))])
 initialSequentsAndRules =
   frontier >>>
   S.toList >>>
@@ -200,5 +201,6 @@ initialSequentsAndRules =
   map genRuleFromValid >>>
   map unRel >>>
   filterOut >>>
-  (S.fromList . map initialize *** id)
   partitionEithers >>>
+  (S.fromList
+  *** id)

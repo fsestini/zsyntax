@@ -17,6 +17,8 @@ module Prover
   , InactiveSequent
   , InactiveSequents
   , ConclSequent
+  , Rule
+  , RuleRes
   , initialSequentsAndRules
   , RuleAppRes
   , resRules
@@ -28,7 +30,6 @@ module Prover
   , initialIsBSChecked
   ) where
 
-import Prover.Frontier
 import Prover.Structures
 import Prover.Class
 import Prover.Transformer

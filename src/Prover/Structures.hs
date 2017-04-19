@@ -17,6 +17,8 @@ module Prover.Structures
   , resSequents
   , applyAll
   , percolate
+  , Rule
+  , RuleRes
   , initialIsFSChecked
   , initialIsBSChecked
   , initialize
@@ -27,13 +29,16 @@ module Prover.Structures
   , popInactiveOp
   , addToInactives
   , addToIndex
+  , foldActives
+  , Prover.Structures.initialSequentsAndRules
   ) where
 
 import Control.Arrow
 import LabelledSequent
 import qualified Data.Set as S
-import Rule
 import Rel
+import Prover.Frontier (initialSequentsAndRules)
+import Formula
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -96,9 +101,14 @@ initialIsBSChecked (InitSS s) = BSCheckedSS s
 newtype RuleAppRes l a =
   RAR (S.Set (SearchSequent Concl l a), [Rule l a])
   deriving (Monoid)
+{-| Type of elements that represent the result of applying an inference rule.
 
 resSequents :: RuleAppRes l a -> S.Set (SearchSequent Concl l a)
 resSequents (RAR r) = fst r
+    Such application may either fail, succeed with a value (when the rule has
+    been fully applied), or succeed with a function (when the rule is only
+    partially applied and has still some premises to match). -}
+type RuleRes l a = Rel (LabelledSequent l a) (ConclSequent l a)
 
 resRules :: RuleAppRes l a -> [Rule l a]
 resRules (RAR r) = snd r
@@ -109,6 +119,11 @@ partitionRuleRes
 partitionRuleRes =
   RAR .
   (S.fromList . map ConclSS *** id) . fpartitionEithers . filterOut . fmap unRel
+{-| Type of inference rules.
+    Axioms are not considered rules in this case, so a rule takes at least one
+    premise. Hence the corresponding type is a function from a premise sequent
+    to a rule application result. -}
+type Rule l a = (LabelledSequent l a) -> RuleRes l a
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -199,3 +214,11 @@ subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
   if s1 `subsumes` s2
     then Just s1
     else Nothing
+
+initialSequentsAndRules
+  :: (Eq a, Eq l, Ord l, Ord a)
+  => Sequent l a
+  -> (S.Set (SearchSequent Initial l a), [Rule l a])
+initialSequentsAndRules =
+  (S.map InitSS *** fmap (fmap (fmap ConclSS))) .
+  Prover.Frontier.initialSequentsAndRules
