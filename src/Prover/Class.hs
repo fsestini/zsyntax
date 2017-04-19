@@ -28,16 +28,16 @@ import Prover.Operations
 class HasProverState l a m where
   getRules :: m ([Rule l a])
   addRule :: Rule l a -> m ()
-  addInactive :: LabelledSequent l a -> m ()
+  addInactive :: SearchSequent BSChecked l a -> m ()
   popInactive :: m (Maybe (ActiveSequent l a))
   getActives :: m (ActiveSequents l a)
-  isNotSubsumed :: ActiveSequent l a -> m Bool
-  removeSubsumedBy :: ActiveSequent l a -> m ()
   -- addActive :: ActiveSequent l a -> m ()
+  isNotFwdSubsumed :: ConclSequent l a -> m (Maybe (SearchSequent FSChecked l a))
+  removeSubsumedBy :: SearchSequent FSChecked l a -> m ()
 
 class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
-  subsumesGoal :: LabelledSequent l a -> m Bool
+  subsumesGoal :: SearchSequent FSChecked l a -> m Bool
 
 haveGoal
   :: (Monad m, HasProverEnvironment l a m)
