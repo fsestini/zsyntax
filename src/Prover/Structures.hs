@@ -19,6 +19,7 @@ module Prover.Structures
   , percolate
   , Rule
   , RuleRes
+  , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
   , initialize
@@ -130,6 +131,10 @@ type Rule l a = (LabelledSequent l a) -> RuleRes l a
 
 applyAll :: (Ord l, Ord a) => [Rule l a] -> ActiveSequent l a -> RuleAppRes l a
 applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
+applyRule :: Rule l a
+          -> ActiveSequent l a
+          -> RuleRes l a
+applyRule rule (ActiveSS s) = rule s
 
 applyToActives
   :: (Ord l, Ord a)

@@ -28,6 +28,7 @@ module Prover
   , haveGoal
   , initialIsFSChecked
   , initialIsBSChecked
+  , applyRule
   ) where
 
 import Prover.Structures
