@@ -11,6 +11,7 @@ import Control.Monad (forM_)
 import Formula
 import LabelledSequent
 import Rule
+import Filterable
 import qualified Data.Set as S
 
 import Control.Monad.Trans.State.Strict hiding (get, put)
