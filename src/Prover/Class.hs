@@ -1,8 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Prover.Class where
