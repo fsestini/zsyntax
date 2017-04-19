@@ -19,6 +19,7 @@ module Prover.Frontier
 
 -}
 
+import Prover.Structures
 import Filterable
 import LabelledSequent
 import Rule
@@ -190,7 +191,7 @@ genRuleFromValid (VDF f) =
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
-  => Sequent l a -> (S.Set (LabelledSequent l a), [Rule l a])
+  => Sequent l a -> (S.Set (SearchSequent Initial l a), [Rule l a])
 initialSequentsAndRules =
   frontier >>>
   S.toList >>>
@@ -200,4 +201,4 @@ initialSequentsAndRules =
   map unRel >>>
   filterOut >>>
   fpartitionEithers >>>
-  (S.fromList *** id)
+  (S.fromList . map initialize *** id)
