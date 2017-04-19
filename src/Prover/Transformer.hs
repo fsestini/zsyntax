@@ -32,7 +32,7 @@ data ProverState l a = PS
   { rules :: [Rule l a]
   , actives :: ActiveSequents l a
   , inactives :: InactiveSequents l a
-  , globalIndex :: S.Set (SearchSequent GlIndex l a)
+  , globalIndex :: GlobalIndex l a
   }
 data ProverEnvironment l a = PE
   { goalSequent :: Sequent l a
