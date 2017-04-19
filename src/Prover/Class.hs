@@ -20,9 +20,10 @@ class HasProverState l a m where
   addInactive :: SearchSequent BSChecked l a -> m ()
   popInactive :: m (Maybe (ActiveSequent l a))
   getActives :: m (ActiveSequents l a)
-  removeSubsumedBy :: SearchSequent FSChecked l a -> m ()
   isNotFwdSubsumed :: ConclSequent l a
                    -> m (Maybe (SearchSequent FSChecked l a))
+  removeSubsumedBy :: SearchSequent FSChecked l a
+                   -> m (SearchSequent BSChecked l a)
 
 class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
@@ -55,8 +56,8 @@ addRules = mapM_ addRule
 
 removeSubsumedByAll
   :: (Monad m, Traversable f, HasProverState l a m)
-  => f (SearchSequent FSChecked l a) -> m ()
-removeSubsumedByAll = mapM_ removeSubsumedBy
+  => f (SearchSequent FSChecked l a) -> m (f (SearchSequent BSChecked l a))
+removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
   :: (HasProverState l a m, Monad m)
