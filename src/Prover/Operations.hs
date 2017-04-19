@@ -1,60 +1,36 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
 
-module Prover.Operations
-  ( RuleAppRes
-  , resSequents
-  , resRules
-  , applyAll
-  , applyToActives
-  , percolate
-  ) where
+module Prover.Operations where
+  -- ( RuleAppRes
+  -- , resSequents
+  -- , resRules
+  -- , applyAll
+  -- , applyToActives
+  -- , percolate
+  -- ) where
 
-import Control.Arrow
 import LabelledSequent
 import Rule
 import qualified Data.Set as S
-import Filterable
-import Rel
-import Prover.Class
 
---------------------------------------------------------------------------------
+import Prover.Structures
 
--- | Result type of matching a list of rules to an input sequent.
-newtype RuleAppRes l a =
-  RAR (S.Set (LabelledSequent l a), [Rule l a])
-  deriving (Monoid)
-
--- instance Monoid (RuleAppRes l a) where
---   mempty = (S.empty, [])
---   mappend (s1, l1) (s2, l2) = (s1 `S.union` s2, l1 ++ )
-
-resSequents :: RuleAppRes l a -> S.Set (LabelledSequent l a)
-resSequents (RAR r) = fst r
-
-resRules :: RuleAppRes l a -> [Rule l a]
-resRules (RAR r) = snd r
-
---------------------------------------------------------------------------------
-
-partitionRuleRes :: (Ord l, Ord a) => [RuleRes l a] -> RuleAppRes l a
-partitionRuleRes =
-  RAR . (S.fromList *** id) . fpartitionEithers . filterOut . fmap unRel
-
---------------------------------------------------------------------------------
-
-applyAll :: (Ord l, Ord a) => [Rule l a] -> LabelledSequent l a -> RuleAppRes l a
-applyAll rules sequent = partitionRuleRes . map ($ sequent) $ rules
+applyAll :: (Ord l, Ord a) => [Rule l a] -> ActiveSequent l a -> RuleAppRes l a
+applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
 
 applyToActives
   :: (Ord l, Ord a)
   => ActiveSequents l a -> [Rule l a] -> RuleAppRes l a
 applyToActives actives rules = partitionRuleRes $ concatMap mapper rules
   where
-    mapper rule = fmap (rule . activeIsLabelled) . S.toList $ actives
+    mapper rule = fmap (rule . extractSequent) . S.toList $ actives
 
 percolate
   :: (Ord l, Ord a)
@@ -65,7 +41,59 @@ percolate actives rules = r1 `mappend` r2
     r1 = applyToActives actives rules
     r2 = percolate actives . resRules $ r1
 
-filterUnsubsumed
-  :: (HasProverState l a m, Monad m)
-  => S.Set (LabelledSequent l a) -> m (S.Set (LabelledSequent l a))
-filterUnsubsumed = undefined
+haveGoal
+  :: (Ord l, Ord a)
+  => SearchSequent Goal l a
+  -> [SearchSequent FSChecked l a]
+  -> Maybe (LabelledSequent l a)
+haveGoal _ [] = Nothing
+haveGoal goal (s:ss) =
+  if (extractSequent s) `subsumes` (extractSequent goal)
+    then Just (extractSequent s)
+    else haveGoal goal ss
+
+activate
+  :: (Ord l, Ord a)
+  => ActiveSequents l a
+  -> InactiveSequent l a
+  -> (ActiveSequents l a, ActiveSequent l a)
+activate as (InactiveSS s) = (S.insert (ActiveSS s) as, ActiveSS s)
+
+addToIndex
+  :: (Ord l, Ord a)
+  => S.Set (SearchSequent GlIndex l a)
+  -> SearchSequent BSChecked l a
+  -> S.Set (SearchSequent GlIndex l a)
+addToIndex gi (BSCheckedSS s) = S.insert (GlIndexSS s) gi
+
+addToInactives
+  :: (Ord l, Ord a)
+  => InactiveSequents l a
+  -> SearchSequent BSChecked l a
+  -> InactiveSequents l a
+addToInactives ins (BSCheckedSS s) = S.insert (InactiveSS s) ins
+
+fwdSubsumes
+  :: (Ord a, Ord l)
+  => SearchSequent GlIndex l a
+  -> SearchSequent Concl l a
+  -> Maybe (SearchSequent FSChecked l a)
+fwdSubsumes (GlIndexSS s1) (ConclSS s2) =
+  if s1 `subsumes` s2
+    then Nothing
+    else Just (FSCheckedSS s2)
+
+bwdSubsumes
+  :: (Ord a, Ord l)
+  => SearchSequent FSChecked l a -> InactiveSequent l a -> Bool
+bwdSubsumes (FSCheckedSS s1) (InactiveSS s2) = s1 `subsumes` s2
+
+subsumesGoal
+  :: (Ord a, Ord l)
+  => SearchSequent FSChecked l a -> SearchSequent Goal l a -> Bool
+subsumesGoal (FSCheckedSS s1) (GoalSS s2) = s1 `subsumes` s2
+
+-- filterUnsubsumed
+--   :: (HasProverState l a m, Monad m)
+--   => S.Set (LabelledSequent l a) -> m (S.Set (LabelledSequent l a))
+-- filterUnsubsumed = undefined
