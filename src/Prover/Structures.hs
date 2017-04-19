@@ -60,9 +60,6 @@ type ConclSequent l a = SearchSequent Concl l a
 initialize :: LabelledSequent l a -> SearchSequent Initial l a
 initialize = InitSS
 
--- initialIsInactive :: SearchSequent Initial l a -> SearchSequent Inactive l a
--- initialIsInactive (InitSS s) = InactiveSS s
-
 initialIsFSChecked :: SearchSequent Initial l a -> SearchSequent FSChecked l a
 initialIsFSChecked (InitSS s) = FSCheckedSS s
 
