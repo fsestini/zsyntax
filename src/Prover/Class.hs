@@ -4,21 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Prover.Class
-  ( ActiveSequent
-  , ActiveSequents
-  , activeIsLabelled
-  , HasProverEnvironment(..)
-  , HasProverState(..)
-  , haveGoal
-  , addActives
-  , addInactives
-  , addRules
-  , removeSubsumedByAll
-  , filterM
-  , filterUnsubsumed
-  , ProverT
-  ) where
+module Prover.Class where
 
 import Control.Monad (forM_)
 import Formula
