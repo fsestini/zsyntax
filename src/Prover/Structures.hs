@@ -50,9 +50,9 @@ instance (Ord a, Ord l) => Ord (SearchSequent s l a) where
   compare s1 s2 = compare (extractSequent s1) (extractSequent s2)
 
 type ActiveSequent l a = SearchSequent Active l a
-type ActiveSequents l a = S.Set (SearchSequent Active l a)
+newtype ActiveSequents l a = AS (S.Set (SearchSequent Active l a))
 type InactiveSequent l a = SearchSequent Inactive l a
-type InactiveSequents l a = S.Set (InactiveSequent l a)
+newtype InactiveSequents l a = IS (S.Set (InactiveSequent l a))
 type ConclSequent l a = SearchSequent Concl l a
 
 --------------------------------------------------------------------------------
