@@ -27,7 +27,7 @@ class HasProverState l a m where
 
 class HasProverEnvironment l a m where
   getGoal :: m (Sequent l a)
-  subsumesGoal :: SearchSequent FSChecked l a -> m Bool
+  subsumesGoal :: SearchSequent FSChecked l a -> m (Maybe (LabelledSequent l a))
 
 haveGoal
   :: (Monad m, HasProverEnvironment l a m)
