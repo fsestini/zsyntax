@@ -88,6 +88,6 @@ processNewActive
 processNewActive sequent = do
   actives <- getActives
   rules <- getRules
-  let r1 = applyAll rules (activeIsLabelled sequent)
+  let r1 = applyAll rules sequent
       r2 = percolate actives . resRules $ r1
   return $ r1 `mappend` r2
