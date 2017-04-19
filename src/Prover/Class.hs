@@ -55,6 +55,6 @@ removeSubsumedByAll
 removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
-  :: (HasProverState l a m, Monad m)
-  => [ConclSequent l a] -> m [SearchSequent FSChecked l a]
+  :: (HasProverState l a m, Monad m, Traversable t, CanPartitionEithers t)
+  => t (ConclSequent l a) -> m (t (SearchSequent FSChecked l a))
 filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed
