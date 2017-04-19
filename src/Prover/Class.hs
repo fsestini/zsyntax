@@ -58,15 +58,6 @@ removeSubsumedByAll
   => f (SearchSequent FSChecked l a) -> m ()
 removeSubsumedByAll = mapM_ removeSubsumedBy
 
-filterM :: (Monad m) => (a -> m Bool) -> [a] -> m [a]
-filterM p [] = return []
-filterM p (x : xs) = do
-  result <- p x
-  rest <- filterM p xs
-  if result
-     then return $ x : rest
-     else return rest
-
 filterUnsubsumed
   :: (HasProverState l a m, Monad m)
   => [ConclSequent l a] -> m [SearchSequent FSChecked l a]
