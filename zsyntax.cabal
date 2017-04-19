@@ -2,13 +2,13 @@ name:                zsyntax
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/zsyntax#readme
+homepage:            https://github.com/fsestini/zsyntax
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2017 Author name here
-category:            Web
+author:              Filippo Sestini
+maintainer:          sestini.filippo@gmail.com
+copyright:           2017 Filippo Sestini
+category:            Logic
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
