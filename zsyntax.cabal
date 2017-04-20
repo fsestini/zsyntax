@@ -16,7 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Formula, Rel, Relation, Rule, TypeClasses
-  build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
+  build-depends:       base >= 4.7 && < 5, containers, transformers, mtl,
+                       profunctors
   default-language:    Haskell2010
 
 executable zsyntax-exe
