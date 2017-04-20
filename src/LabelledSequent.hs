@@ -59,8 +59,10 @@ addToLinCtxt
   => (Label l a) -> LinearCtxt l a -> LinearCtxt l a
 addToLinCtxt lbl (LC lc) = LC (M.insertWith (<>) lbl One lc)
 
-addToUnrestrCtxt :: (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
-addToUnrestrCtxt = undefined
+addToUnrestrCtxt
+  :: (Ord a, Ord l)
+  => (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
+addToUnrestrCtxt lbl (UC set) = UC (S.insert lbl set)
 
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
 singletonLinearCtxt = undefined
