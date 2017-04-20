@@ -28,7 +28,6 @@ module Prover.Structures
   , popInactiveOp
   , addToInactives
   , addToIndex
-  , extractSequent
   , foldActives
   , Prover.Structures.initialSequentsAndRules
   , isGoal
