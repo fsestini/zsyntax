@@ -63,6 +63,9 @@ addToUnrestrCtxt = undefined
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
 singletonLinearCtxt = undefined
 
+--------------------------------------------------------------------------------
+-- Labelled sequents
+
 {-| Type of labelled sequents.
 
     A labelled sequent is composed of an unrestricted context, a linear context
