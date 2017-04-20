@@ -1,3 +1,6 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 
 {-| Module of labelled sequents, sequent schemas and related types
@@ -11,11 +14,11 @@ import Formula
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 
--- | Type of unrestricted contexts.
-type UnrestrCtxt l a = S.Set (Label l a)
+--------------------------------------------------------------------------------
+-- Unrestricted contexts
 
-emptyUnrestrCtxt :: UnrestrCtxt l a
-emptyUnrestrCtxt = S.empty
+-- | Type of unrestricted contexts.
+newtype UnrestrCtxt l a = UC (S.Set (Label l a)) deriving (Monoid)
 
 --------------------------------------------------------------------------------
 -- Numeric datatypes
@@ -61,9 +64,6 @@ addToUnrestrCtxt = undefined
 
 mergeLinearCtxt :: LinearCtxt l a -> LinearCtxt l a -> LinearCtxt l a
 mergeLinearCtxt = undefined
-
-mergeUnrestrCtxt :: UnrestrCtxt l a -> UnrestrCtxt l a -> UnrestrCtxt l a
-mergeUnrestrCtxt = undefined
 
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
 singletonLinearCtxt = undefined
