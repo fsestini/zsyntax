@@ -87,14 +87,11 @@ subsumes
 subsumes (LS uc1 lc1 l1) (LS uc2 lc2 l2) =
   lc1 == lc2 && l1 == l2 && (uc1 `S.isSubsetOf` uc2)
 
-instance (Eq l, Ord l, Ord a, Eq a) =>
-         Ord (LabelledSequent l a) where
-  compare s1 s2 =
-    if s1 == s2
-      then EQ
-      else if s1 `subsumes` s2
-             then LT
-             else GT
+{-| Ordering is defined in terms of subsumption. This works under the tacit
+    assumption that subsumption is a partial ordering, and that (==) is
+    equivalent to testing for mutual subsumption. -}
+instance (Eq l, Ord l, Ord a) => Ord (LabelledSequent l a) where
+  (<=) = subsumes
 
 --------------------------------------------------------------------------------
 -- Conversion from fully-specified sequents to labelled sequents.
