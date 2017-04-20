@@ -27,6 +27,7 @@ import Formula
 import LabelledSequent
 import Control.Monad hiding (fail)
 import Rel
+import Data.Foldable
 
 {-| Type of relations.
 
@@ -44,21 +45,21 @@ newtype SchemaUCtxt l a = SUC (UnrestrCtxt l a)
 -- | Type of linear contexts which appear in sequent schemas.
 newtype SchemaLCtxt l a = SLC (LinearCtxt l a)
 
-{-| Matches an unrestricted context against a schema.
+{-| Matches a context against a schema.
     Returns the result in a MonadFail instance, which signals the error in case
     the match fails. -}
-matchUnrestrCtxt
-  :: (MonadFail m)
-  => SchemaUCtxt l a -> UnrestrCtxt l a -> m (UnrestrCtxt l a)
-matchUnrestrCtxt (SUC suc) uc = undefined
+matchCtxt :: (MonadFail m, SequentContext s l a) => s l a -> s l a -> m (s l a)
+matchCtxt schema ctxt = asFoldable (foldrM remove ctxt) schema
 
-{-| Matches a linear context against a schema.
-    Returns the result in a MonadFail instance, which signals the error in case
-    the match fails. -}
+matchUnrestrCtxt
+  :: (MonadFail m, Ord a, Ord l)
+  => SchemaUCtxt l a -> UnrestrCtxt l a -> m (UnrestrCtxt l a)
+matchUnrestrCtxt (SUC suc) uc = matchCtxt suc uc
+
 matchLinearCtxt
-  :: (MonadFail m)
+  :: (MonadFail m, Ord a, Ord l)
   => SchemaLCtxt l a -> LinearCtxt l a -> m (LinearCtxt l a)
-matchLinearCtxt (SLC slc) lc = undefined
+matchLinearCtxt (SLC slc) lc = matchCtxt slc lc
 
 --------------------------------------------------------------------------------
 -- Act relations.
@@ -122,7 +123,7 @@ data MatchResult actcase l a =
     Returns the result in a MonadFail instance, which signals the error in case
     the match fails. -}
 match
-  :: (Eq a, Eq l, MonadFail m, Alternative m)
+  :: (Eq a, Eq l, MonadFail m, Alternative m, Ord a, Ord l)
   => SequentSchema c l a -> LabelledSequent l a -> m (MatchResult c l a)
 match (Sch gamma delta schGoal) (LS gamma' delta' goal) = do
   gamma'' <- matchUnrestrCtxt (SUC gamma) gamma'
@@ -245,11 +246,11 @@ leftActive delta omega formula =
     [] -> matchRel delta formula
     (OF (FConj f1 f2 _):rest) -> leftActive delta (OF f2 : OF f1 : rest) formula
     (OF (FImpl _ _ l):rest) ->
-      leftActive (addToLinCtxt (L l) delta) rest formula
+      leftActive (add (L l) delta) rest formula
     (OF (FAtom (LBAtom a)):rest) ->
-      leftActive (addToLinCtxt (A a) delta) rest formula
+      leftActive (add (A a) delta) rest formula
     (OF (FAtom (RBAtom a)):rest) ->
-      leftActive (addToLinCtxt (A a) delta) rest formula
+      leftActive (add (A a) delta) rest formula
 
 {-| Active match relation.
     It requires the input xi formula (if any) to be right-synchronous (otherwise
