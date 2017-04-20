@@ -50,17 +50,15 @@ neLength = sconcat . fmap (const One)
     enforce the fact that we consider only labels that occur at least once. -}
 newtype LinearCtxt l a = LC (M.Map (Label l a) PosNat) deriving (Eq)
 
-emptyLinearCtxt :: LinearCtxt l a
-emptyLinearCtxt = M.empty
+instance (Ord a, Ord l) => Monoid (LinearCtxt l a) where
+  mempty = LC M.empty
+  (LC map1) `mappend` (LC map2) = LC $ M.unionWith (<>) map1 map2
 
 addToLinCtxt :: (Label l a) -> LinearCtxt l a -> LinearCtxt l a
 addToLinCtxt = undefined
 
 addToUnrestrCtxt :: (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
 addToUnrestrCtxt = undefined
-
-mergeLinearCtxt :: LinearCtxt l a -> LinearCtxt l a -> LinearCtxt l a
-mergeLinearCtxt = undefined
 
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
 singletonLinearCtxt = undefined
