@@ -1,3 +1,6 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -Wall #-}
 
 {-| Module of labelled sequents, sequent schemas and related types
@@ -11,11 +14,11 @@ import Formula
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 
--- | Type of unrestricted contexts.
-type UnrestrCtxt l a = S.Set (Label l a)
+--------------------------------------------------------------------------------
+-- Unrestricted contexts
 
-emptyUnrestrCtxt :: UnrestrCtxt l a
-emptyUnrestrCtxt = S.empty
+-- | Type of unrestricted contexts.
+newtype UnrestrCtxt l a = UC (S.Set (Label l a)) deriving (Eq, Monoid)
 
 --------------------------------------------------------------------------------
 -- Numeric datatypes
@@ -62,9 +65,6 @@ addToUnrestrCtxt = undefined
 mergeLinearCtxt :: LinearCtxt l a -> LinearCtxt l a -> LinearCtxt l a
 mergeLinearCtxt = undefined
 
-mergeUnrestrCtxt :: UnrestrCtxt l a -> UnrestrCtxt l a -> UnrestrCtxt l a
-mergeUnrestrCtxt = undefined
-
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
 singletonLinearCtxt = undefined
 
@@ -84,7 +84,7 @@ data LabelledSequent l a =
 subsumes
   :: (Eq l, Ord l, Ord a)
   => LabelledSequent l a -> LabelledSequent l a -> Bool
-subsumes (LS uc1 lc1 l1) (LS uc2 lc2 l2) =
+subsumes (LS (UC uc1) lc1 l1) (LS (UC uc2) lc2 l2) =
   lc1 == lc2 && l1 == l2 && (uc1 `S.isSubsetOf` uc2)
 
 {-| Ordering is defined in terms of subsumption. This works under the tacit
@@ -100,7 +100,7 @@ toLabelledSequent
   :: (Ord a, Ord l, Eq l, Eq a)
   => Sequent l a -> LabelledSequent l a
 toLabelledSequent (SQ uc lc goal) =
-  LS (S.map olfLabel uc) (toLabelledLinearCtxt lc) (label goal)
+  LS (UC (S.map olfLabel uc)) (toLabelledLinearCtxt lc) (label goal)
 
 toLabelledLinearCtxt
   :: (Eq a, Eq l, Ord a, Ord l)
