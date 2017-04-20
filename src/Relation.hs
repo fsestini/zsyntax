@@ -19,13 +19,13 @@ module Relation
   , filterPartitionRel
   ) where
 
+import Data.Monoid
 import Control.Applicative
 import Prelude hiding (fail)
 import Control.Monad.Fail
 import Formula
 import LabelledSequent
 import Control.Monad hiding (fail)
-import qualified Data.Set as S
 import Rel
 
 {-| Type of relations.
@@ -151,23 +151,23 @@ type NFocMatchResult l a = MatchResult EmptyXiFullResult l a
     enforced by the type of the function. -}
 negativeFocalDispatch
   :: forall p l a.
-     (Eq a, Eq l)
+     (Eq a, Eq l, Ord a, Ord l)
   => LFormula p l a -> Relation l a (NFocMatchResult l a)
 negativeFocalDispatch formula =
   case formula of
     FAtom (RBAtom a) ->
-      return (MRes emptyUnrestrCtxt emptyLinearCtxt (LabelResult (A a)))
+      return (MRes mempty mempty (LabelResult (A a)))
     FAtom (LBAtom _) -> fail "not right-biased"
     FConj _ _ _ ->
       leftActive
-        emptyLinearCtxt
+        mempty
         [OF formula]
         (EmptyXi :: Xi EmptyXiFullResult p l a)
     FImpl f1 f2 _ -> do
       (MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
       (MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
       return $
-        MRes (mergeUnrestrCtxt gamma1 gamma2) (mergeLinearCtxt delta1 delta2) xi
+        MRes (gamma1 <> gamma2) (delta1 <> delta2) xi
 
 type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
 
@@ -177,7 +177,7 @@ type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
     goal, so we explicitly indicate it in the type. The outcome is that result
     sequents with non-empty goals are statically rejected as ill-typed. -}
 positiveFocal
-  :: (Eq a, Eq l)
+  :: (Eq a, Eq l, Ord l, Ord a)
   => LFormula LARS l a -> Relation l a (PFocMatchResult l a)
 positiveFocal = positiveFocalDispatch
 
@@ -185,21 +185,21 @@ positiveFocal = positiveFocalDispatch
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
-  :: (Eq a, Eq l)
+  :: (Eq a, Eq l, Ord l, Ord a)
   => LFormula p l a -> Relation l a (PFocMatchResult l a)
 positiveFocalDispatch formula =
   case formula of
     FAtom (LBAtom a) ->
-      return (MRes emptyUnrestrCtxt (singletonLinearCtxt (A a)) EmptyResult)
+      return (MRes mempty (singletonLinearCtxt (A a)) EmptyResult)
     FAtom (RBAtom _) -> fail "not left-biased"
-    FImpl _ _ _ -> rightActive emptyLinearCtxt [] formula
+    FImpl _ _ _ -> rightActive mempty [] formula
     FConj f1 f2 _ -> do
       (MRes gamma1 delta1 _) <- positiveFocalDispatch f1
       (MRes gamma2 delta2 _) <- positiveFocalDispatch f2
       return
         (MRes
-           (mergeUnrestrCtxt gamma1 gamma2)
-           (mergeLinearCtxt delta1 delta2)
+           (gamma1 <> gamma2)
+           (delta1 <> delta2)
            EmptyResult)
 
 -- | Formulas with arbitrary polarity.
@@ -214,7 +214,7 @@ data OpaqueFormula l a = forall p . OF (LFormula p l a)
     Notice how the type enforces that, xi being a formula and therefore
     non-empty, the result sequent will have an empty goal. -}
 rightActive
-  :: (Eq a, Eq l)
+  :: (Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
   -> [OpaqueFormula l a]
   -> LFormula p l a
@@ -235,7 +235,7 @@ rightActive delta omega formula =
     Notice how the typeclass context enforces that the input formula is indeed
     right-synchronous. -}
 leftActive
-  :: (IsRightSynchronous p, Eq a, Eq l)
+  :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
   -> [OpaqueFormula l a]
   -> Xi actcase p l a
@@ -255,13 +255,13 @@ leftActive delta omega formula =
     It requires the input xi formula (if any) to be right-synchronous (otherwise
     we would have a right active relation). -}
 matchRel
-  :: (IsRightSynchronous p, Eq a, Eq l)
+  :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
   -> Xi actcase p l a
   -> Relation l a (MatchResult actcase l a)
 matchRel delta xi = liftFun $ \inputSeq -> match schema inputSeq
   where
-    schema = Sch (S.empty) delta goal
+    schema = Sch mempty delta goal
     goal =
       case xi of
         EmptyXi -> EmptyGoal
