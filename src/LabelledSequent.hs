@@ -65,7 +65,7 @@ addToUnrestrCtxt
 addToUnrestrCtxt lbl (UC set) = UC (S.insert lbl set)
 
 singletonLinearCtxt :: Label l a -> LinearCtxt l a
-singletonLinearCtxt = undefined
+singletonLinearCtxt lbl = LC (M.singleton lbl One)
 
 --------------------------------------------------------------------------------
 -- Labelled sequents
