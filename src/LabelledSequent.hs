@@ -104,7 +104,7 @@ toLabelledSequent
   :: (Ord a, Ord l, Eq l, Eq a)
   => Sequent l a -> LabelledSequent l a
 toLabelledSequent (SQ uc lc goal) =
-  LS (S.map olfLabel uc) (toLabelledLinearCtxt lc) (label goal)
+  LS (UC (S.map olfLabel uc)) (toLabelledLinearCtxt lc) (label goal)
 
 toLabelledLinearCtxt
   :: (Eq a, Eq l, Ord a, Ord l)
