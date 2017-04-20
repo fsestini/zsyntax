@@ -115,7 +115,7 @@ partitionRuleRes =
 applyAll
   :: (Ord a, Ord l, Foldable f, CanPartitionEithers f, CanMap f)
   => f (Rule l a) -> ActiveSequent l a -> RuleAppRes l a
-applyAll rules as = partitionRuleRes . map ($ (extractSequent as)) $ rules
+applyAll rules as = partitionRuleRes . map ($ as) $ rules
 
 applyToActives
   :: (Ord l, Ord a, Foldable f)

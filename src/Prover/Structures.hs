@@ -33,6 +33,7 @@ module Prover.Structures
   , isGoal
   ) where
 
+import Data.Profunctor
 import Control.Arrow
 import LabelledSequent
 import qualified Data.Set as S
@@ -104,13 +105,13 @@ initialIsBSChecked (InitSS s) = BSCheckedSS s
     Such application may either fail, succeed with a value (when the rule has
     been fully applied), or succeed with a function (when the rule is only
     partially applied and has still some premises to match). -}
-type RuleRes l a = Rel (LabelledSequent l a) (ConclSequent l a)
+type RuleRes l a = Rel (ActiveSequent l a) (ConclSequent l a)
 
 {-| Type of inference rules.
     Axioms are not considered rules in this case, so a rule takes at least one
     premise. Hence the corresponding type is a function from a premise sequent
     to a rule application result. -}
-type Rule l a = (LabelledSequent l a) -> RuleRes l a
+type Rule l a = (ActiveSequent l a) -> RuleRes l a
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -118,7 +119,7 @@ type Rule l a = (LabelledSequent l a) -> RuleRes l a
 applyRule :: Rule l a
           -> ActiveSequent l a
           -> RuleRes l a
-applyRule rule (ActiveSS s) = rule s
+applyRule rule s = rule s
 
 foldActives
   :: (forall f. (Foldable f) =>
@@ -199,5 +200,5 @@ initialSequentsAndRules
   => Sequent l a
   -> (S.Set (SearchSequent Initial l a), [Rule l a])
 initialSequentsAndRules =
-  (S.map InitSS *** fmap (fmap (fmap ConclSS))) .
+  (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .
   Prover.Frontier.initialSequentsAndRules
