@@ -116,8 +116,8 @@ data LabelledSequent l a =
 subsumes
   :: (Eq l, Ord l, Ord a)
   => LabelledSequent l a -> LabelledSequent l a -> Bool
-subsumes (LS uc1 lc1 l1) (LS uc2 lc2 l2) =
-  lc1 == lc2 && l1 == l2 && (uc1 <= uc2)
+subsumes (LS (UC uc1) lc1 l1) (LS (UC uc2) lc2 l2) =
+  lc1 == lc2 && l1 == l2 && (uc1 `S.isSubsetOf` uc2)
 
 {-| Ordering is defined in terms of subsumption. This works under the tacit
     assumption that subsumption is a partial ordering, and that (==) is
