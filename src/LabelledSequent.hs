@@ -13,6 +13,7 @@ import Formula
        (Label, Sequent(..), OLSLFormula(..), label, olfLabel, olsfLabel)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import Data.Semigroup
 
 --------------------------------------------------------------------------------
 -- Unrestricted contexts
@@ -32,21 +33,12 @@ data Nat = Zero | NatSucc Nat
 -- | Type of positive natural numbers (hence excluding zero).
 data PosNat = One | Succ PosNat deriving (Eq, Show)
 
--- | Translation from positive naturals to integers.
-toInt :: PosNat -> Int
-toInt One       =  1
-toInt (Succ n)  =  toInt n + 1
-
-lLength :: [a] -> Nat
-lLength [] = Zero
-lLength (_ : xs) = NatSucc (lLength xs)
-
-succOfNat :: Nat -> PosNat
-succOfNat Zero = One
-succOfNat (NatSucc n) = Succ (succOfNat n)
+instance Semigroup PosNat where
+  One <> m = Succ m
+  Succ n <> m = Succ (n <> m)
 
 neLength :: NE.NonEmpty a -> PosNat
-neLength (_ NE.:| xs) = succOfNat (lLength xs)
+neLength = sconcat . fmap (const One)
 
 --------------------------------------------------------------------------------
 
