@@ -13,6 +13,8 @@ module Rel
   ) where
 
 import Prelude hiding (map)
+import Data.Bifunctor
+import Data.Profunctor
 import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
@@ -43,6 +45,9 @@ liftFun f = Rel . Just . Right $ liftMaybeToRel . f
 
 instance Functor (Rel a) where
   fmap f rel = rel >>= (return . f)
+
+instance Profunctor Rel where
+  dimap f g = Rel . fmap (bimap g (dimap f (dimap f g))) . unRel
 
 instance Applicative (Rel a) where
   pure = return
