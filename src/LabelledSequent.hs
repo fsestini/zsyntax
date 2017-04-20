@@ -54,8 +54,10 @@ instance (Ord a, Ord l) => Monoid (LinearCtxt l a) where
   mempty = LC M.empty
   (LC map1) `mappend` (LC map2) = LC $ M.unionWith (<>) map1 map2
 
-addToLinCtxt :: (Label l a) -> LinearCtxt l a -> LinearCtxt l a
-addToLinCtxt = undefined
+addToLinCtxt
+  :: (Ord a, Ord l)
+  => (Label l a) -> LinearCtxt l a -> LinearCtxt l a
+addToLinCtxt lbl (LC lc) = LC (M.insertWith (<>) lbl One lc)
 
 addToUnrestrCtxt :: (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
 addToUnrestrCtxt = undefined
