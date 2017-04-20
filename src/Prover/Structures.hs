@@ -134,7 +134,7 @@ isGoal
   -> SearchSequent FSChecked l a
   -> Maybe (LabelledSequent l a)
 isGoal (GoalSS goal) (FSCheckedSS fss) =
-  if fss `subsumes` goal
+  if fss <= goal
     then Just fss
     else Nothing
 
@@ -172,7 +172,7 @@ fwdSubsumes
   -> SearchSequent Concl l a
   -> Maybe (SearchSequent FSChecked l a)
 fwdSubsumes (GI globalIndex) (ConclSS s) =
-  if or . S.map (\gi -> (extractSequent gi) `subsumes` s) $ globalIndex
+  if or . S.map (\gi -> (extractSequent gi) <= s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
@@ -182,7 +182,7 @@ removeSubsumedByOp
   -> InactiveSequents l a
   -> (InactiveSequents l a, SearchSequent BSChecked l a)
 removeSubsumedByOp (FSCheckedSS s) (IS is) =
-  ( IS (S.filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
+  ( IS (S.filter (\iseq -> not (s <= (extractSequent iseq))) is)
   , BSCheckedSS s)
 
 subsumesGoalOp
@@ -191,7 +191,7 @@ subsumesGoalOp
   -> SearchSequent Goal l a
   -> Maybe (LabelledSequent l a)
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  if s1 `subsumes` s2
+  if s1 <= s2
     then Just s1
     else Nothing
 
