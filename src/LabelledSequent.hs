@@ -41,13 +41,14 @@ neLength :: NE.NonEmpty a -> PosNat
 neLength = sconcat . fmap (const One)
 
 --------------------------------------------------------------------------------
+-- Linear contexts
 
 {-| Type of linear contexts.
 
     A linear context is a map from labels to the number of occurrences of that
     label in the context. Such map has positive natural numbers as codomain, to
     enforce the fact that we consider only labels that occur at least once. -}
-type LinearCtxt l a = M.Map (Label l a) PosNat
+newtype LinearCtxt l a = LC (M.Map (Label l a) PosNat) deriving (Eq)
 
 emptyLinearCtxt :: LinearCtxt l a
 emptyLinearCtxt = M.empty
@@ -101,7 +102,7 @@ toLabelledSequent (SQ uc lc goal) =
 toLabelledLinearCtxt
   :: (Eq a, Eq l, Ord a, Ord l)
   => [OLSLFormula l a] -> LinearCtxt l a
-toLabelledLinearCtxt lc = M.fromList occurrences
+toLabelledLinearCtxt lc = LC (M.fromList occurrences)
   where
     labels = NE.groupBy (==) . sortBy compare . map olsfLabel $ lc
     occurrences = map (\xs -> (NE.head xs, neLength xs)) labels
