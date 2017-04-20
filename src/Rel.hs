@@ -12,6 +12,7 @@ module Rel
   , unRel
   ) where
 
+import Prelude hiding (map)
 import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
@@ -29,8 +30,10 @@ import Control.Monad.Fail
  -}
 data Rel a b = Rel { unRel :: Maybe (Either b (a -> Rel a b)) }
 
-filterPartitionRel :: (CanPartitionEithers t, Functor t) => t (Rel a b) -> (t b, t (a -> Rel a b))
-filterPartitionRel = partitionEithers . filterOut . fmap unRel
+filterPartitionRel
+  :: (CanPartitionEithers t, CanMap t)
+  => t (Rel a b) -> (t b, t (a -> Rel a b))
+filterPartitionRel = partitionEithers . filterOut . map unRel
 
 liftMaybeToRel :: Maybe b -> Rel a b
 liftMaybeToRel m = Rel (fmap Left m)
