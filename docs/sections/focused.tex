@@ -1,0 +1,1629 @@
+\section{Focused derivations}
+
+A backward focused proof has two phases. In the active phase all possible rules
+are applied in an arbitrary order to asynchronous propositions. When only
+synchronous propositions remain, one proposition is selected and a \emph{focused
+  phase} for that proposition begins.
+
+As out backward linear sequent calculus is two-sided, we have left- and right-
+synchronous and asynchronous connectives.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{symbol} & \textbf{meaning} \\
+    \hline
+    $P$ & left-synchronous ($\limp$) \\
+    $Q$ & right-synchronous ($\otimes$) \\
+    $L$ & left-asynchronous ($\otimes$) \\
+    $R$ & right-asynchronous ($\limp$) \\
+    \hline
+  \end{tabular}
+\end{table}
+
+The above table does not include the atomic propositions. For reasons explained
+in [thesis], here we are forced to treat them as synchronous. However, we can
+differenciate the atoms by means of a \emph{focusing bias}, which indicates
+whether the atomic proposition under focus must immediately be derived in an
+initial sequent.
+
+The backward focusing calculus consists of the following kinds of sequents:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{symbol} & \textbf{meaning} \\
+    \hline
+    $\Gamma; \Delta \gg A$ & right-focal sequent with $A$ under focus \\
+    $\Gamma; \Delta; A \ll Q$ & left-focal sequent with $A$ under focus \\
+    $\Gamma; \Delta; \Omega \Longrightarrow C; \cdot$ & right-active sequent \\
+    $\Gamma; \Delta; \Omega \Longrightarrow \cdot; Q$ & left-active sequent \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Here, $\Delta$ contains only left-synchronous propositions, i.e., it is of the
+form $P_1, \dots, P_n$. $\Omega$ is an ordered context of propositions which may
+be synchronous of asynchronous.
+
+For active sequents the right active propositions are decomposed until they
+become right-synchronous, i.e. the sequent is of the form $\Gamma; \Delta;
+\Omega \Longrightarrow Q; \cdot$. The right hand side is then changed to $\cdot;
+Q$. Similarly, the propositions in $\Omega$ are decomposed except when the
+proposition is left-synchronous, in which case it is transferred to $\Delta$.
+
+Eventually, the active sequent is reduced to the form $\Gamma; \Delta; \cdot
+\Longrightarrow \cdot \cdot; Q$, which we call \emph{neutral sequents}.
+A focusing phase is launched from such a neutral sequent by selecting a
+\emph{focusable} proposition and giving it the corresponsing focus.
+
+\begin{definition}[Focusable proposition]
+  \begin{enumerate}
+  \item A proposition is right-focusable if it is right-synchronous and not a
+    right-biased atom;
+  \item A proposition is left-focusable if it is left-sunchronous and not a
+    left-biased atom.
+  \end{enumerate}
+\end{definition}
+
+When we are in a neutral sequent, we may copy a proposition out of the
+unrestricted context and immediately focus on it, regardless of whether it is
+focusable or not. If this proposition is actually left-asynchronous, then we
+will immediately remove focus on it and transition to an active phase.
+
+There are two forms of the initial sequent, corresponding to the two focusing
+biases. If the focal proposition becomes atomic, we terminate with one of the
+two initial forms. If the focal proposition is asynchronous, we blur the focus.
+If the focal proposition is atomic and of the wrong bias, then also we blur the
+focus, but in this case we transition directly to the neutral sequent instead of
+entering the active phase.
+
+Decomposing focal propositions uses non-invertible rules for that proposition,
+and focus is maintained to the operands of the top-level connective of the
+proposition.
+
+
+\[
+  \begin{prooftree}
+    p \; \text{left-biased}
+    \justifies
+    \Gamma; p \gg p
+    \using{rinit}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    p \; \text{right-biased}
+    \justifies
+    \Gamma; \cdot; p \ll p
+    \using{linit}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \Longrightarrow \cdot; Q
+    \justifies
+    \Gamma; \Delta; \Omega \Longrightarrow Q; \cdot
+    \using{ract}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, P; \Omega \cdot \Omega' \Longrightarrow \gamma
+    \justifies
+    \Gamma; \Delta; \Omega \cdot P \cdot \Omega' \Longrightarrow \gamma
+    \using{lact}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta \gg Q \qquad Q\; \text{right-focusable}
+    \justifies
+    \Gamma; \Delta; \cdot \Longrightarrow \cdot ; Q
+    \using{rfoc}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; P \ll Q \qquad P\; \text{left-focusable}
+    \justifies
+    \Gamma; \Delta, P; \cdot \Longrightarrow \cdot; Q
+    \using{lfoc}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \cdot \Longrightarrow R; \cdot
+    \justifies
+    \Gamma; \Delta \gg R
+    \using{rblur}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; L \Longrightarrow \cdot; Q
+    \justifies
+    \Gamma; \Delta; L \ll Q
+    \using{lblur}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \cdot \Longrightarrow \cdot ; p \qquad p \; \text{right-biased}
+    \justifies
+    \Gamma; \Delta \gg p
+    \using{rblur^*}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta, p; \cdot \Longrightarrow \cdot; Q \qquad p \; \text{left-biased}
+    \justifies
+    \Gamma; \Delta; p \ll Q
+    \using{lblur^*}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma, A; \Delta ; A \ll Q
+    \justifies
+    \Gamma, A; \Delta; \cdot \Longrightarrow \cdot; Q
+    \using{copy}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \cdot A \cdot B \cdot \Omega' \Longrightarrow \gamma
+    \justifies
+    \Gamma; \Delta; \Omega \cdot A \otimes B \cdot \Omega' \Longrightarrow
+    \gamma
+    \using{\otimes L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta_1 \gg A \qquad \Gamma; \Delta_2 \gg B
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 \gg A \otimes B
+    \using{\otimes R}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \Gamma; \Delta_1; B \ll Q \qquad \Gamma; \Delta_2 \gg A
+    \justifies
+    \Gamma; \Delta_1, \Delta_2 ; A \limp B \ll Q
+    \using{\limp L}
+  \end{prooftree}
+  \qquad \qquad
+  \begin{prooftree}
+    \Gamma; \Delta; \Omega \cdot A \Longrightarrow B; \cdot
+    \justifies
+    \Gamma; \Delta; \Omega \Longrightarrow A \limp B; \cdot
+    \using{\limp R}
+  \end{prooftree}
+\]
+
+\begin{theorem}[Soundness]
+  \begin{enumerate}
+  \item If $\rfocseq{\Gamma}{\Delta}{A}$, then $\Gamma; \Delta \Longrightarrow
+    A$;
+  \item If $\lfocseq{\Gamma}{\Delta}{A}{Q}$, then $\Gamma ; \Delta, A
+    \Longrightarrow Q$;
+  \item If $\btriseq{\Gamma}{\Delta}{\Omega}{C ; \cdot}$, then $\Gamma; \Delta,
+    \Omega \Longrightarrow C$;
+  \item If $\btriseq{\Gamma}{\Delta}{\Omega}{\cdot ; C}$, then $\Gamma; \Delta,
+    \Omega \Longrightarrow C$.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  The four assertions are proved simultaneously by straightforward induction on
+  the height of the derivation.
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\Gamma ; \Delta \Longrightarrow C$, then
+  $\Gamma; \cdot ; \Omega \Longrightarrow C ; \cdot$, where $\Omega$ is some
+  listing of $\Delta$.
+\end{theorem}
+\begin{proof}
+  This proof is much more involved than the one for soundness, and can be found
+  in [thesis] for the full intuitionistic linear logic. It can be easily adapted
+  to our small fragment since it does not rely on the presence of all
+  connectives.
+\end{proof}
+
+\subsection{Backward derived rules}
+
+The primary benefit of focusing is the ability to generate derived ``big step''
+inference rules: the intermediate results of a focusing or active phase are not
+important, since those steps are ``forced'' in some way. Each derived rule
+starts (at the bottom) with a neutral sequent from which a synchronous
+proposition is selected for focus, and the focusing steps are followed. Then the
+active rules are applied, and eventually we obtain a collection of neutral
+sequents as the leaves. These neutral sequents are then treated as the premises
+of the derived rule that produces the neutral sequent with which we started.
+
+We first construct the backward derived rules. Then we will move to their
+forward version. The general design is that intermediate sequents in the eager
+active and focusing phases are not be stored in any sequent database; instead,
+all sequents constructed during search are neutral sequents at the phase
+boundaries. This is achieved by first precomputing the derived rules that
+correspond to the frontier literals of the goal sequent.
+
+For any given proposition, we are interested in constructing a derived inference
+for the proposition corresponding to a single pair of focusing and inverse
+phases. The idea is to interpret a proposition itself as the derived rules that
+it embodies. Every propostiion is viewed as a relation between the conclusion of
+the rule and its premises at the leaves of the bipole. Both the conclusion and
+the premises are neutral sequents, which we indicate as
+$\bneuseq{\Gamma}{\Delta}{Q}$.
+
+There are three classes of relational interpretations:
+
+\begin{enumerate}
+\item Right focal relations for the focus formula $A$, written $\brfrel{A}$;
+\item Left focal relations for the focus formula $A$, written $\blfrel{A}$;
+\item Active relations, written
+  $\bactrel{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}$, where $\xi$ is either
+  $\cdot$ or a proposition $C$.
+\end{enumerate}
+
+The full set of relations is given in Figure~\ref{fig:bkwdrelations}. Each
+relation $R$ takes as input the conclusion sequent $s$, and produces a sequence
+of premise sequents $\Sigma = s_1, \dots, s_n$; we write this as
+$\relj{R}{s}{\Sigma}$. We use these relations to form a calculus of derived
+rules which acts on neutral sequents only, as given in
+Figure~\ref{fig:bkwdderivedcalculus}.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
+        \using{\linit}
+      \end{prooftree}\qquad\qquad
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+        \qquad
+        \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
+            \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{\faplus}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+          \cdot \Sigma_2}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{FA^-}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot
+              \Omega'}{B}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot
+              \Omega'}{A \limp B}}}{s}{\Sigma}
+        \using{\limp A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{
+          \bactrel{
+            \btriseq{\Gamma}{\Delta,P}{\Omega \cdot \Omega'}{\xi}
+          }
+        }{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{bact}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{Q}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{match}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{\cdot}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{match'}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Backward relations for derived rules}
+  \label{fig:bkwdrelations}
+\end{figure}
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        (\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma}{\Delta}{Q}
+        \using{right-focus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        (\relj{\blfrel{Q}}{\bneuseq{\Gamma}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma}{\Delta, P}{Q}
+        \using{left-focus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        (\relj{\blfrel{A}}{\bneuseq{\Gamma, A}{\Delta}{Q}}{s_1 \cdot s_2 \dots s_n})
+        \quad s_1 \quad s_2 \quad \dots \quad s_n
+        \justifies
+        \bneuseq{\Gamma, A}{\Delta}{Q}
+        \using{copy-focus}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Backward calculus of derived rules}
+  \label{fig:bkwdderivedcalculus}
+\end{figure}
+
+The following are some facts on the shape of the derivations for which we omit
+the easy proof.
+
+\begin{fact}\label{bkwdderfact}
+  \begin{enumerate}
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{s}{\Sigma}$, then
+    $s \equiv \bneuseq{\Gamma'}{\Delta'}{Q}$ for some $\Gamma', \Delta', Q$;
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{C}}{s}{\Sigma}$, then
+    $s \equiv \bneuseq{\Gamma'}{\Delta'}{\cdot}$ for some $\Gamma', \Delta'$.
+  \end{enumerate}
+\end{fact}
+
+\begin{definition}
+  A sequent of the backward derived rule calculus $\bneuseq{\Gamma}{\Delta}{Q}$
+  is sound if $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
+\end{definition}
+
+\begin{lemma}\label{bkwdder-soundness-lemma}
+  \begin{enumerate}
+  \item If $\brfrelj{A}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ and $\Sigma$
+    are sound, then $\rfocseq{\Gamma}{\Delta}{A}$.
+  \item If $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$ and $\Sigma$
+    are sound, then $\lfocseq{\Gamma}{\Delta}{A}{Q}$.
+  \item If
+    $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}{\bneuseq{\Gamma'}{\Delta'}{Q}}{\Sigma}$
+    and $\Sigma$ are sound, then $\btriseq{\Gamma, \Gamma'}{\Delta,
+      \Delta'}{\Omega}{\cdot ; Q}$.
+  \item If
+    $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{\bneuseq{\Gamma'}{\Delta'}{\cdot}}{\Sigma}$
+    and $\Sigma$ are sound, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{R ; \cdot}$ or
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; Q}$, depending
+    on whether $\xi = R$ or $\xi = Q$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved simultaneously by induction on the height of the
+  derivations. The cases are briefely sketched below.
+
+  \begin{enumerate}
+  \item Case the last rule was $\linit$. The thesis follows by immediate
+    application of the corresponding $\linit$ rule of the backward focused
+    calculus.
+
+  \item The $\rinit$ case is dual.
+
+  \item Case the last rule was $\otimes F$. The thesis follows immediately by
+    inductive hypothesis and application of the $\otimes R$ rule.
+
+  \item Case the last rule was $\faplus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{bkwdderfact}, $s \equiv \bneuseq{\Gamma}{\Delta}{\cdot}$ for
+    some $\Gamma, \Delta$. By inductive hypothesis,
+    $\btriseq{\Gamma}{\Delta}{\cdot}{R ; \cdot}$. The thesis follows immediately
+    from an application of the $rblur$ rule.
+
+  \item Case the last rule is conj+. The thesis follows immediately by
+    hypothesis of soundness of the resulting sequents, and an application of
+    $\rblurstar$.
+
+  \item Case the last rule is $\limp F$. The thesis follows immediately by
+    inductive hypothesis and an application of $\limp L$.
+
+  \item Case the last rule is $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{bkwdderfact}, $s \equiv \bneuseq{\Gamma}{\Delta}{Q}$. The
+    thesis follows immediately by inductive hypothesis and an application of $lblur$.
+
+  \item Case the last rule is $conj-$. The thesis follows immediately from
+    the hypothesis of soundness of the result sequents, and an application of
+    $\lblurstar$.
+
+  \item The cases $\otimes A, \limp A, \bact$ are a straightforward application
+    of the inductive hypothesis.
+
+  \item In the base cases $\matchrule, \matchprimerule$, the thesis follows
+    immediately from the hypothesis of $\Sigma$ being sound.
+
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\bneuseq{\Gamma}{\Delta}{Q}$ then $\bkwseq{\Gamma}{\Delta}{\cdot ; Q}$.
+\end{theorem}
+\begin{proof}
+  Straightforward induction on the derivation, and
+  Lemma~\ref{bkwdder-soundness-lemma}.
+\end{proof}
+
+\begin{lemma}\label{completeness-lemma}
+  \begin{enumerate}
+
+  \item If $\rfocseq{\Gamma}{\Delta}{A}$, then for some $\Sigma$
+    \begin{enumerate}
+    \item $\relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$, and
+    \item $\Sigma$ are all derivable
+    \end{enumerate}
+
+  \item If $\lfocseq{\Gamma}{\Delta}{A}{Q}$, then for some $\Sigma$
+    \begin{enumerate}
+    \item $\blfrelj{A}{\bneuseq{\Gamma}{\Delta}{Q}}{\Sigma}$, and
+    \item $\Sigma$ are all derivable
+    \end{enumerate}
+
+  \item If $\btriseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{\Omega}{\xi \uplus
+      \gamma}$ (where $\xi \uplus \gamma$ means either $\xi$ or $\gamma$ is
+    empty), then for some $\Sigma$
+    \begin{enumerate}
+    \item
+      $\bactrelj{\btriseq{\Gamma_1}{\Delta_1}{\Omega}{\xi}}{\bneuseq{\Gamma_2}{\Delta_2}{\gamma}}{\Sigma}$,
+      and
+    \item $\Sigma$ are all derivable.
+    \end{enumerate}
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  By simultaneous induction on the height of the derivation.
+  \begin{enumerate}
+  \item Case $\rinit$:
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \rfocseq{\Gamma}{p}{p}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    then, just apply the $\rinit$ relation.
+  \item Case $\linit$ is similar to the case above.
+  \item Case $\ract$ is trivial, since the relations corresponding to the
+    premise and conclusion sequents are identical.
+  \item Case $\lact$. Straightforward use of the $\bact$ rule for derived
+    relations.
+  \item Case $\rfoc$.
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta \gg Q \qquad Q\; \text{right-focusable}
+        \justifies
+        \Gamma; \Delta; \cdot \Longrightarrow \cdot ; Q
+        \using{rfoc}
+      \end{prooftree}
+    \]
+
+    Suppose $\gamma_1, \gamma_2$ are such that $\gamma_1 \uplus \gamma_2 =
+    Q$. Then, the following:
+
+    \[
+      \relj{
+        \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\gamma_1}}
+      }{
+        \bneuseq{\cdot}{\cdot}{\gamma_2}
+      }{
+        \bneuseq{\Gamma}{\Delta}{Q}
+      }
+    \]
+
+    is derivable with either $\matchrule$ or $\matchprimerule$. We need to show
+    that $\bneuseq{\Gamma}{\Delta}{Q}$ is derivable. By inductive hypothesis, we
+    have $\relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$ for some
+    $\Sigma$ all derivable. But then,
+
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{Q}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \qquad \Sigma
+        \justifies
+        \bneuseq{\Gamma}{\Delta}{Q}
+        \using{\rightfocusrule}
+      \end{prooftree}
+    \]
+
+  \item Case $\lfoc$ is just analogous to $\rfoc$, with an application of
+    $\leftfocusrule$.
+  \item Case $\rblur$.
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta; \cdot \Longrightarrow R; \cdot
+        \justifies
+        \Gamma; \Delta \gg R
+        \using{\rblur}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, we have
+    $\relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
+    where all $\Sigma$ are derivable. But
+    then, we can apply the rule $\faplus$ to get the thesis
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+
+  \item Case $\lblur$ is dual to $\rblur$.
+  \item Case $\rblurstar$.
+
+    \[
+      \begin{prooftree}
+        \Gamma; \Delta; \cdot \Longrightarrow \cdot ; p \qquad p \; \text{right-biased}
+        \justifies
+        \Gamma; \Delta \gg p
+        \using{rblur^*}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis,
+    $\relj{\bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{p}}}{\bneuseq{\cdot}{\cdot}{\cdot}}{\Sigma}$,
+    that must have been derived by $\matchprimerule$. Therefore, $\Sigma \equiv
+    \bneuseq{\Gamma}{\Delta}{p}$, which is by hypothesis derivable.
+    Then, we can apply $\faplusstar$ to get
+    $\relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}$.
+
+  \item Case $\lblurstar$ is dual to $\rblurstar$.
+  \item Case $\copyrule$.
+
+    \[
+      \begin{prooftree}
+        \Gamma, A; \Delta ; A \ll Q
+        \justifies
+        \Gamma, A; \Delta; \cdot \Longrightarrow \cdot; Q
+        \using{\copyrule}
+      \end{prooftree}
+    \]
+
+    We can apply $\matchrule$ to immediately derive
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma,
+              A}{\Delta}{\cdot}{\cdot}}}{\bneuseq{\cdot}{\cdot}{Q}}{\bneuseq{\Gamma,
+            A}{\Delta}{Q}}
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    and see that $\bneuseq{\Gamma, A}{\Delta}{Q}$ is derivable by
+    the inductive hypothesis
+    $\relj{\blfrel{A}}{\bneuseq{\Gamma,A}{\Delta}{Q}}{\Sigma}$ and an application
+    of $\copyfocusrule$.
+  \item The remaining rules of the connectives are straightforward application
+    of the inductive hypothesis.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$, then
+  $\bneuseq{\Gamma}{\Delta}{Q}$.
+\end{theorem}
+\begin{proof}
+  Straightforward application of Lemma~\ref{completeness-lemma}. The last rule
+  used to derive $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$ is one of
+  $\lfoc, \rfoc$ or $\copyrule$; correspondingly, by the Lemma, we have the
+  derived rules to use as premises of $\rightfocusrule, \leftfocusrule$ and
+  $\copyfocusrule$ which derive $\bneuseq{\Gamma}{\Delta}{Q}$.
+\end{proof}
+
+\subsection{Forward derived rules}
+
+In the following rules, $\gamma \setminus \xi$ is defined as $\gamma$ if $\xi = \cdot$,
+and as $\cdot$ if $\gamma = \xi$.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
+        \using{\linit}
+      \end{prooftree}
+      \qquad\qquad
+      \begin{prooftree}
+        p \; \text{right-based}
+        \justifies
+        \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+        \using{\linit}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\Sigma}{s}
+        \justifies
+        \relj{\frfrel{R}}{\Sigma}{s}
+        \using{\faplus}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma}{s}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        p \text{ right-biased}
+        \justifies
+        \frfrelj{p}{\fneuseq{\Gamma}{\Delta}{p}}{\fneuseq{\Gamma}{\Delta}{\cdot}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        p \text{ left-biased}
+        \justifies
+        \flfrelj{p}{\fneuseq{\Gamma}{\Delta, p}{Q}}{\fneuseq{\Gamma}{\Delta}{Q}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
+        \using{\limp A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
+        }{\Sigma}{s}
+        \justifies
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
+        }{\Sigma}{s}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \using{\actrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \xi \subseteq \gamma
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\xi}}
+        }{
+          \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\gamma}
+        }{
+          \fneuseq{\Gamma'}{\Delta'}{\gamma \setminus \xi}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus}
+\end{figure}
+
+The derived rule for positive subformulas is:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+    \justifies
+    \fneuseq{\Gamma}{\Delta}{Q}
+    \using{\focplusrule}
+  \end{prooftree}
+\]
+
+Similarly, for negative propositions, we have two rules:
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+    \justifies
+    \fneuseq{\Gamma}{\Delta, P}{Q}
+    \using{\focminusrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+    \justifies
+    \fneuseq{\Gamma, A}{\Delta}{Q}
+    \using{\foccopyrule}
+  \end{prooftree}
+\]
+
+\begin{fact}\label{forwardfact}
+  \begin{enumerate}
+  \item If $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{\gamma}}$, then either
+    \begin{enumerate}
+    \item $\xi = \cdot$ and $\gamma = Q$ for some right-synchronous $Q$;
+    \item $\xi = C$ and $\gamma = \cdot$ for some $C$.
+    \end{enumerate}
+
+  \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\gamma}}$, then
+    $\gamma = Q$ for some right-synchronous $Q$.
+  \end{enumerate}
+\end{fact}
+
+\begin{definition}
+  The sequent $\fneuseq{\Gamma}{\Delta}{Q}$ is sound if
+  $\btriseq{\Gamma}{\Delta}{\cdot}{\cdot ; Q}$.
+\end{definition}
+
+\begin{lemma}\label{fsoundnesslemma}
+  If $\Sigma$ are sound, then
+
+  \begin{enumerate}
+  \item If $\relj{\frfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{\cdot}}$,
+    then, $\rfocseq{\Gamma}{\Delta}{A}$;
+  \item If $\relj{\flfrel{A}}{\Sigma}{\fneuseq{\Gamma}{\Delta}{Q}}$,
+    then $\lfocseq{\Gamma}{\Delta}{A}{Q}$;
+  \item If
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{\cdot}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{Q}}$, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; Q}$;
+  \item If
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{C}}}{\Sigma}
+    {\fneuseq{\Gamma'}{\Delta'}{\cdot}}$, then
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{C ; \cdot}$ or
+    $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta'}{\Omega}{\cdot ; C}$, depending
+    on whether $C$ is right-asynchronous or right-synchronous, respectively.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved by simultaneous induction on the height of the
+  derivation. We distinguish cases on the last rule used in the derivation:
+
+  \begin{itemize}
+  \item Case $\linit$. Hence,
+    $\relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}$ and $p$ is
+    left-biased. Then,
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \rfocseq{\cdot}{p}{p}
+      \end{prooftree}
+    \]
+
+    By soundness of the backward focused calculus, $\bkwseq{\cdot}{p}{p}$.
+
+  \item Case $\rinit$ is similar;
+  \item Case $\faplus{}$.
+
+    \[
+      \begin{prooftree}
+        \relj{
+          \factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}
+        }{
+          \Sigma
+        }{
+          s
+        }
+        \justifies
+        \relj{\frfrel{R}}{\Sigma}{s}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{forwardfact}, $s \equiv
+    \fneuseq{\Gamma'}{\Delta'}{\cdot}$ for some $\Gamma', \Delta'$, and by
+    inductive hypothesis $\btriseq{\Gamma'}{\Delta'}{\cdot}{R ; \cdot}$. Then,
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma'}{\Delta'}{\cdot}{R ; \cdot}
+        \justifies
+        \rfocseq{\Gamma'}{\Delta'}{R}
+        \using{\rblur}
+      \end{prooftree}
+    \]
+
+  \item Case $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma}{s}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma}{s}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+    By Fact~\ref{forwardfact}, $s \equiv \fneuseq{\Gamma'}{\Delta'}{Q}$, then by
+    inductive hypothesis $\btriseq{\Gamma'}{\Delta'}{L}{\cdot ; Q}$. Then,
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma'}{\Delta'}{L}{\cdot ; Q}
+        \justifies
+        \lfocseq{\Gamma'}{\Delta'}{L}{Q}
+        \using{\lblur}
+      \end{prooftree}
+    \]
+
+  \item Case $\limp F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\gamma}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\gamma}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    Then, by Fact~\ref{forwardfact} and inductive hypothesis
+
+    \[
+      \lfocseq{\Gamma_1}{\Delta_1}{B}{Q} \qquad \qquad
+      \rfocseq{\Gamma_2}{\Delta_2}{A}
+    \]
+
+    for some right-synchronous $Q$. Then, by weakening and $\limp L$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \lfocseq{\Gamma_1}{\Delta_1}{B}{Q}
+          \justifies
+          \lfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{B}{Q}
+        \]
+        \qquad
+        \[
+          \rfocseq{\Gamma_2}{\Delta_2}{A}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{A}
+        \]
+        \justifies
+        \lfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \limp B}{Q}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis
+
+    \[
+      \rfocseq{\Gamma_1}{\Delta_1}{A} \qquad \qquad
+      \rfocseq{\Gamma_2}{\Delta_2}{B}
+    \]
+
+    Then, by weakening and $\otimes R$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \rfocseq{\Gamma_1}{\Delta_1}{A}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{A}
+        \]
+        \qquad
+        \[
+          \rfocseq{\Gamma_2}{\Delta_2}{B}
+          \justifies
+          \rfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{B}
+        \]
+        \justifies
+        \rfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item Case $\limp A$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A}{B}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega}{A \limp B}}}{\Sigma}{s}
+        \using{\limp A}
+      \end{prooftree}
+    \]
+
+    By Fact~\ref{forwardfact}, $s \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$ for
+    some $\Gamma', \Delta'$. By inductive hypothesis $\btriseq{\Gamma,
+      \Gamma'}{\Delta, \Delta'}{\Omega \cdot A}{B ; \cdot}$ (if $B$ is
+    right-synchronous, it sufficies to apply $\ract$). Then, by $\limp R$
+
+    \[
+      \begin{prooftree}
+        \btriseq{\Gamma,
+          \Gamma'}{\Delta, \Delta'}{\Omega \cdot A}{B ; \cdot}
+        \justifies
+        \btriseq{\Gamma,
+          \Gamma'}{\Delta, \Delta'}{\Omega}{A \limp B ; \cdot}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes A$ is analogous.
+  \item Case $act$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\Gamma}{\Delta, P}{\Omega \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot P \cdot \Omega'}{\xi}}}{\Sigma}{s}
+        \using{act}
+      \end{prooftree}
+    \]
+
+    \begin{enumerate}
+    \item Case $\xi = \cdot$. Then, by Fact~\ref{forwardfact},
+      $s \equiv \fneuseq{\Gamma'}{\Delta'}{Q}$ for some $Q$. Then, by inductive
+      hypothesis,
+      $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta', P}{\Omega \cdot \Omega'}{\cdot
+        ; Q}$. The thesis follows by application of the $lact$ rule.
+
+    \item Case $\xi = C$ for some $C$. Then, by Fact~\ref{forwardfact},
+      $s \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$. Then, by inductive
+      hypothesis,
+      $\btriseq{\Gamma, \Gamma'}{\Delta, \Delta', P}{\Omega \cdot
+        \Omega'}{\gamma}$, where $\gamma$ is either $C ; \cdot$ and $\cdot ;
+      C$. The thesis follows again by application of the $lact$ rule.
+    \end{enumerate}
+
+  \item Case $match$.
+    \begin{enumerate}
+    \item Case $\xi = \cdot$. Then
+
+      \[
+        \begin{prooftree}
+          \justifies
+          \relj{
+            \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+          }{
+            \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+          }{
+            \fneuseq{\Gamma'}{\Delta'}{Q}
+          }
+          \using{match}
+        \end{prooftree}
+      \]
+
+      Then we need to prove the derivability of $\btriseq{\Gamma,
+        \Gamma'}{\Delta, \Delta'}{\cdot}{\cdot ; Q}$, but this comes from the
+      hypothesis that $\fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}$ be sound.
+
+    \item Case $\xi = C$. Then, $C \equiv Q$ and
+
+      \[
+        \begin{prooftree}
+          \justifies
+          \relj{
+            \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+          }{
+            \fneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+          }{
+            \fneuseq{\Gamma'}{\Delta'}{\cdot}
+          }
+          \using{match}
+        \end{prooftree}
+      \]
+
+      The rest is as above.
+    \end{enumerate}
+  \end{itemize}
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\fneuseq{\Gamma}{\Delta}{Q}$, then it is sound.
+\end{theorem}
+\begin{proof}
+  By induction on the height of the derivation of
+  $\fneuseq{\Gamma}{\Delta}{Q}$. We distinguish three cases
+
+  \begin{enumerate}
+  \item Case $focplus$
+
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+        \justifies
+        \fneuseq{\Gamma}{\Delta}{Q}
+        \using{foc plus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\rfocseq{\Gamma}{\Delta}{Q}$. The thesis
+    follows by $\rfoc$.
+
+  \item Case $focminus$.
+
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\flfrel{P}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+        \justifies
+        \fneuseq{\Gamma}{\Delta, P}{Q}
+        \using{foc minus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\lfocseq{\Gamma}{\Delta}{P}{Q}$. The thesis
+    follows by $\lfoc$.
+
+  \item Case $!focminus$.
+
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\flfrel{A}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{Q}})
+        \justifies
+        \fneuseq{\Gamma, A}{\Delta}{Q}
+        \using{! foc minus}
+      \end{prooftree}
+    \]
+
+    By Lemma~\ref{fsoundnesslemma}, $\lfocseq{\Gamma}{\Delta}{A}{Q}$. The thesis
+    follows by $copy$.
+  \end{enumerate}
+\end{proof}
+
+Completeness is established with respect to the backward calculus of derived
+rules.
+
+\begin{definition}[Stronger forms]
+  A forward sequent $\fneuseq{\Gamma}{\Delta}{G}$ is said to be stronger than a
+  backward derived sequent $\bneuseq{\Gamma'}{\Delta'}{G'}$, written as a
+  relation $\preceq$, if $\Gamma \subseteq \Gamma'$, $\Delta = \Delta'$, and
+  $G = G'$.
+\end{definition}
+
+The above relation is assumed to be extended point-wise to ordered sequences of
+sequents.
+
+\begin{lemma}\label{fdercompllemma}
+  \begin{enumerate}
+  \item If $\brfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence of
+    sequents $\Sigma' \preceq \Sigma$ for which $\frfrelj{A}{\Sigma'}{s'}$, then
+    $s' \preceq s$;
+  \item If $\blfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence
+    $\Sigma' \preceq \Sigma$ for which $\flfrelj{A}{\Sigma'}{s'}$, then $s'
+    \preceq s$;
+  \item If $\bactrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{s}{\Sigma}$ and
+    there exists a derivable sequence $\Sigma' \preceq \Sigma$ for which
+    $\factrelj{\btriseq{\Gamma}{\Delta}{\Omega}{\xi}}{\Sigma'}{s'}$, then
+    $s' \preceq s$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved simultaneously by induction on the height of the backward
+  relation derivation.
+
+  \begin{enumerate}
+  \item Case $\linit$.
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\cdot}{p}}{\cdot}
+        \using{\linit}
+      \end{prooftree}
+    \]
+
+    Suppose there exists a derivable sequence $\Sigma' \preceq \cdot$ such that
+    $\relj{\flfrel{p}}{\Sigma'}{s'}$ is derivable. Then, it must have been an
+    application of the corresponding forward $\linit$ rule:
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-based}
+        \justifies
+        \relj{\flfrel{p}}{\cdot}{\fneuseq{\cdot}{\cdot}{p}}
+        \using{\linit}
+      \end{prooftree}
+    \]
+
+    where indeed $\Sigma' \equiv \cdot$ and $s' \equiv
+    \fneuseq{\cdot}{\cdot}{p}$. The thesis follows immediately.
+
+  \item Case $\rinit$. That is, we have a derivation
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{p}{\cdot}}{\cdot}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    and suppose there are $\Sigma' \preceq \cdot$ and a derivation of
+    $\relj{\frfrel{p}}{\Sigma'}{s'}$. Then, it must be that $\Sigma' = \cdot$ and
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\fneuseq{\cdot}{p}{\cdot}}
+        \using{\rinit}
+      \end{prooftree}
+    \]
+
+    Then $s' \equiv \fneuseq{\cdot}{p}{\cdot}$, which clearly satisfies the
+    thesis.
+
+  \item Case $\faplus$. Then
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{s}{\Sigma}
+        \justifies
+        \relj{\brfrel{R}}{s}{\Sigma}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+
+    Suppose there are $\Sigma' \preceq \Sigma$ such that
+    $\frfrelj{R}{\Sigma'}{s'}$. Then, it must have been derived with an
+    application of the rule $\faplus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{\cdot}{R}}}{\Sigma'}{s'}
+        \justifies
+        \relj{\frfrel{R}}{\Sigma'}{s'}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    The thesis follows immediately from the inductive hypothesis.
+
+  \item Case $conj+$. Then,
+
+    \[
+      \begin{prooftree}
+        p \; \text{right-biased}
+        \justifies
+        \relj{\brfrel{p}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\bneuseq{\Gamma}{\Delta}{p}}
+        \using{conj^+}
+      \end{prooftree}
+    \]
+
+    where $\Sigma \equiv \bneuseq{\Gamma}{\Delta}{p}$ and
+    $s \equiv \bneuseq{\Gamma}{\Delta}{\cdot}$. Suppose there is some $\Sigma'
+    \preceq \Sigma$ and $s'$ such that $\frfrelj{p}{\Sigma'}{s'}$.
+    Then, it must have been derived by an application of $conj+$, hence
+    $\Sigma' \equiv \fneuseq{\Gamma'}{\Delta'}{p}$ and
+    $s' \equiv \fneuseq{\Gamma'}{\Delta'}{\cdot}$.
+
+    By hypothesis, $\Sigma' \preceq \Sigma$ hence $\Gamma' \subseteq \Gamma$ and
+    $\Delta = \Delta'$. It follows that $s' \preceq s$.
+
+      \item Case $\otimes F$:
+
+    \[
+      \begin{prooftree}
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_1}{\cdot}}{\Sigma_1}
+        \qquad
+        \relj{\brfrel{B}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\brfrel{A \otimes B}}{\bneuseq{\Gamma}{\Delta_1,
+            \Delta_2}{\cdot}}{\Sigma_1 \cdot \Sigma_2}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    By hypothesis, there is $(\Sigma_1' \cdot \Sigma_2') \preceq (\Sigma_1 \cdot
+    \Sigma_2)$ such that
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1'}{\fneuseq{\Gamma_1'}{\Delta_1'}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2'}{\fneuseq{\Gamma_2'}{\Delta_2'}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1' \cdot \Sigma_2'}{\fneuseq{\Gamma_1',
+            \Gamma_2'}{\Delta_1', \Delta_2'}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    For some $\Gamma_1', \Gamma_2', \Delta_1', \Delta_2'$. By inductive
+    hypothesis, $\Gamma_1' \subseteq \Gamma$, $\Gamma_2' \subseteq \Gamma$,
+    $\Delta_1 = \Delta_1'$, $\Delta_2 = \Delta_2'$. It follows that $\Gamma_1,
+    \Gamma_2 \subseteq \Gamma$ and $\Delta_1, \Delta_2 = \Delta_1', \Delta_2'$.
+
+  \item Case $\limp F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\blfrel{B}}{\bneuseq{\Gamma}{\Delta_1}{Q}}{\Sigma_1} \qquad
+        \relj{\brfrel{A}}{\bneuseq{\Gamma}{\Delta_2}{\cdot}}{\Sigma_2}
+        \justifies
+        \relj{\blfrel{A \limp B}}{\bneuseq{\Gamma}{\Delta_1,\Delta_2}{Q}}{\Sigma_1
+          \cdot \Sigma_2}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    Suppose $(\Sigma_1' \cdot \Sigma_2') \preceq (\Sigma_1 \cdot \Sigma_2)$ such
+    that $\relj{\flfrel{A \limp B}}{\Sigma_1' \cdot \Sigma_2'}{s'}$. Then, it
+    must have been derived by an application of the corresponding $\limp F$
+    rule.
+
+    \[
+      \begin{prooftree}
+        \relj{\flfrel{B}}{\Sigma_1'}{\fneuseq{\Gamma_1'}{\Delta_1'}{Q'}}
+        \qquad
+        \relj{\frfrel{A}}{\Sigma_2'}{\fneuseq{\Gamma_2'}{\Delta_2'}{\cdot}}
+        \justifies
+        \relj{\flfrel{A \limp B}}{\Sigma_1' \cdot \Sigma_2'}{\fneuseq{\Gamma_1'
+            \cup \Gamma_2'}{\Delta_1', \Delta_2'}{Q'}}
+        \using{\limp F}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, $\Gamma_1' \subseteq \Gamma, \Gamma_2' \subseteq
+    \Gamma, \Delta_1' = \Delta_1, \Delta_2' = \Delta_2, Q = Q'$. Therefore,
+    $\Gamma_1' \cup \Gamma_2 \subseteq \Gamma$ and
+    $\Delta_1', \Delta_2' = \Delta_1, \Delta_2$. The thesis follows immediately.
+
+  \item Case $\otimes A$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \justifies
+        \relj{\bactrel{\btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+              \Omega'}{\xi}}}{s}{\Sigma}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{\factrel{ \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot
+          \Omega'}{\xi}} }{\Sigma'}{s'}$. Then, it must have been derived by an
+    application of the corresponding $\otimes A$ rule:
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \cdot B \cdot \Omega'}{\xi}}
+        }{\Sigma'}{s'}
+        \justifies
+        \relj{\factrel{
+            \btriseq{\Gamma}{\Delta}{\Omega \cdot A \otimes B \cdot \Omega'}{\xi}}
+        }{\Sigma'}{s'}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    The thesis follows immediately from the inductive hypothesis.
+
+  \item Cases $\limp A$ and $bact$ are treated similarly.
+
+  \item Case $\faminus$.
+
+    \[
+      \begin{prooftree}
+        \relj{\bactrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{s}{\Sigma}
+        \justifies
+        \relj{\blfrel{L}}{s}{\Sigma}
+        \using{FA^-}
+      \end{prooftree}
+    \]
+
+    Suppose there exists $\Sigma' \preceq \Sigma$ such that
+    $\relj{\flfrel{L}}{\Sigma'}{s'}$. Then, it must have been derived with a
+    corresponding application of $\faminus$:
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\btriseq{\cdot}{\cdot}{L}{\cdot}}}{\Sigma'}{s'}
+        \justifies
+        \relj{\flfrel{L}}{\Sigma'}{s'}
+        \using{\faminus}
+      \end{prooftree}
+    \]
+
+    By inductive hypothesis, $s' \preceq s$.
+
+  \item Case $conj-$.
+
+    \[
+      \begin{prooftree}
+        p \; \text{left-biased}
+        \justifies
+        \relj{\blfrel{p}}{\bneuseq{\Gamma}{\Delta}{Q}}{\bneuseq{\Gamma}{\Delta, p}{Q}}
+        \using{conj^-}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ for which
+    $\flfrelj{p}{\Sigma'}{s'}$. Then, it must have been derived by an
+    application of the corresponding $conj-$:
+
+    \[
+      \begin{prooftree}
+        p~\text{left-biased}
+        \justifies
+        \flfrelj{p}{\fneuseq{\Gamma'}{\Delta', p}{Q'}}{\fneuseq{\Gamma'}{\Delta'}{Q'}}
+      \end{prooftree}
+    \]
+
+    By hypothesis, $\Gamma' \subseteq \Gamma, \Delta = \Delta', Q = Q'$. Hence
+    $s' \preceq s$.
+
+  \item Case $\matchrule$.
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{Q}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{ \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}} }{ \Sigma' }{ s'
+    }$. Then, it must have been an application of the $\matchrule$ rule such that:
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{\cdot}}
+        }{
+          \fneuseq{\Gamma, \Gamma''}{\Delta, \Delta''}{Q'}
+        }{
+          \fneuseq{\Gamma''}{\Delta''}{Q'}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    remembering that $\Gamma, \Gamma''$ is supposed to be a partitioning of the
+    unrestricted context of the input sequent, hence
+    $\Gamma \cap \Gamma'' = \empty$.  From $\Sigma' \preceq \Sigma$ it follows
+    that $Q \equiv Q'$ and $\Delta, \Delta' = \Delta, \Delta''$, hence $\Delta'
+    = \Delta''$.
+    Moreover, we have $\Gamma \cup \Gamma'' \subseteq \Gamma \cup
+    \Gamma'$, implying $\Gamma'' \subseteq \Gamma'$. Therefore, $s' \preceq s$.
+
+  \item Case $\matchprimerule$.
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \bactrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \bneuseq{\Gamma'}{\Delta'}{\cdot}
+        }{
+          \bneuseq{\Gamma, \Gamma'}{\Delta, \Delta'}{Q}
+        }
+        \using{\matchprimerule}
+      \end{prooftree}
+    \]
+
+    Suppose $\Sigma' \preceq \Sigma$ such that
+    $\relj{\factrel{\btriseq{\Gamma}{\Delta}{Q}{\cdot}} }{ \Sigma' }{ s'
+    }$. Then, it must have been an application of the $\matchrule$ rule such that:
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\btriseq{\Gamma}{\Delta}{\cdot}{Q}}
+        }{
+          \fneuseq{\Gamma, \Gamma''}{\Delta, \Delta''}{Q}
+        }{
+          \fneuseq{\Gamma''}{\Delta''}{\cdot}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    The rest is as in the $\matchrule$ case.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\bneuseq{\Gamma}{\Delta}{Q}$, then $\fneuseq{\Gamma'}{\Delta}{Q}$ for some
+  $\Gamma' \subseteq \Gamma$.
+\end{theorem}
+\begin{proof}
+  Induction on the derivation of $\bneuseq{\Gamma}{\Delta}{Q}$ and
+  Lemma~\ref{fdercompllemma}.
+\end{proof}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:
