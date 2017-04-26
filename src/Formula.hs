@@ -1,5 +1,10 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DataKinds, KindSignatures, GADTs #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
 
@@ -7,6 +12,23 @@
 module Formula where
 
 import qualified Data.Set as S
+
+--------------------------------------------------------------------------------
+-- Bio and control sets.
+
+newtype BiocoreSet a = BS (S.Set (BioFormula a)) deriving (Monoid)
+newtype ControlSet a = CS (S.Set (BioFormula a)) deriving (Monoid)
+
+bsAsSet :: BiocoreSet a -> S.Set (BioFormula a)
+bsAsSet (BS bs) = bs
+
+csAsSet :: ControlSet a -> S.Set (BioFormula a)
+csAsSet (CS cs) = cs
+
+bsSingleton :: BioFormula a -> BiocoreSet a
+bsSingleton f = BS (S.singleton f)
+
+--------------------------------------------------------------------------------
 
 {-| The type of biological (and non-logical) formulas, which constitute
     the logical atoms.
@@ -39,7 +61,15 @@ data Atom :: Bias -> * -> * where
 data LFormula :: Pole -> * -> * -> * where
   FAtom :: Atom b a -> LFormula AtomPole l a
   FConj :: LFormula p l a -> LFormula q l a -> l -> LFormula LARS l a
-  FImpl :: LFormula p l a -> LFormula q l a -> l -> LFormula LSRA l a
+  FFatImpl
+    :: LFormula p l a
+    -> LFormula q l a
+    -> l
+    -> Maybe (BiocoreSet a)
+    -> Maybe (ControlSet a)
+    -> LFormula LSRA l a
+
+pattern FImpl f1 f2 lbl <- FFatImpl f1 f2 lbl _ _
 
 -- | Class of right-synchronous poles, used as a predicate over poles.
 class IsRightSynchronous (p :: Pole) where
