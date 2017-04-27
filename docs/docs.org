@@ -1,9 +1,73 @@
 * Introduction
 ** TODO Zsyntax
+
+   - Def.: bonding language
+     - atomic formulas of Zsyntax.
+     - interaction operator
+   - Z-conjunction
+   - Z-conditional
+   - Other connectives that we do not treat here, but can be added
+     straighforwardly.
+
 ** TODO Controlled monotonicity
+
+*** TODO Control sets
+
+    - Problem: global view. But not enough.. See below.
+
+*** TODO Conditional (linear implication)
+
+    Their definition: an aggregate x of type A -> B is such that, for every
+    disjoint aggregate y of type A, the composition triggers a biochemical
+    reaction that delivers an aggregate of type B.
+
+    Then they define the product. Notice how the two types differ: the
+    conditional speaks of action, the product speaks of aggregates.
+
+    The above definitions could make one think that there is a single idea of
+    the conditional, namely to give an abstract description of an atomic
+    transition that only depends on the control set. However, in biology there
+    are more cases. There are "axiomatic" transitions *and* biological
+    aggregates that act as transitions. The conditional as is does not
+    distinguish between the two.
+
+    Then they give the introduction rule.
+
+	    Gamma, A |= B
+    -----------------------------
+    Gamma, Delta |= A -> B, Delta
+
+    Saying that any instance of a Z-state Gamma, Delta is ipso facto an instance
+    of the Z-state A -> B, Delta, whenever it can be shown that there is a
+    sequence of state transitions leading from Gamma, A to B.
+
+    It is the opinion of the author that such an introduction rule is too
+    powerful, and clashes with the intuitive biological meaning of the
+    conditional. It is too powerful in the sense that it allows to treat an
+    aggregate Gamma as an element of conditional type, forgetting the original
+    biological nature of Gamma itself and of the derivation that allowed us to
+    establish that from Gamma, A we can reach B.
+
+    Let us consider two examples in order to uncover the problems that may
+    arise.
+
+    Cut elimination is difficult to establish because the conditional, presented
+    as such, fails to represent the symmetry between language and metalanguage.
+    Implication should be an object language internalization of the
+    metalinguistic provability relation, but the introduction rule as is allows
+    to introduce the same connective from different derivations (in this case,
+    different in the sense of the control sets involved), thus creating
+    asymmetry.
+
+    This is where the intuition may clash with the global approach to controlled
+    monotonicity given by control sets.
+
 ** TODO Automated deduction
 
    - Simple yet effective approach: linear logic + external controlset checking
+   - Have the structure of the derivation same as the corresponding linear logic
+     derivation. Use control sets only to drive the inference engire, either
+     rejecting or accepting potential derivations.
 
 * COMMENT An alternative natural deduction calculus
 *** Rules
@@ -132,6 +196,86 @@
    3. Check it. If passes, return the SCZ derivation; Otherwise, go to (2);
    4. If there are no more LL derivations, exit declaring we did not find a
       proof (not sure it is unprovable, since we are sound but not complete)
+
+
+* Zsyntax
+
+** TODO Introduction
+
+   ...
+
+   In the sections that follow we will give a slightly modified (but
+   nevertheless still precise and extremely faithful to the original)
+   provability relation for the Zsyntax natural deduction-style calculus in
+   [paper], that not only describes the biological transition but also takes
+   into account the control sets involved in it.
+
+** TODO Controlled monotonicity
+
+   Def. [Control set]
+
+   Control sets are empirically determined blah blah...
+
+   The resulting logical system is open: theorems may loose their status
+   depending on modifications in our empirical knowledge base.
+
+   Example with E*S -> EoS
+
+   Give the definition of section 6.
+
+   Conclude that an elementary base, and also a control set, is a subset of
+   power(bioformulas).
+
+** TODO An alternative natural deduction calculus
+
+   Def. [world]
+
+   A world is a pair of maps Formulas x Formulas -> power(Bioformulas).
+   w = (w_ctrl, w_elem)
+
+   Def. [world extension]
+
+   If w = (w_ctrl, w_elem), then
+   w[Gamma, A|-_G B](C,D) = (w_ctrl[Gamma, A|-_G B], w_elem[Gamma, A|-_G B])
+
+   where
+
+		 {
+   w_ctrl(C,D) = { w_ctrl(A,B) U G     if C -> D \equiv A -> B
+		 {
+		 { w_ctrl(C,D)         otherwise
+		 {
+
+		 {
+   w_elem(C,D) = { w_elem(A,B) U Gamma*    if C -> D \equiv A -> B
+		 {
+		 { w_elem(A,B)             otherwise
+		 {
+
+   Def. [enhanced provability relation]
+
+   Proofs in the natural deduction calculus (and derivations in the sequent
+   calculus that follows) are all done relative to a fixed world. In other
+   terms, the reference world is allowed to (and will) change between
+   derivations, but it is *not* allowed to change *within* a
+   proof/derivation. Even though it wouldn't be difficult to give a natural
+   deduction calculus that accounts for world dynamics within the same proof, it
+   becomes problematic when dealing with the corresponding sequent calculus
+   derivations, and in particular in the proof of cut elimination. For this
+   reason, we choose to consider only proofs with fixed worlds, and in
+   particular we require that the world considered in the proof is aware of all
+   transitions of the form Gamma, A |= B that may have been discovered for the
+   first time in the proof itself. This sounds actually quite reasonable a thing
+   to do: given the dynamic nature of the formalism, every previously
+   established theorem must be re-checked every time the current world is
+   changed with new information. Therefore, it only saves time (and computation)
+   to eagerly check a proof with a world as up-to-date as possible.
+
+   We now give a translation from the calculus given in [paper] to our enhanced
+   calculus, which will be formed by inference rules having as premises and
+   conclusion judgements of the form Gamma |-_G^w Delta.
+
+   TODO: give rules for each connective.
 
 * The Inverse Method
 ** TODO Multiplicative non-determinism
