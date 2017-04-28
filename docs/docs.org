@@ -204,11 +204,6 @@
 
    ...
 
-   In the sections that follow we will give a slightly modified (but
-   nevertheless still precise and extremely faithful to the original)
-   provability relation for the Zsyntax natural deduction-style calculus in
-   [paper], that not only describes the biological transition but also takes
-   into account the control sets involved in it.
 
 ** TODO Controlled monotonicity
 
