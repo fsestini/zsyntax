@@ -23,8 +23,17 @@ import Control.Monad.Fail
 import Control.Monad hiding (fail)
 
 class ConstraintMonad m l a where
+  unifyB :: BioEqConstraint l a -> m l a ()
+  unifyC :: CtrlEqConstraint l a -> m l a ()
   addBioConstraint :: BioConstraint l a -> m l a ()
   getBioConstraints :: m l a [BioConstraint l a]
+
+addLabel
+  :: (ConstraintMonad m l a, Monad (m l a), Ord a, Ord l)
+  => l -> BCSchema l a -> LinearCtxt l a -> m l a (LinearCtxt l a)
+addLabel lbl bs ctxt = do
+  unifyB (VarConstr lbl bs)
+  return (add (L lbl) ctxt)
 
 generateConstraints
   :: (Ord a, Ord l, MonadFail (m l a), ConstraintMonad m l a)
@@ -34,10 +43,10 @@ generateConstraints term = generateConstraints' term >> getBioConstraints
 -- Returns the control set schema of the sequent, the linear context
 -- represented as a set of labels, and the label of the conclusion.
 -- NOTE!!: we are (and should be) operating under the assumption that formulas
--- in the unrestricted context are only axioms, that is, have null elementary
--- base (only implicational formulas with null elementary base).
+-- in the unrestricted context have null biocore (only implicational formulas
+-- with null biocore).
 generateConstraints'
-  :: (Ord a, Ord l, MonadFail (m l a), ConstraintMonad m l a, HasWorld (m l a))
+  :: (Ord a, Ord l, MonadFail (m l a), ConstraintMonad m l a)
   => DerTerm l a -> m l a (CSSchema l a, LinearCtxt l a, Label l a)
 generateConstraints' (Init atom) =
   return (Set mempty, singletonLinearCtxt (A atom), A atom)

@@ -1,43 +1,27 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
 module Checking.Constraints where
 
-import Formula
-import Control.Monad
+import Formula (ElementaryBase)
+import Checking.World (SFormula, ElemMap)
+import qualified Data.Set as S
 
-data Schema s l where
-  Label :: l -> Schema s l
-  Set :: s -> Schema s l
-  Sum :: Schema s l -> Schema s l -> Schema s l
-  deriving (Eq, Functor)
+data PreElemBase a =
+  PEB (ElementaryBase a) (S.Set (SFormula a, SFormula a))
 
-instance Applicative (Schema s) where
-  pure = return
-  (<*>) = ap
+newtype PreCtrlSet a = PCS (S.Set (SFormula a, SFormula a)) deriving (Monoid)
 
-instance Monad (Schema s) where
-  return = Label
-  (Label l) >>= f = f l
-  (Set x) >>= _ = Set x
-  (Sum s1 s2) >>= f = Sum (s1 >>= f) (s2 >>= f)
+preElemBase :: Foldable f => f (SFormula a) -> PreElemBase a
+preElemBase = undefined
 
-type CSSchema l a = Schema (ControlSet a) l
-type BCSchema l a = Schema (BiocoreSet a) l
+elementaryBase :: ElemMap a -> PreElemBase a -> ElementaryBase a
+elementaryBase = undefined
 
 data BioConstraint l a :: * where
-  Respect :: BCSchema l a -> CSSchema l a -> BioConstraint l a
+  Respect :: PreElemBase a -> SFormula a -> SFormula a -> BioConstraint l a
   And :: BioConstraint l a -> BioConstraint l a -> BioConstraint l a
   Or :: BioConstraint l a -> BioConstraint l a -> BioConstraint l a
-
--- | Equality constraints:
-data EqConstraint s l = VarConstr l (Schema s l)
-                      | SetConstr s (Schema s l)
-
-type BioEqConstraint l a = EqConstraint (BiocoreSet a) l
-type CtrlEqConstraint l a = EqConstraint (ControlSet a) l

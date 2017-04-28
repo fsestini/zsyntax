@@ -16,11 +16,7 @@ data DerTerm l a
   | ImplR (DerTerm l a)
           (Label l a)
           l
-          (Maybe (BiocoreSet a))
-          (Maybe (ControlSet a))
   | ImplL (DerTerm l a)
           (DerTerm l a)
           (Label l a)
           l
-          (Maybe (BiocoreSet a))
-          (Maybe (ControlSet a))
