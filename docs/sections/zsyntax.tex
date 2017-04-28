@@ -1,0 +1,355 @@
+\section{Zsyntax}
+
+\subsection{Introduction}
+
+... TODO ...
+
+In the sections that follow we will give a slightly modified (but nevertheless
+still precise and extremely faithful to the original) provability relation for
+the Zsyntax natural deduction-style calculus in [paper], that not only describes
+the biological transition but also takes into account the control sets involved
+in it.
+
+\subsection{Controlled monotonicity}
+
+\begin{definition}[Elementary base]
+  \begin{enumerate}
+  \item An elementary base of a formula $A$ is defined inductively as follows:
+
+    \begin{enumerate}
+    \item ...
+    \end{enumerate}
+
+  \item Denote by $A^*$ the set of all elementary bases for the formula $A$;
+  \item Given a Z-state $\Gamma = A_1, \dots, A_n$, let $\Gamma^*$ be the set of
+    all Z-states $\Delta_1, \dots, \Delta_n$ such that $\Delta_i$ is in $A^*$
+    for all $i$.
+  \end{enumerate}
+\end{definition}
+
+Notice that, given any context $\Gamma$, the set $\Gamma^*$ may change over time
+as new theorems of the form $\Gamma, A \models B$ are discovered, as this
+influences the contents of $(A \rightarrow B)^*$.
+
+[paper] then goes on to define control sets for conditionals $A \rightarrow B$
+in terms of elementary bases, calling them \emph{elementary control sets}.
+
+\begin{definition}
+  The \emph{elementary control set} associated with the conditional
+  $A \rightarrow B$ can be defined as follows:
+
+  \[
+    \ctrlset{A \rightarrow B}^* = \{
+    \Gamma \in \mathcal{L}_{\odot}^* \, | \, \exists \Delta \in (A \rightarrow
+    B)^*
+    : \Gamma, \Delta, A \not \models \Gamma, B \text{ is known}
+    \}
+  \]
+\end{definition}
+
+Under this definition, the controller $\rightarrow$ elimination rule becomes the
+following:
+
+\[
+  \begin{prooftree}
+    \Gamma, A \rightarrow B \, : \, \Gamma^* \cap \ctrlset{A\rightarrow B}^* =
+    \emptyset
+    \justifies
+    \Gamma, B
+  \end{prooftree}
+\]
+
+\subsection{An alternative natural deduction calculus}
+
+\begin{definition}[World]
+  A \emph{world assignment} is a map of type
+  $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot)$.  A
+  \emph{world} $w$ is a pair of world assignments, respectively called the
+  \emph{control} map and the \emph{elementary} map.
+
+  \[
+    (w_{\text{ctrl}}, w_{\text{elem}}) \in W \equiv
+    (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot))
+    \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot))
+  \]
+\end{definition}
+
+\begin{definition}[Enhanced provability judgement]
+  Enhanced provability judgements are judgements of the form
+
+  \[
+    \Gamma \models_{\ctrlset{}}^w \Delta
+  \]
+
+  where $\Gamma, \Delta$ are lists of formulas, $\ctrlset{}$ is a control set
+  and $w \in W$ is a world.
+\end{definition}
+
+The intuitive meaning of a judgement $\Delta \models_{\ctrlset{}}^w \nabla$ is
+that there exists a sequence of Zsyntax rule applications with which it is
+possible to reach the Z-state $\Gamma, \nabla$ from the Z-state
+$\Gamma, \Delta$, under the elementary bases and control sets given by the world
+$w$, provided that $\Gamma$ is compatible with the control set $\ctrlset{}$.
+
+\paragraph{World extension}
+
+A world $w$ codifies our knowledge given by the theorems (i.e., biological
+transitions) so far proved. Worlds are dynamic objects in the sense that they
+change as new reactions are discovered. In particular, we gain new information
+on the control set $\ctrlset{A \rightarrow B}$ whenever a new reaction of the
+form $\Gamma, A \models B$ is discovered. We therefore define a world extension
+operation as follows:
+
+\begin{definition}[World extension]
+  A derivation $\Gamma, A \models_{\ctrlset{}} B$ extends a world $w$ to produce
+  a world $w'$, written $w[\Gamma, A \models_{\ctrlset{}} B] = w'$, as follows:
+
+  \[
+    w[\Gamma, A \models_{\ctrlset{}} B]_{\text{ctrl}}(C,D) =
+    \begin{cases}
+      w_{\text{ctrl}}(A,B) \cup \ctrlset{}, & \text{if } A \rightarrow B \equiv
+      C \rightarrow D \\
+      w_{\text{ctrl}}(C,D), & \text{otherwise}
+    \end{cases}
+  \]
+  \[
+    w[\Gamma, A \models_{\ctrlset{}} B]_{\text{elem}}(C,D) =
+    \begin{cases}
+      w_{\text{elem}}(A,B) \cup w_{\text{elem}}(\Gamma), & \text{if } A \rightarrow B \equiv
+      C \rightarrow D \\
+      w_{\text{elem}}(C,D), & \text{otherwise}
+    \end{cases}
+  \]
+\end{definition}
+
+\paragraph{Empirical rules}
+
+Empirical rules are not part of the calculus, but are treated as axioms as
+hinted in Section [TODO] of [paper].
+
+\paragraph{$\rightarrow$ introduction}
+
+The rule in [paper] is as follows:
+
+\[
+  \begin{prooftree}
+    \Gamma, \Delta \qquad
+    \[
+      \Gamma, A
+      \leadsto
+      B
+    \]
+    \justifies
+    A \rightarrow B, \Delta
+  \end{prooftree}
+\]
+
+Thus, whenever it can be shown that $\Gamma, A \vdash_{\ctrlset{}} B$ for some
+$\ctrlset{}$, $\Gamma$ may be considered \emph{ipso facto} of type
+$A \rightarrow B$, that is
+$\Gamma, \Delta \vdash_{\emptyset} A \rightarrow B, \Delta$.
+Notice, however, that in this process we gain knowledge of the fact that
+$\Gamma, A \models B$, so the \emph{world} against which the side conditions are
+checked must be updated accordingly. This leads to the following rule:
+
+\[
+  \begin{prooftree}
+    \Gamma, A \vdash_{\ctrlset{}}^{w[\Gamma,A\vdash_{\ctrlset{}}B]} B
+    \justifies
+    \Gamma, \Delta \vdash_{\emptyset}^{w[\Gamma,A\vdash_{\ctrlset{}}B]n} A
+    \rightarrow B, \Delta
+  \end{prooftree}
+\]
+
+Here, $w[\Gamma,A\vdash_{\ctrlset{}}B]$ means that the proof may happen in an
+arbitrary world, provided in contains the knowledge that the premise has
+just established.
+
+\paragraph{$\rightarrow$ elimination}
+
+The rule in [paper]
+
+\[
+  \begin{prooftree}
+    \Gamma, A \rightarrow B, A \; : \; \biocore{\Gamma} \cap \ctrlset{A
+      \rightarrow B} = \emptyset
+    \justifies
+    \Gamma, B
+  \end{prooftree}
+\]
+
+Can be straighforwardly translated to our formalism as follows:
+
+\[
+  \begin{prooftree}
+    \textsf{resp}_w(\Gamma, A, B)
+    \justifies
+    \Gamma, A \rightarrow B, A \vdash_{w_{\text{ctrl}}(A,B)}^w \Gamma, B
+  \end{prooftree}
+\]
+
+\paragraph{$\otimes$ introduction and elimination}
+
+The $\otimes$ introduction and elimination rules are straighforward:
+
+\[
+  \begin{prooftree}
+    \justifies
+    \Gamma, A, B \models_{\emptyset}^w \Gamma, A \otimes B
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \justifies
+    \Gamma, A \otimes B \models_{\emptyset}^w \Gamma, A, B
+  \end{prooftree}
+\]
+
+\paragraph{Identity and composition}
+
+Obviously, the trivial transition is allowed in any world:
+
+\[
+  \begin{prooftree}
+    \justifies
+    \Gamma \models_{\emptyset}^w \Gamma
+  \end{prooftree}
+\]
+
+Moreover, in order to have the $\models$ relation represent arbitrary sequences
+of Zsyntax rule applications, we need a way to compose such sequences:
+
+\[
+  \begin{prooftree}
+    \Gamma \models_{\ctrlset{1}}^w \Delta
+    \qquad
+    \Delta \models_{\ctrlset{2}}^w \nabla
+    \justifies
+    \Gamma \models_{\ctrlset{1} \cup \ctrlset{2}}^w \nabla
+  \end{prooftree}
+\]
+
+Notice how composition forces the two subsequences to happen under the same
+world $w$. We then have the following properties, which will be particularly
+useful when implementing the constraint-solving part of the automated deduction
+engine.
+
+\begin{proposition}
+  If $\Gamma \models_{\ctrlset{}}^w \Delta$, then any subderivation $\Gamma'
+  \models_{\ctrlset{}'}^{w'} \Delta'$ is such that $w = w'$.
+\end{proposition}
+\begin{proof}
+  Straightforward induction on the derivation.
+\end{proof}
+
+\begin{proposition}
+  If $\Gamma \models_{\ctrlset{}}^w \Delta$, then for every subderivation
+  $\Gamma', A \models_{\ctrlset{}'}^w B$ it holds that $w[\Gamma', A
+  \models_{\ctrlset{}'} B] = w$.
+\end{proposition}
+\begin{proof}
+  Follows directly from the proposition above.
+\end{proof}
+
+\subsubsection{Implementation details}
+
+To slightly reduce the complexity of the automatic deduction process, we make
+the following assumption:
+
+\[
+  \Delta \models \nabla \wedge \Gamma, \Delta \not \models \Gamma, \nabla
+  \implies \forall \Gamma'
+  \supseteq \Gamma, \; \Gamma', \Delta \not \models \Gamma', \nabla
+\]
+
+In words, we assume that if a context $\Gamma$ is such that it inhibits a
+reaction, then so do all contexts $\Gamma'$ that extend it.
+
+\subsubsection{Implementation details}
+
+The two propositions above allow us to implement the proof search phase as
+follows:
+
+\begin{enumerate}
+\item A structurally acceptable proof $\pi$ is found;
+\item The current world $w$ is extended with knowledge about all derivations
+  of the form $\Gamma, A \models B$ in $\pi$, to yield an updated world $w'$;
+\item The proof in finally checked against the updated world $w'$.
+\end{enumerate}
+
+Notice that different derivations of the form $\Gamma, A \models B$ in the same
+proof may influence each other in how the world is extended, for example when an
+instance of one is part of the subderivation of another. This mutual dependence
+can be solved by considering a per-proof monotone operator defining a one-step
+world extension, and repeatedly applying such operator until a fixed point is
+reached.
+
+\begin{definition}
+  World assignments form a join-semilattice
+
+  \[
+    \mathcal{A} = \langle \mathcal{L} \times \mathcal{L} \to
+    \mathcal{P}(\mathcal{L}_\odot), \leq, \sqcup \rangle
+  \]
+
+  where
+
+  \[
+    w_1 \leq w_2 \equiv \forall F_1, F_2, w_1(F_1,F_2) \subseteq w_2(F_1,F_2)
+  \]
+
+  \[
+    (w_1 \sqcup w_2)(F_1, F_2) = w_1(F_1,F_2) \cup w_2(F_1,F_2)
+  \]
+\end{definition}
+
+Notice that, since we assume $\mathcal{L}_{\odot}$ to be finite, the set
+$\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot)$ is finite
+and so $\mathcal{A}$ is also a complete lattice. In particular, is has a top
+element.
+
+The order theoretic properties of world assigments extend to worlds in the
+obvious way.
+
+\begin{definition}
+  Worlds form a join-semilattice
+  $\mathcal{W} = \langle W, \leq, \sqcup \rangle$, where
+
+  \[
+    (w_{\text{ctrl}1}, w_{\text{elem}1}) \leq
+    (w_{\text{ctrl}2}, w_{\text{elem}2}) \equiv
+    w_{\text{ctrl}1} \leq w_{\text{ctrl}2} \wedge
+    w_{\text{elem}1} \leq w_{\text{elem}2}
+  \]
+  \[
+    (w_{\text{ctrl}1}, w_{\text{elem}1}) \sqcup
+    (w_{\text{ctrl}2}, w_{\text{elem}2}) =
+    (w_{\text{ctrl}1} \sqcup w_{\text{ctrl}2}, w_{\text{elem}1} \sqcup w_{\text{elem}2})
+  \]
+\end{definition}
+
+Being $\mathcal{W}$ equipped with a top element $\top$, we have the rather
+trivial property that every monotonic function over $W$ has a fixed point.
+
+Given a derivation $\pi$ and a world $w$, the one-step extension
+$\textsf{extend}_{\pi}(w) \in W$ is inductively defined as follows:
+
+\begin{enumerate}
+\item Case $\pi$ is ...
+\end{enumerate}
+
+\begin{proposition}
+  The extension operator $\textsf{extend}_{\pi} : W \rightarrow W$ is monotone.
+\end{proposition}
+\begin{proof}
+  TODO...
+\end{proof}
+
+Thus, the world against which a proof $\pi$ is checked is
+$w' = \bigsqcup \{ \textsf{extend}_{\pi}^n(w) \, | \, n \in N \}$.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:
