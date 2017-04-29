@@ -4,51 +4,72 @@
 
 ... TODO ...
 
-In the sections that follow we will give a slightly modified (but nevertheless
-still precise and extremely faithful to the original) provability relation for
-the Zsyntax natural deduction-style calculus in [paper], that not only describes
-the biological transition but also takes into account the control sets involved
-in it.
-
 \subsection{Controlled monotonicity}
 
-\begin{definition}[Elementary base]
+The calculus of Zsyntax revolves around the concept of controlled monotonicity:
+in the particular context of linear logic, linear implication is monotonic since
+$A \vdash B$ implies $A \otimes C \vdash B \otimes C$ for any $C$. Zsyntax
+preserves the characteristics of linear logic as a logic of resources, but has a
+non-monotonic logical consequence relation (and therefore, a linear implication
+operator), or rather one where such monotonicity is allowed in all but some
+specified cases. In this sense it is similar to other formalisms such as default
+logic. In the following we only repeat some of the definitions in [paper] on
+which the following sections built upon. Details and examples on how Zsyntax
+deals with monotonicity can be found in [paper].
+
+\begin{definition}[Elementary bases]
   \begin{enumerate}
-  \item An elementary base of a formula $A$ is defined inductively as follows:
+  \item An elementary base of a formula $A$ is a context
+    $\Gamma \in \bioformulas^*$ defined inductively as follows:
 
     \begin{enumerate}
-    \item ...
+    \item If $A \in \bioformulas$, then $\Gamma = A$;
+    \item If $A \equiv B \rightarrow C$, then $\Gamma$ is an elementary base of
+      $A$ whenever $\Gamma, A \models B$ is known;
+    \item If $A \equiv B \otimes C$, then $\Gamma = \Delta, \Delta'$ is an
+      elementary base of $A$ whenever $\Delta$ and $\Delta'$ are, respectively,
+      an elementary base for $A$ and $B$.
     \end{enumerate}
 
-  \item Denote by $A^*$ the set of all elementary bases for the formula $A$;
-  \item Given a Z-state $\Gamma = A_1, \dots, A_n$, let $\Gamma^*$ be the set of
-    all Z-states $\Delta_1, \dots, \Delta_n$ such that $\Delta_i$ is in $A^*$
-    for all $i$.
+  \item Denote by $\elembases{A} \in \mathcal{P}(\bioformulas^*)$ the set of all
+    elementary bases for the formula $A$;
+  \item Given a Z-state $\Gamma = A_1, \dots, A_n$, let $\elembases{\Gamma}$ be
+    the set of all Z-states $\Delta_1, \dots, \Delta_n$ such that $\Delta_i$ is
+    in $\elembases{A}$ for all $i$.
   \end{enumerate}
 \end{definition}
 
-Notice that, given any context $\Gamma$, the set $\Gamma^*$ may change over time
-as new theorems of the form $\Gamma, A \models B$ are discovered, as this
-influences the contents of $(A \rightarrow B)^*$.
+Notice that, given any context $\Gamma$, the set $\elembases{\Gamma}$ may change
+over time as new theorems of the form $\Delta, A \models B$ are discovered.
+Also notice that the definition of elementary base is not complete until we
+define precisely what it means to \emph{know} that $\Gamma, A \models B$ (for
+example, is this knowledge provided manually by the user or managed
+automatically by the machine?). We leave this decision to the implementation
+details.
 
 [paper] then goes on to define control sets for conditionals $A \rightarrow B$
-in terms of elementary bases, calling them \emph{elementary control sets}.
+in terms of elementary bases, calling them \emph{elementary control sets}.  In
+what follows, $\bioformulas^*$ denotes as usual the set of strings of formulas
+of the bonding language (which are just Z-states formed by formulas of the
+bonding language only.)
 
 \begin{definition}
-  The \emph{elementary control set} associated with the conditional
-  $A \rightarrow B$ can be defined as follows:
+  The \emph{elementary control set}
+  $\ctrlset{A \rightarrow B} \in \mathcal{P}(\bioformulas^*)$ associated with
+  the conditional $A \rightarrow B$ can be defined as follows:
 
   \[
     \ctrlset{A \rightarrow B}^* = \{
-    \Gamma \in \mathcal{L}_{\odot}^* \, | \, \exists \Delta \in (A \rightarrow
-    B)^*
-    : \Gamma, \Delta, A \not \models \Gamma, B \text{ is known}
+    \Gamma \in \bioformulas^* \, | \, \exists \Delta \in \elembases{A \rightarrow
+    B}
+    \quad : \quad \Gamma, \Delta, A \not \models \Gamma, B \text{ is known}
     \}
   \]
 \end{definition}
 
-Under this definition, the controller $\rightarrow$ elimination rule becomes the
-following:
+Again, this definition is incomplete unless we specify what it means to know
+that $\Gamma, \Delta, A \not \models \Gamma, B$. Nevertheless, under this
+definition, the controlled $\rightarrow$ elimination rule becomes the following:
 
 \[
   \begin{prooftree}
@@ -59,20 +80,56 @@ following:
   \end{prooftree}
 \]
 
+In the following section we will give a slightly modified (but nevertheless
+still precise and extremely faithful to the original) provability relation for
+the Zsyntax natural deduction-style calculus in [paper], that not only describes
+the biological transition but also takes into account the control sets involved
+in it.
+
 \subsection{An alternative natural deduction calculus}
+
+As we have seen, the logical framework of Zsyntax is dynamic in the sense that
+knowledge about biochemical reactions changes over time as facts are
+discovered. In other terms, this means that the contents of elementary bases
+and control sets that we consider as part of our system change.
+
+To give a precise definition of proof (in natural deduction style) or derivation
+(in sequent calculus), however, we need a way to refer to a particular
+\emph{current state} of the system, that is, to the current value of the
+elementary bases and control sets. We thus give the concept of a \emph{world},
+which is just a structure that describes the state of the system in a given
+point in time.
 
 \begin{definition}[World]
   A \emph{world assignment} is a map of type
-  $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot)$.  A
+  $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*)$.  A
   \emph{world} $w$ is a pair of world assignments, respectively called the
   \emph{control} map and the \emph{elementary} map.
 
   \[
     (w_{\text{ctrl}}, w_{\text{elem}}) \in W \equiv
-    (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot))
-    \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot))
+    (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
+    \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
   \]
 \end{definition}
+
+Elementary bases and control sets are therefore from now on considered in
+reference to a particular world $w$: the only difference is that the control set
+of a formula $A \rightarrow B$ is given by $w_{\text{ctrl}}(A,B)$, whereas the set
+of elementary bases is given by $w_{\text{elem}}(A,B)$. Thus, the $\rightarrow$
+elimination rule can be rewritten as
+
+\[
+  \begin{prooftree}
+    \Gamma, A \rightarrow B \, : \,
+    \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
+    \justifies
+    \Gamma, B
+  \end{prooftree}
+\]
+
+where $\elembasesw{\Gamma}{w}$ is exactly as $\elembases{\Gamma}$ but using $w$
+for the elementary bases of the conditionals.
 
 \begin{definition}[Enhanced provability judgement]
   Enhanced provability judgements are judgements of the form
@@ -85,11 +142,12 @@ following:
   and $w \in W$ is a world.
 \end{definition}
 
-The intuitive meaning of a judgement $\Delta \models_{\ctrlset{}}^w \nabla$ is
-that there exists a sequence of Zsyntax rule applications with which it is
-possible to reach the Z-state $\Gamma, \nabla$ from the Z-state
-$\Gamma, \Delta$, under the elementary bases and control sets given by the world
-$w$, provided that $\Gamma$ is compatible with the control set $\ctrlset{}$.
+The intuitive meaning of affirming a judgement of the form
+$\Delta \models_{\ctrlset{}}^w \nabla$ is to know that there exists a sequence
+of Zsyntax rule applications with which it is possible to reach the Z-state
+$\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, under the elementary bases
+and control sets given by the world $w$, provided that $\Gamma$ is compatible
+with the control set $\ctrlset{}$.
 
 \paragraph{World extension}
 
@@ -122,6 +180,29 @@ operation as follows:
   \]
 \end{definition}
 
+\paragraph{Technical detail about worlds}
+
+Proofs in the natural deduction calculus (and, analogously, derivations in the
+sequent calculus) consider a fixed world in all parts of the proof. In other
+terms, the \emph{current} world is of course allowed to (and will) change
+between proofs (this is how the system is dynamic), but it is \strong{not}
+allowed to change \strong{within} a proof. Even though it wouldn't be difficult
+to give a natural deduction calculus that accounts for world dynamics within the
+same proof, it becomes problematic when dealing with the corresponding sequent
+calculus derivations, and in particular in the proof of cut elimination. For
+this reason, we choose to consider only proofs with fixed worlds, and in
+particular we require that the world considered in the proof is aware of all
+transitions of the form $\Gamma, A \models B$ that may have been
+\emph{discovered} for the first time from the proof itself. This is actually a
+quite reasonable thing to do: given the dynamic nature of the calculus, every
+previously established theorem must be re-checked every time the current world
+is changed with new information. Therefore, it only saves time (and computation)
+to eagerly check a proof with a world as up-to-date as possible.
+
+We now give a translation from the calculus given in [paper] to our enhanced
+calculus, which will be formed by inference rules having as premises and
+conclusion judgements of the form $\Gamma \models_{\ctrlset{}}^w \Delta$.
+
 \paragraph{Empirical rules}
 
 Empirical rules are not part of the calculus, but are treated as axioms as
@@ -150,20 +231,25 @@ $A \rightarrow B$, that is
 $\Gamma, \Delta \vdash_{\emptyset} A \rightarrow B, \Delta$.
 Notice, however, that in this process we gain knowledge of the fact that
 $\Gamma, A \models B$, so the \emph{world} against which the side conditions are
-checked must be updated accordingly. This leads to the following rule:
+checked must be updated accordingly (or rather, must already be up to date, for
+what we said before). This leads to the following rule:
 
 \[
   \begin{prooftree}
-    \Gamma, A \vdash_{\ctrlset{}}^{w[\Gamma,A\vdash_{\ctrlset{}}B]} B
+    \Gamma, A \vdash_{\ctrlset{}}^{w} B
     \justifies
-    \Gamma, \Delta \vdash_{\emptyset}^{w[\Gamma,A\vdash_{\ctrlset{}}B]n} A
+    \Gamma, \Delta \vdash_{\emptyset}^{w} A
     \rightarrow B, \Delta
+    \using{w[\Gamma,A\vdash_{\ctrlset{}}B] = w}
   \end{prooftree}
 \]
 
-Here, $w[\Gamma,A\vdash_{\ctrlset{}}B]$ means that the proof may happen in an
-arbitrary world, provided in contains the knowledge that the premise has
-just established.
+Here, the side condition $w[\Gamma,A\vdash_{\ctrlset{}}B] = w$ means that the
+proof may happen in an arbitrary world, provided it already contains the
+additional knowledge that the premise has just established. In other words, we
+require that the world against which we check the validity of the proof is a
+fixed point with respect to the extension operation represented by
+$\Gamma,A\models_{\ctrlset{}}B$.
 
 \paragraph{$\rightarrow$ elimination}
 
@@ -171,8 +257,8 @@ The rule in [paper]
 
 \[
   \begin{prooftree}
-    \Gamma, A \rightarrow B, A \; : \; \biocore{\Gamma} \cap \ctrlset{A
-      \rightarrow B} = \emptyset
+    \Gamma, A \rightarrow B, A \; : \;
+    \elembases{\Gamma} \cap \ctrlset{A \rightarrow B}^* = \emptyset
     \justifies
     \Gamma, B
   \end{prooftree}
@@ -182,7 +268,7 @@ Can be straighforwardly translated to our formalism as follows:
 
 \[
   \begin{prooftree}
-    \textsf{resp}_w(\Gamma, A, B)
+    \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
     \justifies
     \Gamma, A \rightarrow B, A \vdash_{w_{\text{ctrl}}(A,B)}^w \Gamma, B
   \end{prooftree}
@@ -251,103 +337,6 @@ engine.
 \begin{proof}
   Follows directly from the proposition above.
 \end{proof}
-
-\subsubsection{Implementation details}
-
-To slightly reduce the complexity of the automatic deduction process, we make
-the following assumption:
-
-\[
-  \Delta \models \nabla \wedge \Gamma, \Delta \not \models \Gamma, \nabla
-  \implies \forall \Gamma'
-  \supseteq \Gamma, \; \Gamma', \Delta \not \models \Gamma', \nabla
-\]
-
-In words, we assume that if a context $\Gamma$ is such that it inhibits a
-reaction, then so do all contexts $\Gamma'$ that extend it.
-
-\subsubsection{Implementation details}
-
-The two propositions above allow us to implement the proof search phase as
-follows:
-
-\begin{enumerate}
-\item A structurally acceptable proof $\pi$ is found;
-\item The current world $w$ is extended with knowledge about all derivations
-  of the form $\Gamma, A \models B$ in $\pi$, to yield an updated world $w'$;
-\item The proof in finally checked against the updated world $w'$.
-\end{enumerate}
-
-Notice that different derivations of the form $\Gamma, A \models B$ in the same
-proof may influence each other in how the world is extended, for example when an
-instance of one is part of the subderivation of another. This mutual dependence
-can be solved by considering a per-proof monotone operator defining a one-step
-world extension, and repeatedly applying such operator until a fixed point is
-reached.
-
-\begin{definition}
-  World assignments form a join-semilattice
-
-  \[
-    \mathcal{A} = \langle \mathcal{L} \times \mathcal{L} \to
-    \mathcal{P}(\mathcal{L}_\odot), \leq, \sqcup \rangle
-  \]
-
-  where
-
-  \[
-    w_1 \leq w_2 \equiv \forall F_1, F_2, w_1(F_1,F_2) \subseteq w_2(F_1,F_2)
-  \]
-
-  \[
-    (w_1 \sqcup w_2)(F_1, F_2) = w_1(F_1,F_2) \cup w_2(F_1,F_2)
-  \]
-\end{definition}
-
-Notice that, since we assume $\mathcal{L}_{\odot}$ to be finite, the set
-$\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot)$ is finite
-and so $\mathcal{A}$ is also a complete lattice. In particular, is has a top
-element.
-
-The order theoretic properties of world assigments extend to worlds in the
-obvious way.
-
-\begin{definition}
-  Worlds form a join-semilattice
-  $\mathcal{W} = \langle W, \leq, \sqcup \rangle$, where
-
-  \[
-    (w_{\text{ctrl}1}, w_{\text{elem}1}) \leq
-    (w_{\text{ctrl}2}, w_{\text{elem}2}) \equiv
-    w_{\text{ctrl}1} \leq w_{\text{ctrl}2} \wedge
-    w_{\text{elem}1} \leq w_{\text{elem}2}
-  \]
-  \[
-    (w_{\text{ctrl}1}, w_{\text{elem}1}) \sqcup
-    (w_{\text{ctrl}2}, w_{\text{elem}2}) =
-    (w_{\text{ctrl}1} \sqcup w_{\text{ctrl}2}, w_{\text{elem}1} \sqcup w_{\text{elem}2})
-  \]
-\end{definition}
-
-Being $\mathcal{W}$ equipped with a top element $\top$, we have the rather
-trivial property that every monotonic function over $W$ has a fixed point.
-
-Given a derivation $\pi$ and a world $w$, the one-step extension
-$\textsf{extend}_{\pi}(w) \in W$ is inductively defined as follows:
-
-\begin{enumerate}
-\item Case $\pi$ is ...
-\end{enumerate}
-
-\begin{proposition}
-  The extension operator $\textsf{extend}_{\pi} : W \rightarrow W$ is monotone.
-\end{proposition}
-\begin{proof}
-  TODO...
-\end{proof}
-
-Thus, the world against which a proof $\pi$ is checked is
-$w' = \bigsqcup \{ \textsf{extend}_{\pi}^n(w) \, | \, n \in N \}$.
 
 %%% Local Variables:
 %%% mode: latex
