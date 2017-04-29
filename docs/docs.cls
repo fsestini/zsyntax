@@ -111,6 +111,13 @@
 \newcommand{\biocore}[1]{(#1)^{*}}
 \newcommand{\deflimp}{\limp^{S}_{\ctrlset{}}}
 
+% All elementary bases of a formula/context
+\newcommand{\elembases}[1]{(#1)^{b}}
+\newcommand{\elembasesw}[2]{(#1)^{b}_{#2}}
+
+% Bonding language
+\newcommand{\bioformulas}{\mathcal{L}_{\odot}}
+
 \newcommand{\css}[1]{\mathrm{CSS}_{#1}}
 \newcommand{\bss}[1]{\mathrm{BSS}_{#1}}
 

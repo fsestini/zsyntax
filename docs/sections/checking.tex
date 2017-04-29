@@ -1,5 +1,109 @@
 \section{Checking}
 
+
+
+\subsubsection{Implementation details}
+
+To slightly reduce the complexity of the automatic deduction process, we make
+the following assumption:
+
+\[
+  \Delta \models \nabla \wedge \Gamma, \Delta \not \models \Gamma, \nabla
+  \implies \forall \Gamma'
+  \supseteq \Gamma, \; \Gamma', \Delta \not \models \Gamma', \nabla
+\]
+
+In words, we assume that if a context $\Gamma$ is such that it inhibits a
+reaction, then so do all contexts $\Gamma'$ that extend it.
+
+\subsubsection{Implementation details}
+
+The two propositions above allow us to implement the proof search phase as
+follows:
+
+\begin{enumerate}
+\item A structurally acceptable proof $\pi$ is found;
+\item The current world $w$ is extended with knowledge about all derivations
+  of the form $\Gamma, A \models B$ in $\pi$, to yield an updated world $w'$;
+\item The proof in finally checked against the updated world $w'$.
+\end{enumerate}
+
+Notice that different derivations of the form $\Gamma, A \models B$ in the same
+proof may influence each other in how the world is extended, for example when an
+instance of one is part of the subderivation of another. This mutual dependence
+can be solved by considering a per-proof monotone operator defining a one-step
+world extension, and repeatedly applying such operator until a fixed point is
+reached.
+
+\begin{definition}
+  World assignments form a join-semilattice
+
+  \[
+    \mathcal{A} = \langle \mathcal{L} \times \mathcal{L} \to
+    \mathcal{P}(\mathcal{L}_\odot), \leq, \sqcup \rangle
+  \]
+
+  where
+
+  \[
+    w_1 \leq w_2 \equiv \forall F_1, F_2, w_1(F_1,F_2) \subseteq w_2(F_1,F_2)
+  \]
+
+  \[
+    (w_1 \sqcup w_2)(F_1, F_2) = w_1(F_1,F_2) \cup w_2(F_1,F_2)
+  \]
+\end{definition}
+
+Notice that, since we assume $\mathcal{L}_{\odot}$ to be finite, the set
+$\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\mathcal{L}_\odot)$ is finite
+and so $\mathcal{A}$ is also a complete lattice. In particular, is has a top
+element.
+
+The order theoretic properties of world assigments extend to worlds in the
+obvious way.
+
+\begin{definition}
+  Worlds form a join-semilattice
+  $\mathcal{W} = \langle W, \leq, \sqcup \rangle$, where
+
+  \[
+    (w_{\text{ctrl}1}, w_{\text{elem}1}) \leq
+    (w_{\text{ctrl}2}, w_{\text{elem}2}) \equiv
+    w_{\text{ctrl}1} \leq w_{\text{ctrl}2} \wedge
+    w_{\text{elem}1} \leq w_{\text{elem}2}
+  \]
+  \[
+    (w_{\text{ctrl}1}, w_{\text{elem}1}) \sqcup
+    (w_{\text{ctrl}2}, w_{\text{elem}2}) =
+    (w_{\text{ctrl}1} \sqcup w_{\text{ctrl}2}, w_{\text{elem}1} \sqcup w_{\text{elem}2})
+  \]
+\end{definition}
+
+Being $\mathcal{W}$ equipped with a top element $\top$, we have the rather
+trivial property that every monotonic function over $W$ has a fixed point.
+
+Given a derivation $\pi$ and a world $w$, the one-step extension
+$\textsf{extend}_{\pi}(w) \in W$ is inductively defined as follows:
+
+\begin{enumerate}
+\item Case $\pi$ is ...
+\end{enumerate}
+
+\begin{proposition}
+  The extension operator $\textsf{extend}_{\pi} : W \rightarrow W$ is monotone.
+\end{proposition}
+\begin{proof}
+  TODO...
+\end{proof}
+
+Thus, the world against which a proof $\pi$ is checked is
+$w' = \bigsqcup \{ \textsf{extend}_{\pi}^n(w) \, | \, n \in N \}$.
+
+--------------------------------------------------------------------------------
+
+
+
+
 Checking is performed after derivation search, to check that the candidate
 derivation respects the constraints imposed by the control sets involved.
 Checking happens by first doing a recursive pass though the derivation tree,
