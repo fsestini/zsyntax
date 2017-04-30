@@ -50,8 +50,13 @@ newtype ProverT seqty goalty m b = ProverT
   { unProverT :: ReaderT (ProverEnvironment goalty) (StateT (ProverState seqty) m) b
   }
 
--- runProverT :: ProverT seqty m b -> NeutralSequent seqty -> m b
--- runProverT prover sequent = undefined
+runProverT
+  :: (Functor m, Ord seqty)
+  => ProverT seqty goalty m b -> goalty -> m b
+runProverT prover sequent =
+  fmap fst $ runStateT
+               (runReaderT (unProverT prover) (PE (makeGoal sequent)))
+               (PS [] emptyActives emptyInactives emptyGlobalIndex)
 
 deriving instance (Functor m) => Functor (ProverT seqty goalty m)
 deriving instance (Monad m) => Applicative (ProverT seqty goalty m)
