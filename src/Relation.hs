@@ -34,7 +34,10 @@ import DerivationTerm
 --------------------------------------------------------------------------------
 
 -- | Type of labelled sequents decorated with derivation terms
-data DLSequent l a = DLS (DerTerm l a) (LabelledSequent l a)
+data DLSequent l a = DLS
+  { derivation :: DerTerm l a
+  , sequent :: LabelledSequent l a
+  }
 
 instance  (Eq a, Eq l) => Eq (DLSequent l a) where
   (DLS _ s1) == (DLS _ s2) = s1 == s2
