@@ -43,27 +43,24 @@ data ProverState seqty = PS
 --   }
 
 data ProverEnvironment s = PE
-  { -- goalSequent :: NeutralSequent l a
-  -- ,
-    convertedGoalSequent :: SearchSequent Goal s
+  { goalSequent :: SearchSequent Goal s
   }
 
-
-newtype ProverT seqty m b = ProverT
-  { unProverT :: ReaderT (ProverEnvironment seqty) (StateT (ProverState seqty) m) b
+newtype ProverT seqty goalty m b = ProverT
+  { unProverT :: ReaderT (ProverEnvironment goalty) (StateT (ProverState seqty) m) b
   }
 
 -- runProverT :: ProverT seqty m b -> NeutralSequent seqty -> m b
 -- runProverT prover sequent = undefined
 
-deriving instance (Functor m) => Functor (ProverT seqty m)
-deriving instance (Monad m) => Applicative (ProverT seqty m)
-deriving instance (Monad m) => Monad (ProverT seqty m)
-deriving instance (Monad m) => MonadState (ProverState seqty) (ProverT seqty m)
-deriving instance (Monad m) => MonadReader (ProverEnvironment seqty) (ProverT seqty m)
+deriving instance (Functor m) => Functor (ProverT seqty goalty m)
+deriving instance (Monad m) => Applicative (ProverT seqty goalty m)
+deriving instance (Monad m) => Monad (ProverT seqty goalty m)
+deriving instance (Monad m) => MonadState (ProverState seqty) (ProverT seqty goalty m)
+deriving instance (Monad m) => MonadReader (ProverEnvironment goalty) (ProverT seqty goalty m)
 
 instance (Monad m, Ord seqty, ForwardSequent seqty) =>
-         HasProverState seqty (ProverT seqty m) where
+         HasProverState seqty (ProverT seqty goalty m) where
   getRules = rules <$> get
   addRule r = do
     (PS rls as is gi) <- get
@@ -91,9 +88,8 @@ instance (Monad m, Ord seqty, ForwardSequent seqty) =>
     put (PS r as newIs gi)
     return bschecked
 
-instance (Monad m, ForwardSequent seqty) =>
-         HasProverEnvironment seqty (ProverT seqty m) where
-  -- getGoal = goalSequent <$> ask
+instance (Monad m, ForwardSequent goalty, Coercible seqty goalty) =>
+         HasProverEnvironment seqty (ProverT seqty goalty m) where
   subsumesGoal s = do
-    gs <- convertedGoalSequent <$> ask
-    return (s `Prover.Structures.subsumesGoalOp` gs)
+    gs <- goalSequent <$> ask
+    return $ s `Prover.Structures.subsumesGoalOp` gs
