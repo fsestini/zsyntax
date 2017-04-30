@@ -40,6 +40,7 @@ import Rel
 import Relation (DLSequent)
 import Prover.Frontier (initialSequentsAndRules)
 import Formula
+import ForwardSequent
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -54,17 +55,17 @@ data Stage
   | GlIndex    -- | Global index sequent
   | Goal       -- | Goal sequent
 
-data SearchSequent :: Stage -> * -> * -> * where
-  InitSS :: DLSequent l a -> SearchSequent Initial l a
-  ActiveSS :: DLSequent l a -> SearchSequent Active l a
-  InactiveSS :: DLSequent l a -> SearchSequent Inactive l a
-  ConclSS :: DLSequent l a -> SearchSequent Concl l a
-  FSCheckedSS :: DLSequent l a -> SearchSequent FSChecked l a
-  BSCheckedSS :: DLSequent l a -> SearchSequent BSChecked l a
-  GlIndexSS :: DLSequent l a -> SearchSequent GlIndex l a
-  GoalSS :: DLSequent l a -> SearchSequent Goal l a
+data SearchSequent :: Stage -> * -> * where
+  InitSS :: seq -> SearchSequent Initial seq
+  ActiveSS :: seq -> SearchSequent Active seq
+  InactiveSS :: seq -> SearchSequent Inactive seq
+  ConclSS :: seq -> SearchSequent Concl seq
+  FSCheckedSS :: seq -> SearchSequent FSChecked seq
+  BSCheckedSS :: seq -> SearchSequent BSChecked seq
+  GlIndexSS :: seq -> SearchSequent GlIndex seq
+  GoalSS :: seq -> SearchSequent Goal seq
 
-extractSequent :: SearchSequent s l a -> DLSequent l a
+extractSequent :: SearchSequent s seq -> seq
 extractSequent (InitSS s) = s
 extractSequent (ActiveSS s) = s
 extractSequent (InactiveSS s) = s
@@ -74,28 +75,33 @@ extractSequent (FSCheckedSS s) = s
 extractSequent (GlIndexSS s) = s
 extractSequent (GoalSS s) = s
 
-instance (Eq a, Eq l) => Eq (SearchSequent s l a) where
+instance Eq seq => Eq (SearchSequent s seq) where
   s1 == s2 = (extractSequent s1) == (extractSequent s2)
 
-instance (Ord a, Ord l) => Ord (SearchSequent s l a) where
+instance Ord seq => Ord (SearchSequent s seq) where
   compare s1 s2 = compare (extractSequent s1) (extractSequent s2)
 
-type ActiveSequent l a = SearchSequent Active l a
-newtype ActiveSequents l a = AS (S.Set (SearchSequent Active l a))
-type InactiveSequent l a = SearchSequent Inactive l a
-newtype InactiveSequents l a = IS (S.Set (InactiveSequent l a))
-type ConclSequent l a = SearchSequent Concl l a
-newtype GlobalIndex l a = GI (S.Set (SearchSequent GlIndex l a))
+instance ForwardSequent seq => ForwardSequent (SearchSequent s seq) where
+  subsumes s1 s2 = subsumes (extractSequent s1) (extractSequent s2)
+
+type ActiveSequent seq = SearchSequent Active seq
+newtype ActiveSequents seq = AS (S.Set (SearchSequent Active seq))
+type InactiveSequent seq = SearchSequent Inactive seq
+newtype InactiveSequents seq = IS (S.Set (InactiveSequent seq))
+type ConclSequent seq = SearchSequent Concl seq
+newtype GlobalIndex seq = GI (S.Set (SearchSequent GlIndex seq))
 
 --------------------------------------------------------------------------------
 
-initialize :: DLSequent l a -> SearchSequent Initial l a
+initialize :: seqty -> SearchSequent Initial seqty
 initialize = InitSS
 
-initialIsFSChecked :: SearchSequent Initial l a -> SearchSequent FSChecked l a
+initialIsFSChecked :: SearchSequent Initial seqty
+                   -> SearchSequent FSChecked seqty
 initialIsFSChecked (InitSS s) = FSCheckedSS s
 
-initialIsBSChecked :: SearchSequent Initial l a -> SearchSequent BSChecked l a
+initialIsBSChecked :: SearchSequent Initial seqty
+                   -> SearchSequent BSChecked seqty
 initialIsBSChecked (InitSS s) = BSCheckedSS s
 
 --------------------------------------------------------------------------------
@@ -105,100 +111,95 @@ initialIsBSChecked (InitSS s) = BSCheckedSS s
     Such application may either fail, succeed with a value (when the rule has
     been fully applied), or succeed with a function (when the rule is only
     partially applied and has still some premises to match). -}
-type RuleRes l a = Rel (ActiveSequent l a) (ConclSequent l a)
+type RuleRes seqty = Rel (ActiveSequent seqty) (ConclSequent seqty)
 
 {-| Type of inference rules.
     Axioms are not considered rules in this case, so a rule takes at least one
     premise. Hence the corresponding type is a function from a premise sequent
     to a rule application result. -}
-type Rule l a = (ActiveSequent l a) -> RuleRes l a
+type Rule seqty = (ActiveSequent seqty) -> RuleRes seqty
 
 --------------------------------------------------------------------------------
 -- Operations
 
-applyRule :: Rule l a
-          -> ActiveSequent l a
-          -> RuleRes l a
+applyRule :: Rule seqty
+          -> ActiveSequent seqty
+          -> RuleRes seqty
 applyRule rule s = rule s
 
 foldActives
-  :: (forall f. (Foldable f) =>
-                  f (ActiveSequent l a) -> b)
-  -> ActiveSequents l a
+  :: (forall f. (Foldable f) => f (ActiveSequent seqty) -> b)
+  -> ActiveSequents seqty
   -> b
 foldActives folder (AS actives) = folder actives
 
 isGoal
-  :: (Ord l, Ord a)
-  => SearchSequent Goal l a
-  -> SearchSequent FSChecked l a
-  -> Maybe (DLSequent l a)
+  :: ForwardSequent seqty
+  => SearchSequent Goal seqty -> SearchSequent FSChecked seqty -> Maybe seqty
 isGoal (GoalSS goal) (FSCheckedSS fss) =
-  if fss <= goal
+  if fss `subsumes` goal
     then Just fss
     else Nothing
 
 activate
-  :: (Ord l, Ord a)
-  => ActiveSequents l a
-  -> InactiveSequent l a
-  -> (ActiveSequents l a, ActiveSequent l a)
+  :: Ord seqty
+  => ActiveSequents seqty
+  -> InactiveSequent seqty
+  -> (ActiveSequents seqty, ActiveSequent seqty)
 activate (AS as) (InactiveSS s) = (AS (S.insert (ActiveSS s) as), ActiveSS s)
 
-popInactiveOp :: (Ord a, Ord l) => InactiveSequents l a
-              -> Maybe (InactiveSequents l a, InactiveSequent l a)
+popInactiveOp
+  :: Ord seqty
+  => InactiveSequents seqty
+  -> Maybe (InactiveSequents seqty, InactiveSequent seqty)
 popInactiveOp (IS is) =
   case S.toList is of
     [] -> Nothing
     (x:xs) -> Just (IS . S.fromList $ xs, x)
 
 addToIndex
-  :: (Ord l, Ord a)
-  => GlobalIndex l a
-  -> SearchSequent BSChecked l a
-  -> GlobalIndex l a
+  :: Ord seqty
+  => GlobalIndex seqty -> SearchSequent BSChecked seqty -> GlobalIndex seqty
 addToIndex (GI gi) (BSCheckedSS s) = GI (S.insert (GlIndexSS s) gi)
 
 addToInactives
-  :: (Ord l, Ord a)
-  => InactiveSequents l a
-  -> SearchSequent BSChecked l a
-  -> InactiveSequents l a
+  :: Ord seqty
+  => InactiveSequents seqty
+  -> SearchSequent BSChecked seqty
+  -> InactiveSequents seqty
 addToInactives (IS ins) (BSCheckedSS s) = IS (S.insert (InactiveSS s) ins)
 
 fwdSubsumes
-  :: (Ord a, Ord l)
-  => GlobalIndex l a
-  -> SearchSequent Concl l a
-  -> Maybe (SearchSequent FSChecked l a)
+  :: Ord seqty
+  => GlobalIndex seqty
+  -> SearchSequent Concl seqty
+  -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI globalIndex) (ConclSS s) =
   if or . S.map (\gi -> (extractSequent gi) <= s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
 removeSubsumedByOp
-  :: (Ord a, Ord l)
-  => SearchSequent FSChecked l a
-  -> InactiveSequents l a
-  -> (InactiveSequents l a, SearchSequent BSChecked l a)
+  :: ForwardSequent seqty
+  => SearchSequent FSChecked seqty
+  -> InactiveSequents seqty
+  -> (InactiveSequents seqty, SearchSequent BSChecked seqty)
 removeSubsumedByOp (FSCheckedSS s) (IS is) =
-  ( IS (S.filter (\iseq -> not (s <= (extractSequent iseq))) is)
+  ( IS (S.filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
   , BSCheckedSS s)
 
 subsumesGoalOp
-  :: (Ord a, Ord l)
-  => SearchSequent FSChecked l a
-  -> SearchSequent Goal l a
-  -> Maybe (DLSequent l a)
+  :: ForwardSequent seqty
+  => SearchSequent FSChecked seqty -> SearchSequent Goal seqty -> Maybe seqty
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  if s1 <= s2
+  if s1 `subsumes` s2
     then Just s1
     else Nothing
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
   => NeutralSequent l a
-  -> (S.Set (SearchSequent Initial l a), [Rule l a])
+  -> (S.Set (SearchSequent Initial (DLSequent l a)), [Rule (DLSequent l a)])
 initialSequentsAndRules =
   (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .
   Prover.Frontier.initialSequentsAndRules

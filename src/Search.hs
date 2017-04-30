@@ -37,48 +37,61 @@ type DerivationTerm l a = DLSequent l a
   9. Remove inactive sequents that are subsumed by the new sequents (backward
      subsumption)
   10. Add rules to rule set
-  11. Is any new sequent subsumed the goal, exit
+  11. If any new sequent subsumes the goal, exit
   12. Add new sequents to inactive set
   13. Goto 4
 
 -}
 
+-- doSearch
+--   :: forall m a l.
+--      ( Monad m
+--      , HasProverState l a m
+--      , HasProverEnvironment l a m
+--      , Ord l
+--      , Ord a
+--      , Eq a
+--      , Eq l
+--      )
+--   => m (Maybe (DerivationTerm l a))
+-- doSearch = do
+--   goal <- getGoal @l @a
+--   let (initialSequents, initialRules) =
+--         (S.toList *** id) . initialSequentsAndRules $ goal
+--   addInactives (map initialIsBSChecked initialSequents)
+--   addRules initialRules
+--   (<|>) <$> (haveGoal (map initialIsFSChecked initialSequents)) <*> otterLoop
+
 doSearch
-  :: forall m a l.
-     ( Monad m
-     , HasProverState l a m
-     , HasProverEnvironment l a m
-     , Ord l
-     , Ord a
-     , Eq a
-     , Eq l
+  :: ( Monad m
+     , HasProverState seqty m
+     , HasProverEnvironment seqty m
+     , Ord seqty
+     , Eq seqty
      )
-  => m (Maybe (DerivationTerm l a))
-doSearch = do
-  goal <- getGoal @l @a
-  let (initialSequents, initialRules) =
-        (S.toList *** id) . initialSequentsAndRules $ goal
-  addInactives (map initialIsBSChecked initialSequents)
+  => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (Maybe seqty)
+doSearch initialSequents initialRules = do
+  addInactives (map initialIsBSChecked initialList)
   addRules initialRules
-  (<|>) <$> (haveGoal (map initialIsFSChecked initialSequents)) <*> otterLoop
+  (<|>) <$> (haveGoal (map initialIsFSChecked initialList)) <*> otterLoop
+  where
+    initialList = S.toList initialSequents
 
 otterLoop
-  :: forall m l a.
+  :: forall m seqty .
      ( Monad m
-     , HasProverState l a m
-     , HasProverEnvironment l a m
-     , Ord a
-     , Ord l
-     , Eq a
-     , Eq l
+     , HasProverState seqty m
+     , HasProverEnvironment seqty m
+     , Ord seqty
+     , Eq seqty
      )
-  => m (Maybe (DerivationTerm l a))
+  => m (Maybe seqty)
 otterLoop = do
   inactive <- popInactive
   case inactive of
     Nothing -> return Nothing
     Just sequent -> do
-      res <- processNewActive @m @l @a sequent
+      res <- processNewActive sequent
       unsubSeqs <- filterUnsubsumed (S.toList . resSequents $ res)
       unsubSeqs' <- removeSubsumedByAll unsubSeqs
       addInactives unsubSeqs'
@@ -86,8 +99,8 @@ otterLoop = do
       (<|>) <$> (haveGoal unsubSeqs) <*> otterLoop
 
 processNewActive
-  :: (Monad m, HasProverState l a m, Ord l, Ord a)
-  => ActiveSequent l a -> m (RuleAppRes l a)
+  :: (Monad m, HasProverState seqty m, Ord seqty)
+  => ActiveSequent seqty -> m (RuleAppRes seqty)
 processNewActive sequent = do
   actives <- getActives
   rules <- getRules
@@ -98,35 +111,35 @@ processNewActive sequent = do
 --------------------------------------------------------------------------------
 
 -- | Result type of matching a list of rules to an input sequent.
-type RuleAppRes l a = (S.Set (ConclSequent l a), [Rule l a])
+type RuleAppRes seqty = (S.Set (ConclSequent seqty), [Rule seqty])
 
-resSequents :: RuleAppRes l a -> S.Set (ConclSequent l a)
+resSequents :: RuleAppRes seqty -> S.Set (ConclSequent seqty)
 resSequents r = fst r
 
-resRules :: RuleAppRes l a -> [Rule l a]
+resRules :: RuleAppRes seqty -> [Rule seqty]
 resRules r = snd r
 
 partitionRuleRes
-  :: (CanMap f, CanPartitionEithers f, Foldable f, Ord l, Ord a)
-  => f (RuleRes l a) -> RuleAppRes l a
+  :: (CanMap f, CanPartitionEithers f, Foldable f, Ord seqty)
+  => f (RuleRes seqty) -> RuleAppRes seqty
 partitionRuleRes =
   (S.fromList . toList *** toList) . partitionEithers . filterOut . map unRel
 
 applyAll
-  :: (Ord a, Ord l, Foldable f, CanPartitionEithers f, CanMap f)
-  => f (Rule l a) -> ActiveSequent l a -> RuleAppRes l a
+  :: (Ord seqty, Foldable f, CanPartitionEithers f, CanMap f)
+  => f (Rule seqty) -> ActiveSequent seqty -> RuleAppRes seqty
 applyAll rules as = partitionRuleRes . map ($ as) $ rules
 
 applyToActives
-  :: (Ord l, Ord a, Foldable f)
-  => ActiveSequents l a -> f (Rule l a) -> RuleAppRes l a
+  :: (Ord seqty, Foldable f)
+  => ActiveSequents seqty -> f (Rule seqty) -> RuleAppRes seqty
 applyToActives actives rules = partitionRuleRes $ concatMap mapper rules
   where
     mapper rule = foldActives (foldMap (pure . applyRule rule)) actives
 
 percolate
-  :: (Ord l, Ord a, Foldable f)
-  => ActiveSequents l a -> f (Rule l a) -> RuleAppRes l a
+  :: (Ord seqty, Foldable f)
+  => ActiveSequents seqty -> f (Rule seqty) -> RuleAppRes seqty
 percolate actives rules = r1 `mappend` r2
   where
     r1 = applyToActives actives rules

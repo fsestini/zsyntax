@@ -21,38 +21,48 @@ import Rule
 import Control.Monad.Trans.State.Strict hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
 
+import ForwardSequent
+
 import Prover.Class
 import Prover.Structures
 
 --------------------------------------------------------------------------------
 -- ProverT monad transformer
 
-data ProverState l a = PS
-  { rules :: [Rule l a]
-  , actives :: ActiveSequents l a
-  , inactives :: InactiveSequents l a
-  , globalIndex :: GlobalIndex l a
-  }
-data ProverEnvironment l a = PE
-  { goalSequent :: NeutralSequent l a
-  , convertedGoalSequent :: SearchSequent Goal l a
+data ProverState seqty = PS
+  { rules :: [Rule seqty]
+  , actives :: ActiveSequents seqty
+  , inactives :: InactiveSequents seqty
+  , globalIndex :: GlobalIndex seqty
   }
 
-newtype ProverT l a m b = ProverT
-  { unProverT :: ReaderT (ProverEnvironment l a) (StateT (ProverState l a) m) b
+-- data ProverEnvironment l a = PE
+--   { goalSequent :: NeutralSequent l a
+--   , convertedGoalSequent :: SearchSequent Goal l a
+--   }
+
+data ProverEnvironment s = PE
+  { -- goalSequent :: NeutralSequent l a
+  -- ,
+    convertedGoalSequent :: SearchSequent Goal s
   }
 
-runProverT :: ProverT l a m b -> NeutralSequent l a -> m b
-runProverT prover sequent = undefined
 
-deriving instance (Functor m) => Functor (ProverT l a m)
-deriving instance (Monad m) => Applicative (ProverT l a m)
-deriving instance (Monad m) => Monad (ProverT l a m)
-deriving instance (Monad m) => MonadState (ProverState l a) (ProverT l a m)
-deriving instance (Monad m) => MonadReader (ProverEnvironment l a) (ProverT l a m)
+newtype ProverT seqty m b = ProverT
+  { unProverT :: ReaderT (ProverEnvironment seqty) (StateT (ProverState seqty) m) b
+  }
 
-instance (Monad m, Ord l, Ord a) =>
-         HasProverState l a (ProverT l a m) where
+-- runProverT :: ProverT seqty m b -> NeutralSequent seqty -> m b
+-- runProverT prover sequent = undefined
+
+deriving instance (Functor m) => Functor (ProverT seqty m)
+deriving instance (Monad m) => Applicative (ProverT seqty m)
+deriving instance (Monad m) => Monad (ProverT seqty m)
+deriving instance (Monad m) => MonadState (ProverState seqty) (ProverT seqty m)
+deriving instance (Monad m) => MonadReader (ProverEnvironment seqty) (ProverT seqty m)
+
+instance (Monad m, Ord seqty, ForwardSequent seqty) =>
+         HasProverState seqty (ProverT seqty m) where
   getRules = rules <$> get
   addRule r = do
     (PS rls as is gi) <- get
@@ -80,9 +90,9 @@ instance (Monad m, Ord l, Ord a) =>
     put (PS r as newIs gi)
     return bschecked
 
-instance (Monad m, Ord l, Ord a) =>
-         HasProverEnvironment l a (ProverT l a m) where
-  getGoal = goalSequent <$> ask
+instance (Monad m, ForwardSequent seqty) =>
+         HasProverEnvironment seqty (ProverT seqty m) where
+  -- getGoal = goalSequent <$> ask
   subsumesGoal s = do
     gs <- convertedGoalSequent <$> ask
     return (s `Prover.Structures.subsumesGoalOp` gs)
