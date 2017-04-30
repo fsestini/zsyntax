@@ -22,6 +22,7 @@ import Control.Monad.Trans.State.Strict hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
 
 import ForwardSequent
+import TypeClasses
 
 import Prover.Class
 import Prover.Structures
