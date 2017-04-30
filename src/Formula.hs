@@ -101,6 +101,20 @@ data ORSLFormula l a =
 
 data OAtom a = forall b . OA (Atom b a)
 
+instance Ord a => Eq (OAtom a) where
+  (OA a1) == (OA a2) = compareAtom a1 a2 == EQ
+
+instance Ord a => Ord (OAtom a) where
+  compare (OA a1) (OA a2) = compareAtom a1 a2
+
+compareAtom :: Ord a => Atom b1 a -> Atom b2 a -> Ordering
+compareAtom atom1 atom2 = compare (getAtom atom1) (getAtom atom2)
+  where
+    getAtom :: Atom b a -> BioFormula a
+    getAtom (LBAtom atom) = atom
+    getAtom (RBAtom atom) = atom
+
+
 olfLabel :: OLFormula l a -> Label l a
 olfLabel (OLF f) = label f
 
