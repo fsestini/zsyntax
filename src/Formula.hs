@@ -89,6 +89,34 @@ label (FImpl _ _ l) = L l
 -- | Type of opaque formulas.
 data OLFormula l a = forall p . OLF (LFormula p l a)
 
+instance (Ord a, Ord l) => Eq (OLFormula l a) where
+  (OLF f1) == (OLF f2) = compareLF f1 f2 == EQ
+
+instance (Ord a, Ord l) => Ord (OLFormula l a) where
+  compare (OLF f1) (OLF f2) = compareLF f1 f2
+
+compareLF :: (Ord a, Ord l) => LFormula p l a -> LFormula q l a -> Ordering
+compareLF (FAtom atom1) (FAtom atom2) =
+  compare (OA atom1) (OA atom2)
+compareLF (FConj f1 f2 l1) (FConj g1 g2 l2) =
+  case compareLF f1 g1 of
+    EQ ->
+      case compareLF f2 g2 of
+        EQ -> compare l1 l2
+        x -> x
+    x -> x
+compareLF (FImpl f1 f2 l1) (FImpl g1 g2 l2) =
+  case compareLF f1 g1 of
+    EQ ->
+      case compareLF f2 g2 of
+        EQ -> compare l1 l2
+        x -> x
+    x -> x
+compareLF (FAtom _) _ = LT
+compareLF (FConj _ _ _) (FAtom _) = GT
+compareLF (FConj _ _ _) (FImpl _ _ _) = LT
+compareLF (FImpl _ _ _) _ = GT
+
 -- | Type of opaque left-synchronous labelled formulas.
 data OLSLFormula l a =
   forall p. (IsLeftSynchronous p) =>
