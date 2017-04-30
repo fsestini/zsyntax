@@ -45,3 +45,9 @@ class CanPartition f where
 
 class CanSingleton f where
   singleton :: a -> f a
+
+class Denumerable t where
+  next :: t -> t
+
+pickFresh :: (Ord t, Foldable f, Denumerable t) => f t -> t
+pickFresh = next . maximum
