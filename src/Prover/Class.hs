@@ -6,9 +6,6 @@
 module Prover.Class where
 
 import Data.Foldable
--- import Formula
--- import Relation
--- import Rule
 import TypeClasses
 import Control.Applicative
 import Control.Monad
