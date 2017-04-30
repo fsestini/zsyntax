@@ -11,6 +11,7 @@ module TypeClasses
   , CanFilter(..)
   , CanPartition(..)
   , PickMonad(..)
+  , Coercible(..)
   , filterOut
   ) where
 
@@ -55,3 +56,6 @@ pickFresh = next . maximum
 
 class Monad m => PickMonad m l where
   pick :: m l
+
+class Coercible a b where
+  coerce :: a -> b
