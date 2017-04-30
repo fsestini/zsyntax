@@ -94,6 +94,11 @@ data OLSLFormula l a =
   forall p. (IsLeftSynchronous p) =>
             OLSLF (LFormula p l a)
 
+-- | Type of opaque right-synchronous labelled formulas.
+data ORSLFormula l a =
+  forall p. (IsRightSynchronous p) =>
+            ORSLF (LFormula p l a)
+
 data OAtom a = forall b . OA (Atom b a)
 
 olfLabel :: OLFormula l a -> Label l a
