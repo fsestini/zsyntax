@@ -150,22 +150,6 @@ olsfLabel :: OLSLFormula l a -> Label l a
 olsfLabel (OLSLF f) = label f
 
 --------------------------------------------------------------------------------
--- Simple formulas
-
--- | Type of simple formulas.
-data SFormula a where
-  SAtom :: BioFormula a -> SFormula a
-  SConj :: SFormula a -> SFormula a -> SFormula a
-  SImpl :: SFormula a -> SFormula a -> SFormula a
-  deriving (Eq, Ord)
-
-fromLFormula :: LFormula p l a -> SFormula a
-fromLFormula (FAtom (LBAtom atom)) = SAtom atom
-fromLFormula (FAtom (RBAtom atom)) = SAtom atom
-fromLFormula (FConj f1 f2 _) = fromLFormula f1 `SConj` fromLFormula f2
-fromLFormula (FImpl f1 f2 _) = fromLFormula f1 `SImpl` fromLFormula f2
-
---------------------------------------------------------------------------------
 -- Neutral sequents.
 --
 -- Although the search procedure uses labelled sequents, here we give the type
