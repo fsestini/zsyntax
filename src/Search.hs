@@ -7,20 +7,17 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Search where
+module Search (doSearch) where
 
+import Prelude hiding (fail, map)
 import Data.Foldable
-import Prelude hiding (map)
 import Control.Applicative
-import Control.Arrow
+import Control.Arrow ((***))
+import Rel (unRel)
+import Control.Monad.Fail
 import qualified Data.Set as S
-import Relation
 import TypeClasses
-import Rel
 import Prover
-
--- TODO: use the real thing
-type DerivationTerm l a = DLSequent l a
 
 {-
 
@@ -43,33 +40,16 @@ type DerivationTerm l a = DLSequent l a
 
 -}
 
--- doSearch
---   :: forall m a l.
---      ( Monad m
---      , HasProverState l a m
---      , HasProverEnvironment l a m
---      , Ord l
---      , Ord a
---      , Eq a
---      , Eq l
---      )
---   => m (Maybe (DerivationTerm l a))
--- doSearch = do
---   goal <- getGoal @l @a
---   let (initialSequents, initialRules) =
---         (S.toList *** id) . initialSequentsAndRules $ goal
---   addInactives (map initialIsBSChecked initialSequents)
---   addRules initialRules
---   (<|>) <$> (haveGoal (map initialIsFSChecked initialSequents)) <*> otterLoop
-
 doSearch
   :: ( Monad m
+     , MonadFail mf
+     , Alternative mf
      , HasProverState seqty m
      , HasProverEnvironment seqty m
      , Ord seqty
      , Eq seqty
      )
-  => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (Maybe seqty)
+  => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (mf seqty)
 doSearch initialSequents initialRules = do
   addInactives (map initialIsBSChecked initialList)
   addRules initialRules
@@ -78,18 +58,20 @@ doSearch initialSequents initialRules = do
     initialList = S.toList initialSequents
 
 otterLoop
-  :: forall m seqty .
+  :: forall m mf seqty .
      ( Monad m
+     , MonadFail mf
+     , Alternative mf
      , HasProverState seqty m
      , HasProverEnvironment seqty m
      , Ord seqty
      , Eq seqty
      )
-  => m (Maybe seqty)
+  => m (mf seqty)
 otterLoop = do
   inactive <- popInactive
   case inactive of
-    Nothing -> return Nothing
+    Nothing -> return $ fail "search space saturated"
     Just sequent -> do
       res <- processNewActive sequent
       unsubSeqs <- filterUnsubsumed (S.toList . resSequents $ res)
