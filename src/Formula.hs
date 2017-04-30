@@ -39,7 +39,11 @@ data Atom :: Bias -> * -> * where
 data LFormula :: Pole -> * -> * -> * where
   FAtom :: Atom b a -> LFormula AtomPole l a
   FConj :: LFormula p l a -> LFormula q l a -> l -> LFormula LARS l a
-  FImpl :: LFormula p l a -> LFormula q l a -> l -> LFormula LSRA l a
+  FImpl
+    :: LFormula p l a
+    -> LFormula q l a
+    -> l
+    -> LFormula LSRA l a
 
 -- | Class of right-synchronous poles, used as a predicate over poles.
 class IsRightSynchronous (p :: Pole) where
