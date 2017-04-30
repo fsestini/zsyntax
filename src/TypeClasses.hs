@@ -10,6 +10,7 @@ module TypeClasses
   , CanMap(..)
   , CanFilter(..)
   , CanPartition(..)
+  , PickMonad(..)
   , filterOut
   ) where
 
@@ -51,3 +52,6 @@ class Denumerable t where
 
 pickFresh :: (Ord t, Foldable f, Denumerable t) => f t -> t
 pickFresh = next . maximum
+
+class Monad m => PickMonad m l where
+  pick :: m l
