@@ -160,13 +160,10 @@ negativeFocalDispatch formula =
       return (MRes mempty mempty (LabelResult (A a)))
     FAtom (LBAtom _) -> fail "not right-biased"
     FConj _ _ _ ->
-      leftActive
-        mempty
-        [OF formula]
-        (EmptyXi :: Xi EmptyXiFullResult p l a)
     FImpl f1 f2 _ -> do
       (MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
       (MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
+      leftActive mempty [OLF formula] (EmptyXi :: Xi EmptyXiFullResult p l a)
       return $
         MRes (gamma1 <> gamma2) (delta1 <> delta2) xi
 
@@ -203,9 +200,6 @@ positiveFocalDispatch formula =
            (delta1 <> delta2)
            EmptyResult)
 
--- | Formulas with arbitrary polarity.
-data OpaqueFormula l a = forall p . OF (LFormula p l a)
-
 {-| Right active relation, that is active relation of the form
 
       act( ; delta ; omega ===> C)
@@ -217,14 +211,14 @@ data OpaqueFormula l a = forall p . OF (LFormula p l a)
 rightActive
   :: (Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
-  -> [OpaqueFormula l a]
+  -> [OLFormula l a]
   -> LFormula p l a
   -> Relation l a (MatchResult FullXiEmptyResult l a)
 rightActive delta omega formula =
   case formula of
     FAtom atom -> leftActive delta omega (FullXi formula)
     FConj f1 f2 _ -> leftActive delta omega (FullXi formula)
-    FImpl f1 f2 _ -> rightActive delta ((OF f1) : omega) f2
+    FImpl f1 f2 _ -> rightActive delta ((OLF f1) : omega) f2
 
 {-| Left active relation, that is active relation of the form
 
@@ -238,18 +232,18 @@ rightActive delta omega formula =
 leftActive
   :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
-  -> [OpaqueFormula l a]
+  -> [OLFormula l a]
   -> Xi actcase p l a
   -> Relation l a (MatchResult actcase l a)
 leftActive delta omega formula =
   case omega of
     [] -> matchRel delta formula
-    (OF (FConj f1 f2 _):rest) -> leftActive delta (OF f2 : OF f1 : rest) formula
-    (OF (FImpl _ _ l):rest) ->
+    (OLF (FConj f1 f2 _):rest) -> leftActive delta (OLF f2 : OLF f1 : rest) formula
+    (OLF (FImpl _ _ l):rest) ->
       leftActive (add (L l) delta) rest formula
-    (OF (FAtom (LBAtom a)):rest) ->
+    (OLF (FAtom (LBAtom a)):rest) ->
       leftActive (add (A a) delta) rest formula
-    (OF (FAtom (RBAtom a)):rest) ->
+    (OLF (FAtom (RBAtom a)):rest) ->
       leftActive (add (A a) delta) rest formula
 
 {-| Active match relation.
