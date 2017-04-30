@@ -39,12 +39,14 @@ module Prover.Structures
 
 import Data.Profunctor
 import Control.Arrow
+import Control.Monad.Fail
 import qualified Data.Set as S
 import Rel
 import Relation (DLSequent)
 import Prover.Frontier (initialSequentsAndRules)
 import Formula
 import ForwardSequent
+import TypeClasses (Coercible(..))
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -205,12 +207,12 @@ removeSubsumedByOp (FSCheckedSS s) (IS is) =
   , BSCheckedSS s)
 
 subsumesGoalOp
-  :: ForwardSequent seqty
-  => SearchSequent FSChecked seqty -> SearchSequent Goal seqty -> Maybe seqty
+  :: (ForwardSequent goalty, MonadFail mf, Coercible seqty goalty)
+  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf seqty
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  if s1 `subsumes` s2
-    then Just s1
-    else Nothing
+  if (coerce s1) `subsumes` s2
+    then return s1
+    else Control.Monad.Fail.fail "sequent does not subsumes goal"
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
