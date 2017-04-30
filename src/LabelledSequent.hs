@@ -10,9 +10,7 @@
 module LabelledSequent where
 
 import Data.List
-import qualified Data.List.NonEmpty as NE
-import Formula
-       (Label, NeutralSequent(..), OLSLFormula(..), label, olfLabel, olsfLabel)
+import Formula (Label, NeutralSequent(..), olfLabel, olsfLabel, label)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Semigroup
