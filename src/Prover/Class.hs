@@ -7,8 +7,10 @@ module Prover.Class where
 
 import Data.Foldable
 import TypeClasses
+import Control.Monad hiding (fail)
+import Prelude hiding (fail)
+import Control.Monad.Fail
 import Control.Applicative
-import Control.Monad
 
 import Prover.Structures
 
@@ -26,15 +28,19 @@ class HasProverState seqty m where
                    -> m (SearchSequent BSChecked seqty)
 
 class HasProverEnvironment seqty m where
-  -- getGoal :: m (NeutralSequent l a)
-  subsumesGoal :: SearchSequent FSChecked seqty -> m (Maybe seqty)
+  subsumesGoal
+    :: MonadFail mf
+    => SearchSequent FSChecked seqty -> m (mf seqty)
 
 haveGoal
-  :: (Monad m, HasProverEnvironment seqty m, Foldable f)
-  => f (SearchSequent FSChecked seqty) -> m (Maybe seqty)
-haveGoal = foldrM folder Nothing
-  where
-    folder ss rest = liftM2 (<|>) (subsumesGoal ss) (return rest)
+  :: ( Monad m
+     , MonadFail mf
+     , Alternative mf
+     , HasProverEnvironment seqty m
+     , Foldable f
+     )
+  => f (SearchSequent FSChecked seqty) -> m (mf seqty)
+haveGoal = fmap (foldr (<|>) (fail "no goals")) . mapM subsumesGoal . toList
 
 addInactives
   :: (Traversable t, Monad m, HasProverState seqty m)
