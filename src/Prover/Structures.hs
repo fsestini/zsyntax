@@ -31,6 +31,10 @@ module Prover.Structures
   , foldActives
   , Prover.Structures.initialSequentsAndRules
   , isGoal
+  , makeGoal
+  , emptyActives
+  , emptyInactives
+  , emptyGlobalIndex
   ) where
 
 import Data.Profunctor
@@ -103,6 +107,18 @@ initialIsFSChecked (InitSS s) = FSCheckedSS s
 initialIsBSChecked :: SearchSequent Initial seqty
                    -> SearchSequent BSChecked seqty
 initialIsBSChecked (InitSS s) = BSCheckedSS s
+
+makeGoal :: seqty -> SearchSequent Goal seqty
+makeGoal = GoalSS
+
+emptyActives :: Ord seq => ActiveSequents seq
+emptyActives = AS mempty
+
+emptyInactives :: Ord seq => InactiveSequents seq
+emptyInactives = IS mempty
+
+emptyGlobalIndex :: Ord seq => GlobalIndex seq
+emptyGlobalIndex = GI mempty
 
 --------------------------------------------------------------------------------
 
