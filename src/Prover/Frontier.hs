@@ -26,6 +26,8 @@ import qualified Data.Set as S
 import Relation
 import Rel
 import Control.Arrow
+import DerivationTerm
+import SFormula (fromLFormula)
 
 --------------------------------------------------------------------------------
 -- Decorated formulas
@@ -166,7 +168,8 @@ decideValid (ODF decf) =
 
 genRuleFromValid
   :: (Eq a, Eq l, Ord a, Ord l)
-  => ValidDecFormula l a -> Rel (LabelledSequent l a) (LabelledSequent l a)
+  => ValidDecFormula l a
+  -> Rel (DLSequent l a) (DLSequent l a)
 genRuleFromValid (VDF f) =
   case f of
     UnrestrNegativeAtom a -> unrestr (FAtom a)
@@ -177,14 +180,17 @@ genRuleFromValid (VDF f) =
     LinearPositive f -> linearPos f
   where
     unrestr formula = do
-      (MRes gamma delta (LabelResult goal)) <- negativeFocalDispatch formula
-      return $ LS (add (label formula) gamma) delta goal
+      (d, MRes gamma delta (LabelResult goal)) <- negativeFocalDispatch formula
+      return $
+        DLS
+          (Copy d (label formula) (fromLFormula formula))
+          (LS (add (label formula) gamma) delta goal)
     linearNeg formula = do
-      (MRes gamma delta (LabelResult goal)) <- negativeFocalDispatch formula
-      return $ LS gamma (add (label formula) delta) goal
+      (d, MRes gamma delta (LabelResult goal)) <- negativeFocalDispatch formula
+      return $ DLS d (LS gamma (add (label formula) delta) goal)
     linearPos formula = do
-      (MRes gamma delta _) <- positiveFocalDispatch formula
-      return $ LS gamma delta (label formula)
+      (d, MRes gamma delta _) <- positiveFocalDispatch formula
+      return $ DLS d (LS gamma delta (label formula))
 
 --------------------------------------------------------------------------------
 -- Main function
@@ -192,7 +198,8 @@ genRuleFromValid (VDF f) =
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
   => NeutralSequent l a
-  -> (S.Set (LabelledSequent l a), [(LabelledSequent l a -> Rel (LabelledSequent l a) (LabelledSequent l a))])
+  -> (S.Set (DLSequent l a),
+       [(DLSequent l a -> Rel (DLSequent l a) (DLSequent l a))])
 initialSequentsAndRules =
   frontier >>>
   S.toList >>>

@@ -35,9 +35,9 @@ module Prover.Structures
 
 import Data.Profunctor
 import Control.Arrow
-import LabelledSequent
 import qualified Data.Set as S
 import Rel
+import Relation (DLSequent)
 import Prover.Frontier (initialSequentsAndRules)
 import Formula
 
@@ -55,16 +55,16 @@ data Stage
   | Goal       -- | Goal sequent
 
 data SearchSequent :: Stage -> * -> * -> * where
-  InitSS :: LabelledSequent l a -> SearchSequent Initial l a
-  ActiveSS :: LabelledSequent l a -> SearchSequent Active l a
-  InactiveSS :: LabelledSequent l a -> SearchSequent Inactive l a
-  ConclSS :: LabelledSequent l a -> SearchSequent Concl l a
-  FSCheckedSS :: LabelledSequent l a -> SearchSequent FSChecked l a
-  BSCheckedSS :: LabelledSequent l a -> SearchSequent BSChecked l a
-  GlIndexSS :: LabelledSequent l a -> SearchSequent GlIndex l a
-  GoalSS :: LabelledSequent l a -> SearchSequent Goal l a
+  InitSS :: DLSequent l a -> SearchSequent Initial l a
+  ActiveSS :: DLSequent l a -> SearchSequent Active l a
+  InactiveSS :: DLSequent l a -> SearchSequent Inactive l a
+  ConclSS :: DLSequent l a -> SearchSequent Concl l a
+  FSCheckedSS :: DLSequent l a -> SearchSequent FSChecked l a
+  BSCheckedSS :: DLSequent l a -> SearchSequent BSChecked l a
+  GlIndexSS :: DLSequent l a -> SearchSequent GlIndex l a
+  GoalSS :: DLSequent l a -> SearchSequent Goal l a
 
-extractSequent :: SearchSequent s l a -> LabelledSequent l a
+extractSequent :: SearchSequent s l a -> DLSequent l a
 extractSequent (InitSS s) = s
 extractSequent (ActiveSS s) = s
 extractSequent (InactiveSS s) = s
@@ -89,7 +89,7 @@ newtype GlobalIndex l a = GI (S.Set (SearchSequent GlIndex l a))
 
 --------------------------------------------------------------------------------
 
-initialize :: LabelledSequent l a -> SearchSequent Initial l a
+initialize :: DLSequent l a -> SearchSequent Initial l a
 initialize = InitSS
 
 initialIsFSChecked :: SearchSequent Initial l a -> SearchSequent FSChecked l a
@@ -132,7 +132,7 @@ isGoal
   :: (Ord l, Ord a)
   => SearchSequent Goal l a
   -> SearchSequent FSChecked l a
-  -> Maybe (LabelledSequent l a)
+  -> Maybe (DLSequent l a)
 isGoal (GoalSS goal) (FSCheckedSS fss) =
   if fss <= goal
     then Just fss
@@ -189,7 +189,7 @@ subsumesGoalOp
   :: (Ord a, Ord l)
   => SearchSequent FSChecked l a
   -> SearchSequent Goal l a
-  -> Maybe (LabelledSequent l a)
+  -> Maybe (DLSequent l a)
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
   if s1 <= s2
     then Just s1
@@ -197,7 +197,7 @@ subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
-  => Sequent l a
+  => NeutralSequent l a
   -> (S.Set (SearchSequent Initial l a), [Rule l a])
 initialSequentsAndRules =
   (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .

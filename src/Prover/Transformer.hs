@@ -34,7 +34,7 @@ data ProverState l a = PS
   , globalIndex :: GlobalIndex l a
   }
 data ProverEnvironment l a = PE
-  { goalSequent :: Sequent l a
+  { goalSequent :: NeutralSequent l a
   , convertedGoalSequent :: SearchSequent Goal l a
   }
 
@@ -42,7 +42,7 @@ newtype ProverT l a m b = ProverT
   { unProverT :: ReaderT (ProverEnvironment l a) (StateT (ProverState l a) m) b
   }
 
-runProverT :: ProverT l a m b -> Sequent l a -> m b
+runProverT :: ProverT l a m b -> NeutralSequent l a -> m b
 runProverT prover sequent = undefined
 
 deriving instance (Functor m) => Functor (ProverT l a m)

@@ -7,7 +7,7 @@ module Prover.Class where
 
 import Data.Foldable
 import Formula
-import LabelledSequent
+import Relation
 import Rule
 import TypeClasses
 import Control.Applicative
@@ -29,12 +29,12 @@ class HasProverState l a m where
                    -> m (SearchSequent BSChecked l a)
 
 class HasProverEnvironment l a m where
-  getGoal :: m (Sequent l a)
-  subsumesGoal :: SearchSequent FSChecked l a -> m (Maybe (LabelledSequent l a))
+  getGoal :: m (NeutralSequent l a)
+  subsumesGoal :: SearchSequent FSChecked l a -> m (Maybe (DLSequent l a))
 
 haveGoal
   :: (Monad m, HasProverEnvironment l a m, Foldable f)
-  => f (SearchSequent FSChecked l a) -> m (Maybe (LabelledSequent l a))
+  => f (SearchSequent FSChecked l a) -> m (Maybe (DLSequent l a))
 haveGoal = foldrM folder Nothing
   where
     folder ss rest = liftM2 (<|>) (subsumesGoal ss) (return rest)

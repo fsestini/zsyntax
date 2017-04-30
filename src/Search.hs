@@ -14,13 +14,13 @@ import Prelude hiding (map)
 import Control.Applicative
 import Control.Arrow
 import qualified Data.Set as S
-import LabelledSequent
+import Relation
 import TypeClasses
 import Rel
 import Prover
 
 -- TODO: use the real thing
-type DerivationTerm l a = LabelledSequent l a
+type DerivationTerm l a = DLSequent l a
 
 {-
 

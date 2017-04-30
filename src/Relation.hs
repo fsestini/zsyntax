@@ -11,11 +11,11 @@
 {-| Module of derived rule relations. -}
 
 module Relation
-  ( positiveFocal
-  , positiveFocalDispatch
+  ( positiveFocalDispatch
   , negativeFocalDispatch
   , MatchResult(..)
   , GoalResult(..)
+  , DLSequent(..)
   , filterPartitionRel
   ) where
 
@@ -31,12 +31,25 @@ import Rel
 import Data.Foldable
 import DerivationTerm
 
+--------------------------------------------------------------------------------
+
+-- | Type of labelled sequents decorated with derivation terms
+data DLSequent l a = DLS (DerTerm l a) (LabelledSequent l a)
+
+instance  (Eq a, Eq l) => Eq (DLSequent l a) where
+  (DLS _ s1) == (DLS _ s2) = s1 == s2
+
+instance (Ord a, Ord l) => Ord (DLSequent l a) where
+  compare (DLS _ s1) (DLS _ s2) = compare s1 s2
+
+--------------------------------------------------------------------------------
+
 {-| Type of relations.
 
     A relation is an unbounded curried function of labelled sequents.  It is
     parameterized by the type of labels and biological atoms of the input
     labelled sequents, and by the codomain type of the relation. -}
-type Relation l a b = Rel (DerTerm l a, LabelledSequent l a) b
+type Relation l a b = Rel (DLSequent l a) b
 
 --------------------------------------------------------------------------------
 -- Sequent schemas.
@@ -257,7 +270,7 @@ matchRel
   -> Xi actcase p l a
   -> Relation l a (DerTerm l a, MatchResult actcase l a)
 matchRel delta xi =
-  liftFun $ \(der, inputSeq) -> fmap ((,) der) $ match schema inputSeq
+  liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
   where
     schema = Sch mempty delta goal
     goal =
