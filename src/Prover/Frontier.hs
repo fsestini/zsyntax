@@ -28,6 +28,7 @@ import Rel
 import Control.Arrow
 import DerivationTerm
 import SFormula (fromLFormula)
+import Context
 
 --------------------------------------------------------------------------------
 -- Decorated formulas
