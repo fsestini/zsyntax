@@ -31,6 +31,7 @@ import Rel
 import Data.Foldable
 import DerivationTerm
 import ForwardSequent
+import TypeClasses
 
 --------------------------------------------------------------------------------
 
@@ -48,6 +49,9 @@ instance (Ord a, Ord l) => Ord (DLSequent l a) where
 
 instance (Ord l, Ord a) => ForwardSequent (DLSequent l a) where
   subsumes (DLS _ s1) (DLS _ s2) = ForwardSequent.subsumes s1 s2
+
+instance Coercible (DLSequent l a) (LabelledSequent l a) where
+  coerce (DLS _ s) = s
 
 --------------------------------------------------------------------------------
 
