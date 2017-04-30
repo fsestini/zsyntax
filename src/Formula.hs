@@ -138,15 +138,15 @@ fromLFormula (FConj f1 f2 _) = fromLFormula f1 `SConj` fromLFormula f2
 fromLFormula (FImpl f1 f2 _) = fromLFormula f1 `SImpl` fromLFormula f2
 
 --------------------------------------------------------------------------------
--- Sequents.
+-- Neutral sequents.
 --
 -- Although the search procedure uses labelled sequents, here we give the type
 -- of fully specified sequents.
 
-data Sequent l a where
-  SQ
+data NeutralSequent l a where
+  NSQ
     :: (IsRightSynchronous p)
     => S.Set (OLFormula l a)
     -> [OLSLFormula l a]
     -> LFormula p l a
-    -> Sequent l a
+    -> NeutralSequent l a

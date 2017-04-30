@@ -12,7 +12,7 @@ module LabelledSequent where
 import Data.List
 import qualified Data.List.NonEmpty as NE
 import Formula
-       (Label, Sequent(..), OLSLFormula(..), label, olfLabel, olsfLabel)
+       (Label, NeutralSequent(..), OLSLFormula(..), label, olfLabel, olsfLabel)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Semigroup
@@ -130,8 +130,8 @@ instance (Eq l, Ord l, Ord a) => Ord (LabelledSequent l a) where
 
 toLabelledSequent
   :: (Ord a, Ord l, Eq l, Eq a)
-  => Sequent l a -> LabelledSequent l a
-toLabelledSequent (SQ uc lc goal) =
+  => NeutralSequent l a -> LabelledSequent l a
+toLabelledSequent (NSQ uc lc goal) =
   LS (UC (S.map olfLabel uc)) (toLabelledLinearCtxt lc) (label goal)
 
 toLabelledLinearCtxt

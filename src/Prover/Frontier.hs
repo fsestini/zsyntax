@@ -86,8 +86,8 @@ toLinearPositive f =
 -- Frontier computation
 
 -- | Computes the frontier of a labelled sequent.
-frontier :: Sequent l a -> S.Set (ODecFormula l a)
-frontier (SQ uc lc goal) =
+frontier :: NeutralSequent l a -> S.Set (ODecFormula l a)
+frontier (NSQ uc lc goal) =
   S.map toUnrestrNeg uc `S.union` (S.fromList . map toLinearNeg) lc `S.union`
   S.singleton (toLinearPositive goal) `S.union`
   unrestrFrontier `S.union`
@@ -191,7 +191,7 @@ genRuleFromValid (VDF f) =
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a)
-  => Sequent l a
+  => NeutralSequent l a
   -> (S.Set (LabelledSequent l a), [(LabelledSequent l a -> Rel (LabelledSequent l a) (LabelledSequent l a))])
 initialSequentsAndRules =
   frontier >>>
