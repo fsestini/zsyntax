@@ -4,12 +4,13 @@
 module SFormula
   ( SFormula(..)
   , Sequent(..)
-  , normalize
+  , neutralize
   , fromLFormula
   , BioFormula(..)
   ) where
 
 import Formula
+import TypeClasses (PickMonad(..))
 import Control.Monad
 import qualified Data.Set as S
 
@@ -36,11 +37,8 @@ fromLFormula (FImpl f1 f2 _) = fromLFormula f1 `SImpl` fromLFormula f2
 
 data Sequent a = SQ (S.Set (SFormula a)) [SFormula a] (SFormula a)
 
-class Monad m => PickMonad m l where
-  pick :: m l
-
-normalize :: (PickMonad m l, Ord a, Ord l) => Sequent a -> m (NeutralSequent l a)
-normalize (SQ unrestr linear concl) = do
+neutralize :: (PickMonad m l, Ord a, Ord l) => Sequent a -> m (NeutralSequent l a)
+neutralize (SQ unrestr linear concl) = do
   lUnrestr <- fmap S.fromList $ mapM toLabelled (S.toList unrestr)
   (moreLinear, (ORSLF lConcl)) <- rightAsync concl
   lLinear <- mapM leftAsync linear
