@@ -90,7 +90,9 @@ label (FImpl _ _ l) = L l
 data OLFormula l a = forall p . OLF (LFormula p l a)
 
 -- | Type of opaque left-synchronous labelled formulas.
-data OLSLFormula l a = forall p . (IsLeftSynchronous p) => OLSLF (LFormula p l a)
+data OLSLFormula l a =
+  forall p. (IsLeftSynchronous p) =>
+            OLSLF (LFormula p l a)
 
 data OAtom a = forall b . OA (Atom b a)
 
