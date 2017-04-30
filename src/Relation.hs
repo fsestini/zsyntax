@@ -19,6 +19,7 @@ module Relation
   , filterPartitionRel
   ) where
 
+import SFormula (fromLFormula)
 import Data.Monoid
 import Control.Applicative
 import Prelude hiding (fail)
@@ -28,13 +29,14 @@ import LabelledSequent
 import Control.Monad hiding (fail)
 import Rel
 import Data.Foldable
+import DerivationTerm
 
 {-| Type of relations.
 
     A relation is an unbounded curried function of labelled sequents.  It is
     parameterized by the type of labels and biological atoms of the input
     labelled sequents, and by the codomain type of the relation. -}
-type Relation l a b = Rel (LabelledSequent l a) b
+type Relation l a b = Rel (DerTerm l a, LabelledSequent l a) b
 
 --------------------------------------------------------------------------------
 -- Sequent schemas.
@@ -153,52 +155,49 @@ type NFocMatchResult l a = MatchResult EmptyXiFullResult l a
 negativeFocalDispatch
   :: forall p l a.
      (Eq a, Eq l, Ord a, Ord l)
-  => LFormula p l a -> Relation l a (NFocMatchResult l a)
+  => LFormula p l a -> Relation l a (DerTerm l a, NFocMatchResult l a)
 negativeFocalDispatch formula =
   case formula of
-    FAtom (RBAtom a) ->
-      return (MRes mempty mempty (LabelResult (A a)))
+    FAtom (RBAtom a) -> return (Init a, MRes mempty mempty (LabelResult (A a)))
     FAtom (LBAtom _) -> fail "not right-biased"
     FConj _ _ _ ->
-    FImpl f1 f2 _ -> do
-      (MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
-      (MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
       leftActive mempty [OLF formula] (EmptyXi :: Xi EmptyXiFullResult p l a)
+    FImpl f1 f2 r -> do
+      (d1, MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
+      (d2, MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
       return $
-        MRes (gamma1 <> gamma2) (delta1 <> delta2) xi
+        ( ImplL d1 d2 (label f2) (fromLFormula f2) r
+        , MRes (gamma1 <> gamma2) (delta1 <> delta2) xi)
 
 type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
 
 {-| Type of positive focused match results.
 
-    Positive focus relations always return a result sequent with empty
-    goal, so we explicitly indicate it in the type. The outcome is that result
-    sequents with non-empty goals are statically rejected as ill-typed. -}
-positiveFocal
-  :: (Eq a, Eq l, Ord l, Ord a)
-  => LFormula LARS l a -> Relation l a (PFocMatchResult l a)
-positiveFocal = positiveFocalDispatch
+--     Positive focus relations always return a result sequent with empty
+--     goal, so we explicitly indicate it in the type. The outcome is that result
+--     sequents with non-empty goals are statically rejected as ill-typed. -}
+-- positiveFocal
+--   :: (Eq a, Eq l, Ord l, Ord a)
+--   => LFormula LARS l a -> Relation l a (PFocMatchResult l a)
+-- positiveFocal = positiveFocalDispatch
 
 {-| Positive focal relation.
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
   :: (Eq a, Eq l, Ord l, Ord a)
-  => LFormula p l a -> Relation l a (PFocMatchResult l a)
+  => LFormula p l a -> Relation l a (DerTerm l a, PFocMatchResult l a)
 positiveFocalDispatch formula =
   case formula of
     FAtom (LBAtom a) ->
-      return (MRes mempty (singletonLinearCtxt (A a)) EmptyResult)
+      return (Init a, MRes mempty (singletonLinearCtxt (A a)) EmptyResult)
     FAtom (RBAtom _) -> fail "not left-biased"
     FImpl _ _ _ -> rightActive mempty [] formula
-    FConj f1 f2 _ -> do
-      (MRes gamma1 delta1 _) <- positiveFocalDispatch f1
-      (MRes gamma2 delta2 _) <- positiveFocalDispatch f2
+    FConj f1 f2 r -> do
+      (d1, MRes gamma1 delta1 _) <- positiveFocalDispatch f1
+      (d2, MRes gamma2 delta2 _) <- positiveFocalDispatch f2
       return
-        (MRes
-           (gamma1 <> gamma2)
-           (delta1 <> delta2)
-           EmptyResult)
+        (ConjR d1 d2 r, MRes (gamma1 <> gamma2) (delta1 <> delta2) EmptyResult)
 
 {-| Right active relation, that is active relation of the form
 
@@ -213,12 +212,14 @@ rightActive
   => (LinearCtxt l a)
   -> [OLFormula l a]
   -> LFormula p l a
-  -> Relation l a (MatchResult FullXiEmptyResult l a)
+  -> Relation l a (DerTerm l a, MatchResult FullXiEmptyResult l a)
 rightActive delta omega formula =
   case formula of
     FAtom atom -> leftActive delta omega (FullXi formula)
     FConj f1 f2 _ -> leftActive delta omega (FullXi formula)
-    FImpl f1 f2 _ -> rightActive delta ((OLF f1) : omega) f2
+    FImpl f1 f2 r -> do
+      (d, res) <- rightActive delta ((OLF f1) : omega) f2
+      return (ImplR d (label f1) (fromLFormula f1) r, res)
 
 {-| Left active relation, that is active relation of the form
 
@@ -234,17 +235,18 @@ leftActive
   => (LinearCtxt l a)
   -> [OLFormula l a]
   -> Xi actcase p l a
-  -> Relation l a (MatchResult actcase l a)
+  -> Relation l a (DerTerm l a, MatchResult actcase l a)
 leftActive delta omega formula =
   case omega of
     [] -> matchRel delta formula
-    (OLF (FConj f1 f2 _):rest) -> leftActive delta (OLF f2 : OLF f1 : rest) formula
-    (OLF (FImpl _ _ l):rest) ->
-      leftActive (add (L l) delta) rest formula
-    (OLF (FAtom (LBAtom a)):rest) ->
-      leftActive (add (A a) delta) rest formula
-    (OLF (FAtom (RBAtom a)):rest) ->
-      leftActive (add (A a) delta) rest formula
+    (OLF (FConj f1 f2 r):rest) -> do
+      (d, res) <- leftActive delta (OLF f2 : OLF f1 : rest) formula
+      return
+        ( ConjL d (label f1) (fromLFormula f1) (label f2) (fromLFormula f2) r
+        , res)
+    (OLF (FImpl _ _ l):rest) -> leftActive (add (L l) delta) rest formula
+    (OLF (FAtom (LBAtom a)):rest) -> leftActive (add (A a) delta) rest formula
+    (OLF (FAtom (RBAtom a)):rest) -> leftActive (add (A a) delta) rest formula
 
 {-| Active match relation.
     It requires the input xi formula (if any) to be right-synchronous (otherwise
@@ -253,8 +255,9 @@ matchRel
   :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
   => (LinearCtxt l a)
   -> Xi actcase p l a
-  -> Relation l a (MatchResult actcase l a)
-matchRel delta xi = liftFun $ \inputSeq -> match schema inputSeq
+  -> Relation l a (DerTerm l a, MatchResult actcase l a)
+matchRel delta xi =
+  liftFun $ \(der, inputSeq) -> fmap ((,) der) $ match schema inputSeq
   where
     schema = Sch mempty delta goal
     goal =
