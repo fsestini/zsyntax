@@ -1,3 +1,7 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE GADTs #-}
@@ -31,6 +35,7 @@ import Rel
 import Data.Foldable
 import DerivationTerm
 import ForwardSequent
+import LinearContext
 import TypeClasses
 
 --------------------------------------------------------------------------------
@@ -66,26 +71,29 @@ type Relation l a b = Rel (DLSequent l a) b
 -- Sequent schemas.
 
 -- | Type of unrestricted contexts which appear in sequent schemas.
-newtype SchemaUCtxt l a = SUC (UnrestrCtxt l a)
+newtype SchemaUCtxt l a = SUC (LUnrestrCtxt l a)
 
 -- | Type of linear contexts which appear in sequent schemas.
-newtype SchemaLCtxt l a = SLC (LinearCtxt l a)
+newtype SchemaLCtxt l a = SLC (LLinearCtxt l a)
 
 {-| Matches a context against a schema.
     Returns the result in a MonadFail instance, which signals the error in case
     the match fails. -}
-matchCtxt :: (MonadFail m, SequentContext s l a) => s l a -> s l a -> m (s l a)
-matchCtxt schema ctxt = asFoldable (foldrM remove ctxt) schema
+matchCtxt
+  :: forall m ctxt l a . (MonadFail m, Context ctxt (Label l a))
+  => ctxt -> ctxt -> m (ctxt)
+matchCtxt schema ctxt =
+  asFoldable (foldrM (removeM @_ @(Label l a) @_) ctxt) schema
 
 matchUnrestrCtxt
-  :: (MonadFail m, Ord a, Ord l)
-  => SchemaUCtxt l a -> UnrestrCtxt l a -> m (UnrestrCtxt l a)
-matchUnrestrCtxt (SUC suc) uc = matchCtxt suc uc
+  :: forall m l a . (MonadFail m, Ord a, Ord l)
+  => SchemaUCtxt l a -> LUnrestrCtxt l a -> m (LUnrestrCtxt l a)
+matchUnrestrCtxt (SUC suc) uc = (matchCtxt @_ @_ @ l @ a) suc uc
 
 matchLinearCtxt
-  :: (MonadFail m, Ord a, Ord l)
-  => SchemaLCtxt l a -> LinearCtxt l a -> m (LinearCtxt l a)
-matchLinearCtxt (SLC slc) lc = matchCtxt slc lc
+  :: forall m l a . (MonadFail m, Ord a, Ord l)
+  => SchemaLCtxt l a -> LLinearCtxt l a -> m (LLinearCtxt l a)
+matchLinearCtxt (SLC slc) lc = matchCtxt @ _ @ _ @ l @ a slc lc
 
 --------------------------------------------------------------------------------
 -- Act relations.
@@ -116,8 +124,8 @@ data SchemaGoal :: ActCase -> * -> * -> * where
     part is empty. It is composed of an unrestricted context, a linear context,
     and a schema goal. -}
 data SequentSchema actcase l a =
-  Sch (UnrestrCtxt l a)
-      (LinearCtxt l a)
+  Sch (LUnrestrCtxt l a)
+      (LLinearCtxt l a)
       (SchemaGoal actcase l a)
 
 {-| Type of goal results of an act relation.
@@ -141,8 +149,8 @@ data Xi :: ActCase -> Pole -> * -> * -> * where
     It is composed of an unrestricted context, a linear context, and a goal
     result parameterized, among others, by an ActCase. -}
 data MatchResult actcase l a =
-  MRes (UnrestrCtxt l a)
-       (LinearCtxt l a)
+  MRes (LUnrestrCtxt l a)
+       (LLinearCtxt l a)
        (GoalResult actcase l a)
 
 {-| Matches a labelled sequent against an act sequent schema.
@@ -209,12 +217,12 @@ type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
-  :: (Eq a, Eq l, Ord l, Ord a)
+  :: forall p l a . (Eq a, Eq l, Ord l, Ord a)
   => LFormula p l a -> Relation l a (DerTerm l a, PFocMatchResult l a)
 positiveFocalDispatch formula =
   case formula of
     FAtom (LBAtom a) ->
-      return (Init a, MRes mempty (singletonLinearCtxt (A a)) EmptyResult)
+      return (Init a, MRes mempty (singletonCtxt (A @l @a a)) EmptyResult)
     FAtom (RBAtom _) -> fail "not left-biased"
     FImpl _ _ _ -> rightActive mempty [] formula
     FConj f1 f2 r -> do
@@ -233,7 +241,7 @@ positiveFocalDispatch formula =
     non-empty, the result sequent will have an empty goal. -}
 rightActive
   :: (Eq a, Eq l, Ord l, Ord a)
-  => (LinearCtxt l a)
+  => (LLinearCtxt l a)
   -> [OLFormula l a]
   -> LFormula p l a
   -> Relation l a (DerTerm l a, MatchResult FullXiEmptyResult l a)
@@ -255,8 +263,8 @@ rightActive delta omega formula =
     Notice how the typeclass context enforces that the input formula is indeed
     right-synchronous. -}
 leftActive
-  :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
-  => (LinearCtxt l a)
+  :: forall p l a actcase . (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
+  => (LLinearCtxt l a)
   -> [OLFormula l a]
   -> Xi actcase p l a
   -> Relation l a (DerTerm l a, MatchResult actcase l a)
@@ -268,16 +276,16 @@ leftActive delta omega formula =
       return
         ( ConjL d (label f1) (fromLFormula f1) (label f2) (fromLFormula f2) r
         , res)
-    (OLF (FImpl _ _ l):rest) -> leftActive (add (L l) delta) rest formula
-    (OLF (FAtom (LBAtom a)):rest) -> leftActive (add (A a) delta) rest formula
-    (OLF (FAtom (RBAtom a)):rest) -> leftActive (add (A a) delta) rest formula
+    (OLF (FImpl _ _ l):rest) -> leftActive (add (L @l @a l) delta) rest formula
+    (OLF (FAtom (LBAtom a)):rest) -> leftActive (add (A @l @a a) delta) rest formula
+    (OLF (FAtom (RBAtom a)):rest) -> leftActive (add (A @l @a a) delta) rest formula
 
 {-| Active match relation.
     It requires the input xi formula (if any) to be right-synchronous (otherwise
     we would have a right active relation). -}
 matchRel
   :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
-  => (LinearCtxt l a)
+  => (LLinearCtxt l a)
   -> Xi actcase p l a
   -> Relation l a (DerTerm l a, MatchResult actcase l a)
 matchRel delta xi =
