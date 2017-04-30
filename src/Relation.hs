@@ -30,6 +30,7 @@ import Control.Monad hiding (fail)
 import Rel
 import Data.Foldable
 import DerivationTerm
+import ForwardSequent
 
 --------------------------------------------------------------------------------
 
@@ -44,6 +45,9 @@ instance  (Eq a, Eq l) => Eq (DLSequent l a) where
 
 instance (Ord a, Ord l) => Ord (DLSequent l a) where
   compare (DLS _ s1) (DLS _ s2) = compare s1 s2
+
+instance (Ord l, Ord a) => ForwardSequent (DLSequent l a) where
+  subsumes (DLS _ s1) (DLS _ s2) = ForwardSequent.subsumes s1 s2
 
 --------------------------------------------------------------------------------
 
