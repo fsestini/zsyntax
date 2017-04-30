@@ -5,6 +5,7 @@ module SFormula
   ( SFormula(..)
   , Sequent(..)
   , normalize
+  , fromLFormula
   , BioFormula(..)
   ) where
 
