@@ -43,7 +43,7 @@ neutralize :: (PickMonad m l, Ord a, Ord l) => Sequent a -> m (NeutralSequent l 
 neutralize (SQ unrestr linear concl) = do
   lUnrestr <- fmap S.fromList $ mapM toLabelled (S.toList unrestr)
   (moreLinear, (ORSLF lConcl)) <- rightAsync concl
-  lLinear <- mapM leftAsync linear
+  lLinear <- mapM leftAsync (linear ++ moreLinear)
   return $ NSQ lUnrestr (join lLinear) lConcl
 
 toLabelled :: PickMonad m l => SFormula a -> m (OLFormula l a)
