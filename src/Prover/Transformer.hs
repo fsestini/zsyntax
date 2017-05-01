@@ -18,7 +18,7 @@ import qualified Data.Set as S
 import LabelledSequent
 import Formula
 import Rule
-import Control.Monad.Trans.State.Strict hiding (get, put)
+import Control.Monad.Trans.State.Lazy hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
 
 import ForwardSequent
