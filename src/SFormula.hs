@@ -25,6 +25,8 @@ data SFormula a
   | SImpl (SFormula a)
           (SFormula a)
   deriving (Eq, Ord)
+infixl 4 `SConj`
+infixr 3 `SImpl`
 
 fromLFormula :: LFormula p l a -> SFormula a
 fromLFormula (FAtom (LBAtom atom)) = SAtom atom
