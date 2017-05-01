@@ -199,8 +199,8 @@ negativeFocalDispatch formula =
     FImpl f1 f2 r -> do
       (d1, MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
       (d2, MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
-      return $
-        ( ImplL d1 d2 (label f2) (fromLFormula f2) r
+      return
+        ( ImplL d2 d1 (label f2) (fromLFormula f2) r
         , MRes (gamma1 <> gamma2) (delta1 <> delta2) xi)
 
 type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
