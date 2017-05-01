@@ -191,7 +191,9 @@ negativeFocalDispatch
 negativeFocalDispatch formula =
   case formula of
     FAtom (RBAtom a) -> return (Init a, MRes mempty mempty (LabelResult (A a)))
-    FAtom (LBAtom _) -> fail "not right-biased"
+    FAtom (LBAtom a) ->
+      liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
+      where schema = Sch mempty (singletonCtxt (A @l @a a)) EmptyGoal
     FConj _ _ _ ->
       leftActive mempty [OLF formula] (EmptyXi :: Xi EmptyXiFullResult p l a)
     FImpl f1 f2 r -> do
