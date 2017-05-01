@@ -16,9 +16,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Formula, Rel, Relation, Rule, TypeClasses
-                     , LabelledSequent, SFormula, Prover, Search, Checking
-                     , Context, LinearContext, UnrestrContext, DerivationTerm
-                     , ForwardSequent
+                     , LabelledSequent, SFormula, Prover, Prover.Search
+                     , Checking, Context, LinearContext, UnrestrContext
+                     , DerivationTerm, ForwardSequent
   other-modules:       Checking.Constraints, Checking.Checker
                      , Checking.Generation, Checking.World
                      , Prover.Class, Prover.Frontier, Prover.Structures

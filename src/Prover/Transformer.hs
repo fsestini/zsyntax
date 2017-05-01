@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -7,12 +8,14 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Prover.Transformer where
+module Prover.Transformer (proverSearch) where
 
 import Data.Maybe (listToMaybe)
 import Control.Monad.State.Class
 import Control.Monad.Reader.Class
 import Control.Monad.Trans
+import Control.Monad.Fail
+import Control.Applicative
 import qualified Data.Map as M
 import qualified Data.Set as S
 import LabelledSequent
@@ -26,6 +29,28 @@ import TypeClasses
 
 import Prover.Class
 import Prover.Structures
+import Prover.Search
+
+--------------------------------------------------------------------------------
+
+proverSearch'
+  :: ( MonadFail mf
+     , Monad m
+     , Alternative mf
+     , Ord seqty
+     , ForwardSequent seqty
+     , ForwardSequent goalty
+     , Coercible seqty goalty
+     )
+  => S.Set (SearchSequent Initial seqty)
+  -> [Rule seqty]
+  -> ProverT seqty goalty m (mf seqty)
+proverSearch' = doSearch
+
+proverSearch neutral = runProverT (proverSearch' initS initR) labelled
+  where
+    (initS, initR) = initialSequentsAndRules neutral
+    labelled = toLabelledSequent neutral
 
 --------------------------------------------------------------------------------
 -- ProverT monad transformer
@@ -36,11 +61,6 @@ data ProverState seqty = PS
   , inactives :: InactiveSequents seqty
   , globalIndex :: GlobalIndex seqty
   }
-
--- data ProverEnvironment l a = PE
---   { goalSequent :: NeutralSequent l a
---   , convertedGoalSequent :: SearchSequent Goal l a
---   }
 
 data ProverEnvironment s = PE
   { goalSequent :: SearchSequent Goal s

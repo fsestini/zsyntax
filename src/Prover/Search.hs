@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeApplications #-}
@@ -7,7 +8,7 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Search (doSearch) where
+module Prover.Search (doSearch) where
 
 import Prelude hiding (fail, map)
 import Data.Foldable
@@ -17,7 +18,12 @@ import Rel (unRel)
 import Control.Monad.Fail
 import qualified Data.Set as S
 import TypeClasses
-import Prover
+
+import Prover.Class
+import Prover.Structures
+       (SearchSequent, Stage(..), Rule, ActiveSequent, ConclSequent,
+        RuleRes, ActiveSequents, initialIsBSChecked, initialIsFSChecked,
+        foldActives, applyRule)
 
 {-
 

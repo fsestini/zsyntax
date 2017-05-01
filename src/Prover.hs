@@ -2,32 +2,37 @@
     modules, for client code use. -}
 
 module Prover
-  ( HasProverState(..)
-  , HasProverEnvironment(..)
-  , addInactives
-  , addRules
-  , removeSubsumedByAll
-  , filterUnsubsumed
-  , ProverT
-  , runProverT
-  , Stage(..)
-  , SearchSequent
-  , ActiveSequent
-  , ActiveSequents
-  , InactiveSequent
-  , InactiveSequents
-  , ConclSequent
-  , Rule
-  , RuleRes
-  , initialSequentsAndRules
-  , haveGoal
-  , initialIsFSChecked
-  , initialIsBSChecked
-  , foldActives
-  , applyRule
-  , isGoal
+  ( proverSearch
   ) where
 
-import Prover.Structures
-import Prover.Class
+-- module Prover
+--   ( HasProverState(..)
+--   , HasProverEnvironment(..)
+--   , addInactives
+--   , addRules
+--   , removeSubsumedByAll
+--   , filterUnsubsumed
+--   , proverSearch
+-- --  , ProverT
+--   --, runProverT
+--   , Stage(..)
+--   , SearchSequent
+--   , ActiveSequent
+--   , ActiveSequents
+--   , InactiveSequent
+--   , InactiveSequents
+--   , ConclSequent
+--   , Rule
+--   , RuleRes
+--   -- , initialSequentsAndRules
+--   , haveGoal
+--   -- , initialIsFSChecked
+--   -- , initialIsBSChecked
+--   -- , foldActives
+--   , applyRule
+--   , isGoal
+--   ) where
+
+-- import Prover.Structures
+-- import Prover.Class
 import Prover.Transformer
