@@ -17,13 +17,14 @@ module TypeClasses
 
 import qualified Data.Set as S
 import qualified Data.Either as E
+import qualified Data.Either as ET (partitionEithers)
 import Prelude hiding (map)
 
 class CanPartitionEithers f where
   partitionEithers :: f (Either a b) -> (f a, f b)
 
 instance CanPartitionEithers [] where
-  partitionEithers = undefined
+  partitionEithers = ET.partitionEithers
 
 filterOut
   :: (CanMap f, CanPartitionEithers f)
