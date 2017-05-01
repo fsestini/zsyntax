@@ -19,7 +19,7 @@ library
                      , LabelledSequent, SFormula, Prover, Search, Checking
                      , Context, LinearContext, UnrestrContext, DerivationTerm
                      , ForwardSequent
-  other-modules:       Checking.Constraints, Checking.CheckerT
+  other-modules:       Checking.Constraints, Checking.Checker
                      , Checking.Generation, Checking.World
                      , Prover.Class, Prover.Frontier, Prover.Structures
                      , Prover.Transformer
