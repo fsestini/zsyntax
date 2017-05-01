@@ -225,7 +225,9 @@ positiveFocalDispatch formula =
   case formula of
     FAtom (LBAtom a) ->
       return (Init a, MRes mempty (singletonCtxt (A @l @a a)) EmptyResult)
-    FAtom (RBAtom _) -> fail "not left-biased"
+    FAtom (RBAtom a) ->
+      liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
+      where schema = Sch mempty mempty (LabelGoal (A a))
     FImpl _ _ _ -> rightActive mempty [] formula
     FConj f1 f2 r -> do
       (d1, MRes gamma1 delta1 _) <- positiveFocalDispatch f1
