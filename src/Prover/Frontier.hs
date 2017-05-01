@@ -62,11 +62,37 @@ data DecFormula :: FShape -> * -> * -> * where
 
 data ODecFormula l a = forall s . ODF (DecFormula s l a)
 
-instance Eq (ODecFormula l a) where
-  (==) = undefined
 
-instance Ord (ODecFormula l a) where
-  compare = undefined
+instance (Ord a, Ord l) => Eq (ODecFormula l a) where
+  (ODF f1) == (ODF f2) = compareODec f1 f2 == EQ
+
+instance (Ord a, Ord l) => Ord (ODecFormula l a) where
+  compare (ODF f1) (ODF f2) = compareODec f1 f2
+
+-- unrnegatom < unrneg < linnegatom < linneg < linposatom < linpos
+compareODec :: (Ord a, Ord l) => DecFormula s1 l a -> DecFormula s2 l a -> Ordering
+compareODec (UnrestrNegativeAtom a1) (UnrestrNegativeAtom a2) = compareAtom a1 a2
+compareODec (UnrestrNegative f1) (UnrestrNegative f2) = compareLF f1 f2
+compareODec (LinearNegativeAtom a1) (LinearNegativeAtom a2) = compareAtom a1 a2
+compareODec (LinearNegative f1) (LinearNegative f2) = compareLF f1 f2
+compareODec (LinearPositiveAtom a1) (LinearPositiveAtom a2) = compareAtom a1 a2
+compareODec (LinearPositive f1) (LinearPositive f2) = compareLF f1 f2
+compareODec (UnrestrNegativeAtom _) _ = LT
+compareODec (UnrestrNegative _) (UnrestrNegativeAtom _) = GT
+compareODec (UnrestrNegative _) _ = LT
+compareODec (LinearNegativeAtom _) (UnrestrNegativeAtom _) = GT
+compareODec (LinearNegativeAtom _) (UnrestrNegative _) = GT
+compareODec (LinearNegativeAtom _) _ = LT
+compareODec (LinearNegative _) (UnrestrNegativeAtom _) = GT
+compareODec (LinearNegative _) (UnrestrNegative _) = GT
+compareODec (LinearNegative _) (LinearNegativeAtom _) = GT
+compareODec (LinearNegative _) _ = LT
+compareODec (LinearPositiveAtom _) (UnrestrNegativeAtom _) = GT
+compareODec (LinearPositiveAtom _) (UnrestrNegative _) = GT
+compareODec (LinearPositiveAtom _) (LinearNegativeAtom _) = GT
+compareODec (LinearPositiveAtom _) (LinearNegative _) = GT
+compareODec (LinearPositiveAtom _) _ = LT
+compareODec (LinearPositive _) _ = GT
 
 toUnrestrNeg :: OLFormula l a -> ODecFormula l a
 toUnrestrNeg (OLF (FAtom a)) = ODF . UnrestrNegativeAtom $ a
@@ -89,7 +115,7 @@ toLinearPositive f =
 -- Frontier computation
 
 -- | Computes the frontier of a labelled sequent.
-frontier :: NeutralSequent l a -> S.Set (ODecFormula l a)
+frontier :: (Ord a, Ord l) => NeutralSequent l a -> S.Set (ODecFormula l a)
 frontier (NSQ uc lc goal) =
   S.map toUnrestrNeg uc `S.union` (S.fromList . map toLinearNeg) lc `S.union`
   S.singleton (toLinearPositive goal) `S.union`
@@ -102,34 +128,34 @@ frontier (NSQ uc lc goal) =
     goalFrontier = frontierPositive goal
 
 -- | Same as frontierNegative, but for opaque formulas.
-ofn :: OLFormula l a -> S.Set (ODecFormula l a)
+ofn :: (Ord a, Ord l) => OLFormula l a -> S.Set (ODecFormula l a)
 ofn (OLF f) = frontierNegative f
 
 -- | Same as frontierNegative, but for opaque left-synchronous formulas.
-olsfn :: OLSLFormula l a -> S.Set (ODecFormula l a)
+olsfn :: (Ord a, Ord l) => OLSLFormula l a -> S.Set (ODecFormula l a)
 olsfn (OLSLF f) = frontierNegative f
 
-frontierNegative :: LFormula p l a -> S.Set (ODecFormula l a)
+frontierNegative :: (Ord a, Ord l) => LFormula p l a -> S.Set (ODecFormula l a)
 frontierNegative (FAtom (RBAtom _)) = S.empty
 frontierNegative f@(FAtom a@(LBAtom _)) = S.singleton (ODF (LinearNegativeAtom a))
 frontierNegative f@(FConj _ _ _) = activeNegative f
 frontierNegative (FImpl f1 f2 _) =
   frontierPositive f1 `S.union` frontierNegative f2
 
-frontierPositive :: LFormula p l a -> S.Set (ODecFormula l a)
+frontierPositive :: (Ord a, Ord l) => LFormula p l a -> S.Set (ODecFormula l a)
 frontierPositive f@(FAtom a@(RBAtom _)) = S.singleton (ODF (LinearPositiveAtom a))
 frontierPositive (FAtom (LBAtom _)) = S.empty
 frontierPositive (FConj f1 f2 _) =
   frontierPositive f1 `S.union` frontierPositive f2
 frontierPositive f@(FImpl _ _ _) = activePositive f
 
-activeNegative :: LFormula p l a -> S.Set (ODecFormula l a)
+activeNegative :: (Ord a, Ord l) => LFormula p l a -> S.Set (ODecFormula l a)
 activeNegative (FAtom a) = S.singleton (ODF (LinearNegativeAtom a))
 activeNegative (FConj f1 f2 _) = activeNegative f1 `S.union` activeNegative f2
 activeNegative f@(FImpl _ _ _) =
   frontierNegative f `S.union` S.singleton (ODF (LinearNegative f))
 
-activePositive :: LFormula p l a -> S.Set (ODecFormula l a)
+activePositive :: (Ord a, Ord l) => LFormula p l a -> S.Set (ODecFormula l a)
 activePositive (FAtom a) = S.singleton (ODF (LinearPositiveAtom a))
 activePositive f@(FConj _ _ _) =
   frontierPositive f `S.union` S.singleton (ODF (LinearPositive f))
