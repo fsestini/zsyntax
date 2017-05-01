@@ -112,17 +112,12 @@ applyAll
   => f (Rule seqty) -> ActiveSequent seqty -> RuleAppRes seqty
 applyAll rules as = partitionRuleRes . map ($ as) $ rules
 
-applyToActives
-  :: (Ord seqty, Foldable f)
-  => ActiveSequents seqty -> f (Rule seqty) -> RuleAppRes seqty
-applyToActives actives rules = partitionRuleRes $ concatMap mapper rules
-  where
-    mapper rule = foldActives (foldMap (pure . applyRule rule)) actives
-
 percolate
-  :: (Ord seqty, Foldable f)
-  => ActiveSequents seqty -> f (Rule seqty) -> RuleAppRes seqty
+  :: Ord seqty
+  => ActiveSequents seqty -> [Rule seqty] -> RuleAppRes seqty
+percolate _ [] = mempty
 percolate actives rules = r1 `mappend` r2
   where
-    r1 = applyToActives actives rules
+    r1 = partitionRuleRes . concatMap mapper $ rules
     r2 = percolate actives . resRules $ r1
+    mapper rule = foldActives (foldMap (pure . applyRule rule)) actives
