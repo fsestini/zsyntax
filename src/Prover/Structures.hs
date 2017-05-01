@@ -188,12 +188,12 @@ addToInactives
 addToInactives (IS ins) (BSCheckedSS s) = IS (S.insert (InactiveSS s) ins)
 
 fwdSubsumes
-  :: Ord seqty
+  :: (ForwardSequent seqty, Show seqty)
   => GlobalIndex seqty
   -> SearchSequent Concl seqty
   -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI globalIndex) (ConclSS s) =
-  if or . S.map (\gi -> (extractSequent gi) <= s) $ globalIndex
+  if or . S.map (\gi -> extractSequent gi `subsumes` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
