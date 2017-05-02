@@ -1,140 +1,56 @@
 \section{Backward sequent calculus}
 
-The objective is to obtain a calculus for Zsyntax that is amenable to efficient proof
-search, while being sound and complete with the original formulation. This
-basically means that we are going to need some sort of sequent calculus enjoying
-properties like the subformula property and cut admissibility.
-Given the obvious similarities between a Zsyntax proof and a proof in
-intuitionistic linear logic, it seems reasonable to aim for a slightly modified
-version of the sequent calculus for intuitionistic linear logic in our search
-for such a calculus. The rest of this section does exactly that.
+The objective of this section is to obtain a logic describing the modified
+provability relation of \eznd{}, that is amenable to efficient proof search
+while being sound and complete with \eznd{} itself. This basically means that we
+are going to need some sort of sequent calculus enjoying properties like the
+subformula property and cut admissibility.  Given the obvious similarities
+between a Zsyntax proof and a proof in intuitionistic linear logic, it seems
+reasonable to aim for a slightly modified version of the sequent calculus for
+intuitionistic linear logic in our search for such a calculus. The rest of this
+section does exactly that.
 
-\begin{align*}
-  \biocore{A} & \equiv \{A\} \ \text{if } A\ \text{is a bio formula} \\
-  \biocore{A \otimes B} & \equiv \biocore{A} \cup \biocore{B} \\
-  \biocore{A \deflimp B} & \equiv S
-\end{align*}
+In what follows, we try to mold our sequent calculus rules into shape by
+starting from what would be a direct translation of the rules of \eznd{} and
+refining them into more standard form by cut. The aim is to get rules that
+allow us to easily prove the subformula property and cut admissibility in a
+later stage.
 
-the biocore of a context is defined in the obvious way:
-
-\[
-  \biocore{A_1, A_2, \dots, A_n} \equiv \bigcup_{i = 1}^{n}\biocore{A_i}
-\]
+As premises and conclusions we have annotated sequents of the following form
 
 \[
-  \respects{\Delta}{\ctrlset{}} \equiv \forall A \in \biocore{\Delta}, A \notin \ctrlset{}
+  \zsyseq{\Gamma}{\Delta}{\ctrlset{}}{C}
 \]
 
-From this definition, it follows immediately that
+where $\Gamma$ is the \emph{unrestricted context}, namely one where contraction
+and weakening are accepted, $\Delta$ is the usual linear context, and
+$\ctrlset{} \in \mathcal{P}(\bioformulas^*)$ is a control set. The intuitive
+explanation is that a valid sequent of this form witnesses the fact that, under
+the set $\Gamma$ of biological axioms available, there exists a sequence of
+Zsyntax transitions that bring the aggregate $\Delta$ to the aggregate $C$,
+provided any additional context that may surround $\Gamma$ does not violate the
+control set $\ctrlset{}$. In other words, the validity of the sequent above
+expresses that we know that $\Delta \models_{\ctrlset{}} C$ holds in \eznd{}.
+
+Throughout the rest of the presentation, we assume that the set of axioms is
+``harmful'', in the sense that $\elembases{\Gamma} = \emptyset$.
+This is the same as saying that all formulas in $\Gamma$ must be conditionals
+with an empty elementary base.
+
+We now give the rules of the calculus. To do so, we assume to have the following
+form of cut rule available, even though we do not really include in the
+calculus. This is because it will be shown later to be admissible.
 
 \[
-  \forall \ctrlset{}, \respects{\emptyset}{\ctrlset{}}, \qquad
-  \forall \Delta, \respects{\Delta}{\emptyset}
+  \begin{prooftree}
+    \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+    \qquad
+    \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+    \justifies
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+    \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+  \end{prooftree}
 \]
-
-where $\emptyset$ represents both the empty list and the empty set by abuse of
-notation.
-
-\begin{table}[h]
-  \centering
-  \bgroup
-  \def\arraystretch{2}%  1 is the default, change whatever you need
-  \begin{tabular}[h]{| L | L |}
-    \hline
-    \text{Zsyntax} & \text{Provability relation}\\
-    \text{implicit} & \begin{prooftree}\justifies \zsy{\Gamma}{\emptyset}{\Gamma}\end{prooftree}
-    \\
-    \hline
-
-    \text{implicit} &
-                      \begin{prooftree}
-                        \zsy{\Gamma}{\ctrlset{1}}{\Delta} \quad
-                        \zsy{\Delta}{\ctrlset{2}}{\nabla}
-                        \justifies
-                        \zsy{\Gamma}{\ctrlset{1} \cup \ctrlset{2}}{\nabla}
-                      \end{prooftree} \\
-
-    \hline
-
-    \begin{prooftree}
-      \Gamma, \Delta_1 \; : \; \respects{\Gamma}{\ctrlset{i}}
-      \justifies
-      \Gamma, \Delta_2
-      \using{\mathrm{Ax}_i}
-    \end{prooftree} &
-                      \begin{prooftree}
-                        \respects{\Gamma}{\ctrlset{i}}
-                        \justifies
-                        \zsy{\Gamma, \Delta_1}{\ctrlset{i}}{\Gamma, \Delta_2}
-                      \end{prooftree} \\
-
-    \hline
-
-    \begin{prooftree}
-      \Gamma, A, B
-      \justifies
-      \Gamma, A \otimes B
-    \end{prooftree} & \zsy{\Gamma, A, B}{\emptyset}{\Gamma, A \otimes B} \\
-
-    \hline
-
-    \begin{prooftree}
-      \Gamma, A \otimes B
-      \justifies
-      \Gamma, A, B
-    \end{prooftree} & \zsy{\Gamma, A \otimes B}{\emptyset}{\Gamma, A, B} \\
-
-    \hline
-
-    \begin{prooftree}
-      \Gamma, \Delta \qquad
-      \[
-        \Gamma, A
-        \using
-        \ctrlset{}
-        \leadsto
-        B
-      \]
-      \justifies
-      A \limp^{\biocore{\Gamma}}_{\ctrlset{}} B, \Delta
-    \end{prooftree}
-                   &
-                     \begin{prooftree}
-                       \zsy{\Gamma, A}{\ctrlset{}}{B}
-                       \justifies
-                       \zsy{\Gamma, \Delta}{\emptyset}{A \limp^{\biocore{\Gamma}}_{\ctrlset{}} B, \Delta}
-                     \end{prooftree} \\
-
-    \hline
-
-    \begin{prooftree}
-      \Gamma, A, A \limp^{S}_{\ctrlset{}} B
-      \; : \; \respects{\Gamma}{\ctrlset{}}
-      \justifies
-      \Gamma, B
-    \end{prooftree}
-                   &
-                     \begin{prooftree}
-                       \respects{\Gamma}{\ctrlset{}}
-                       \justifies
-                       \zsy{\Gamma, A, A \limp^{S}_{\ctrlset{}}
-                         B}{\ctrlset{}}{\Gamma, B}
-                     \end{prooftree} \\
-    \hline
-  \end{tabular}
-  \egroup
-  \caption{Caption}
-\end{table}
-
-Linear logic inspired calculus... One where if you remove the annotations, you
-have a standard linear logic sequent calculus.
-
-So we try to mold our rules into shape by starting from a direct translation of
-the zsyntax rules and refining them into more standard form.
-
-In intuitionistic linear logic, the linear context can be thought as the list of
-resources, that are modified by the rules. In a sense, this is what the standard
-rules of zsyntax do: change a list of resources into another...
 
 \paragraph{Identity}
 
@@ -143,19 +59,19 @@ The trivial reaction is the one that does nothing:
 \[
   \begin{prooftree}
     \justifies
-    \zsyseq{\Gamma}{A}{\ctrlset{}}{A}
+    \zsyseq{\Gamma}{A}{\emptyset}{A}
   \end{prooftree}
 \]
 
-for any control set $\ctrlset{}$. It can be proved that we can rescrict $A$ to
-the atomic case while retaining completeness.
+It can be proved that we can rescrict $A$ to the atomic case while retaining
+completeness.
 
 \paragraph{Biological axioms}
 
 The calculus has a built-in way to account for (biological) axioms with the
 unrestricted context. To make an axiom $A$ available to a derivation, it
-sufficies to add it to the unrestricted context. Formulas in the unrestricted
-context can of course be used ad libitum:
+sufficies to take it from the unrestricted context and add it to the linear
+context. Formulas in the unrestricted context can of course be used ad libitum:
 
 \[
   \begin{prooftree}
@@ -167,8 +83,8 @@ context can of course be used ad libitum:
 
 \paragraph{$\otimes$ elimination}
 
-A direct translation yields a rule that is already in an acceptable form for a
-left rule.
+A direct translation from Zsyntax yields a rule that is already in an acceptable
+form for a left rule.
 
 \[
   \begin{prooftree}
@@ -217,24 +133,20 @@ cut:
 \]
 
 However, we have to do some additional cuts to the axiom above in order to
-obtain a rule that allows us to eliminate the cut rule. There are actually two
-ways to do it (yielding in essence two different rules), but this is just a
-consequence of the fact that Zsyntax is aware of the ordering in which
-deductions (i.e., reactions) are performed.
+obtain something that allows us to eliminate the cut rule later.
+
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B} \qquad
+    \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B} \qquad
     \[
-      \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
+      \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
       \[\justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
       \justifies
-      \zsyseq{\Gamma}{\Delta_1, B}{\ctrlset{1}}{A \otimes B}
-      \using{\respects{B}{\ctrlset{1}}}
+      \zsyseq{\Gamma}{\Delta_1, B}{\emptyset}{A \otimes B}
     \]
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
-    \using{\respects{\Delta_1}{\ctrlset{2}}}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
   \end{prooftree}
 \]
 
@@ -242,44 +154,77 @@ thus yielding the following rule
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
-    \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B}
+    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
+    \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
-    \using{\respects{\Delta_1}{\ctrlset{2}} \wedge \respects{B}{\ctrlset{1}}}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
   \end{prooftree}
 \]
 
-Or
+
+% There are actually two
+% ways to do it (yielding in essence two different rules), but this is just a
+% consequence of the fact that Zsyntax is aware of the ordering in which
+% deductions (i.e., reactions) are performed.
+
+% \[
+%   \begin{prooftree}
+%     \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B} \qquad
+%     \[
+%       \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
+%       \[\justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
+%       \justifies
+%       \zsyseq{\Gamma}{\Delta_1, B}{\ctrlset{1}}{A \otimes B}
+%       \using{\respects{B}{\ctrlset{1}}}
+%     \]
+%     \justifies
+%     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
+%     \using{\respects{\Delta_1}{\ctrlset{2}}}
+%   \end{prooftree}
+% \]
+
+% thus yielding the following rule
+
+% \[
+%   \begin{prooftree}
+%     \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
+%     \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B}
+%     \justifies
+%     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
+%     \using{\respects{\Delta_1}{\ctrlset{2}} \wedge \respects{B}{\ctrlset{1}}}
+%   \end{prooftree}
+% \]
+
+% Or
 
 
-\[
-  \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
-    \[
-      \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B} \qquad
-      \[\justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
-      \justifies
-      \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{A \otimes B}
-      \using{\respects{A}{\ctrlset{2}}}
-    \]
-    \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
-    \using{\respects{\Delta_2}{\ctrlset{1}}}
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
+%     \[
+%       \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B} \qquad
+%       \[\justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
+%       \justifies
+%       \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{A \otimes B}
+%       \using{\respects{A}{\ctrlset{2}}}
+%     \]
+%     \justifies
+%     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
+%     \using{\respects{\Delta_2}{\ctrlset{1}}}
+%   \end{prooftree}
+% \]
 
-thus yielding the following rule
+% thus yielding the following rule
 
-\[
-  \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
-    \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B}
-    \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
-    \using{\respects{\Delta_2}{\ctrlset{1}} \wedge \respects{A}{\ctrlset{2}}}
-  \end{prooftree}
-\]
+% \[
+%   \begin{prooftree}
+%     \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
+%     \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B}
+%     \justifies
+%     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
+%     \using{\respects{\Delta_2}{\ctrlset{1}} \wedge \respects{A}{\ctrlset{2}}}
+%   \end{prooftree}
+% \]
 
 \paragraph{$\limp$ introduction}
 
@@ -289,7 +234,7 @@ following:
 \[
   \begin{prooftree}
     \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B} \qquad
-    \zsyseq{\Gamma}{\Delta_2, A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
       B}{\ctrlset{2}}{C}
     \justifies
     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{2}}{C}
@@ -304,11 +249,11 @@ standard rule can be obtained as a special case of the one above:
   \begin{prooftree}
     \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
     \qquad
-    \zsyseq{\Gamma}{A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
-      B}{\emptyset}{A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
+      B}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
       B}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
       B}
   \end{prooftree}
 \]
@@ -319,24 +264,24 @@ thus yielding the following:
   \begin{prooftree}
     \zsyseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}
     \justifies
-    \zsyseq{\Gamma}{\Delta}{\emptyset}{A \limp^{\biocore{\Delta}}_{\ctrlset{}}
+    \zsyseq{\Gamma}{\Delta}{\emptyset}{A \rightarrow^{\elembases{\Delta}}_{\ctrlset{}}
       B}
   \end{prooftree}
 \]
 
-The equivalence is witnessed by the fact that the first rule can be obtained from
-the second by cut:
+The equivalence is witnessed by the fact that the first rule can be obtained
+from the second by cut:
 
 \[
   \begin{prooftree}
     \[
       \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
       \justifies
-      \zsyseq{\Gamma}{\Delta}{\emptyset}{A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
+      \zsyseq{\Gamma}{\Delta}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
         B}
     \]
     \qquad
-    \zsyseq{\Gamma}{\Delta_2, A \limp^{\biocore{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
       B}{\ctrlset{2}}{C}
     \justifies
     \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{2}}{C}
@@ -351,7 +296,7 @@ The direct translation would be the following:
   \begin{prooftree}
     \zsyseq{\Gamma}{\Delta, B}{\ctrlset{}'}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta, A \limp^{\biocore{S}}_{\ctrlset{}}
+    \zsyseq{\Gamma}{\Delta, A \rightarrow^{\elembases{S}}_{\ctrlset{}}
       B, A}{\ctrlset{} \cup \ctrlset{}'}{C}
     \using{\respects{\Delta}{\ctrlset{}}}
   \end{prooftree}
@@ -367,12 +312,12 @@ formula with cut:
     \[
       \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
       \justifies
-      \zsyseq{\Gamma}{\Delta_2, A \limp^{\biocore{S}}_{\ctrlset{1}}
+      \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}}
         B, A}{\ctrlset{2}}{C}
       \using{\respects{\Delta_2}{\ctrlset{1}}}
     \]
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \limp^{\biocore{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
   \end{prooftree}
 \]
 
@@ -383,10 +328,12 @@ thus yielding the following rule:
     \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}\qquad
     \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \limp^{\biocore{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
     \using{\respects{\Delta_2}{\ctrlset{1}}}
   \end{prooftree}
 \]
+
+The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
 \begin{figure}[ht]
   \begin{mdframed}
@@ -395,24 +342,24 @@ thus yielding the following rule:
       \begin{prooftree}
         \justifies
         \zsyseq{\Gamma}{A}{\ctrlset{}}{A}
+        \using{\init}
       \end{prooftree}
       \qquad \qquad
       \begin{prooftree}
         \zsyseq{\Gamma, A}{\Delta, A}{\ctrlset{}}{C}
         \justifies
         \zsyseq{\Gamma, A}{\Delta}{\ctrlset{}}{C}
+        \using{\copyrule}
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A} \qquad
-        \zsyseq{\Gamma}{\Delta_2}{\ctrlset{2}}{B}
+        \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
+        \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
         \justifies
-        \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1} \cup \ctrlset{2}}{A \otimes B}
-        \using{(\respects{\Delta_1}{\ctrlset{2}} \wedge
-          \respects{B}{\ctrlset{1}}) \vee
-        (\respects{\Delta_2}{\ctrlset{1}} \wedge \respects{A}{\ctrlset{2}})}
+        \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+        \using{\otimes R}
       \end{prooftree}
     \]
 
@@ -421,13 +368,15 @@ thus yielding the following rule:
         \zsyseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
         \justifies
         \zsyseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+        \using{\otimes L}
       \end{prooftree}
       \qquad \qquad
       \begin{prooftree}
         \zsyseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}
         \justifies
-        \zsyseq{\Gamma}{\Delta}{\emptyset}{A \limp^{\biocore{\Delta}}_{\ctrlset{}}
+        \zsyseq{\Gamma}{\Delta}{\emptyset}{A \limp^{\elembases{\Delta}}_{\ctrlset{}}
           B}
+        \using{\rightarrow R}
       \end{prooftree}
     \]
 
@@ -435,15 +384,339 @@ thus yielding the following rule:
       \begin{prooftree}
         \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}\qquad
         \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
+        \qquad \respects{\Delta_2}{\ctrlset{1}}
         \justifies
-        \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \limp^{\biocore{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
-        \using{\respects{\Delta_2}{\ctrlset{1}}}
+        \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{S}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+        \using{\rightarrow L}
       \end{prooftree}
     \]
 
   \end{mdframed}
-  \caption{\label{bkwseqcalc} Annotated backward sequent calculus.}
+  \caption{\label{bkwseqcalc} Annotated backward sequent calculus \zss{}.}
 \end{figure}
+
+\begin{lemma}[Identity expansion]
+  The calculus \zss{}' with identity axiom allowing arbitrary formulas is
+  equivalent to the calculus \zss{} with identity axiom restricted to atomic
+  formulas.
+\end{lemma}
+\begin{proof}
+  By induction on the derivations. There are as many cases as there are
+  connectives to consider.
+
+  \begin{enumerate}
+  \item Case $\zsyseq{\Gamma}{A \otimes B}{\emptyset}{A \otimes B}$. Then,
+
+    \[
+      \begin{prooftree}
+        \[
+          \zsyseq{\Gamma}{A}{\emptyset}{A}
+          \qquad
+          \zsyseq{\Gamma}{B}{\emptyset}{B}
+          \justifies
+          \zsyseq{\Gamma}{A, B}{\emptyset}{A \otimes B}
+          \using{\otimes R}
+        \]
+        \justifies
+        \zsyseq{\Gamma}{A \otimes B}{\emptyset}{A \otimes B}
+        \using{\otimes L}
+      \end{prooftree}
+    \]
+
+  \item Case $\zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B}{\emptyset}{A
+      \rightarrow_{\ctrlset{}}^S B}$. Then, the following holds
+
+    \[
+      \begin{prooftree}
+        \[
+          \zsyseq{\Gamma}{A}{\emptyset}{A}\qquad
+          \zsyseq{\Gamma}{B}{\emptyset}{B}
+          \justifies
+          \zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B, A}{\ctrlset{}}{B}
+        \]
+        \justifies
+        \zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B}{\emptyset}{A
+          \rightarrow_{\ctrlset{}}^S B}
+      \end{prooftree}
+    \]
+
+    since $\elembases{A \rightarrow^S_{\ctrlset{}} B} = S$.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Cut admissibility]
+  The following cut rule
+
+  \[
+    \begin{prooftree}
+      \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+      \qquad
+      \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+      \justifies
+      \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+      \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+    \end{prooftree}
+  \]
+
+  is admissible.
+\end{theorem}
+\begin{proof}
+  The proof is inspired by the one given in [paper] for the full linear
+  logic. In particular, we consider four ``classes'' of cuts and show
+  admissibility for all of them. The theorem follows from the fact that these
+  four classes cover all possible uses of the cut rule.
+
+  \begin{description}
+  \item[Identity cuts] One of the premises is obtained by an application of the
+    identity axiom.
+
+    \begin{enumerate}
+    \item Left case.
+
+      \[
+        \begin{prooftree}
+          \[ \justifies \zsyseq{\Gamma}{A}{\emptyset}{A} \]
+          \qquad
+          \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+          \justifies
+          \zsyseq{\Gamma}{A, \Delta_2}{\ctrlset{2}}{B}
+        \end{prooftree}
+      \]
+
+      Then, just take the second premise.
+
+    \item Right case.
+
+      \[
+        \begin{prooftree}
+          \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+          \qquad
+          \zsyseq{\Gamma}{A}{\emptyset}{A}
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+        \end{prooftree}
+      \]
+
+      Then, just take the first premise.
+    \end{enumerate}
+  \item[Principal cuts] The cut formula is principal in both premises. We
+    distinguish the two possible cases of non-atomic formulas.
+
+    \begin{enumerate}
+    \item Case $\otimes$.
+
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+          \]
+          \qquad
+          \[
+            \zsyseq{\Gamma}{\Delta_3, A, B}{\ctrlset{}}{C}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_3, A \otimes B}{\ctrlset{}}{C}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{}}{C}
+        \end{prooftree}
+      \]
+
+      Then, by inductive hypothesis, we have
+
+      \[
+        \begin{prooftree}
+          \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+          \qquad
+          \[
+            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_3, A, B}{\ctrlset{}}{C}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_3, B}{\ctrlset{}}{C}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{}}{C}
+        \end{prooftree}
+      \]
+
+    \item Case $\rightarrow_{\ctrlset{}}^S$.
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A \rightarrow_{\ctrlset{1}}^{\elembases{\Delta_1}} B}
+          \]
+          \qquad
+          \[
+            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_3, B}{\ctrlset{2}}{C}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_2, \Delta_3, A
+              \rightarrow_{\ctrlset{1}}^{\elembases{\Delta_1}}
+              B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+            \using{\respects{\Delta_3}{\ctrlset{1}}}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{\ctrlset{1}\cup\ctrlset{2}}{C}
+        \end{prooftree}
+      \]
+
+      Then, by inductive hypothesis, we have
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}}{B}
+          \]
+          \quad
+          \zsyseq{\Gamma}{\Delta_3, B}{\ctrlset{2}}{C}
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{\ctrlset{1}\cup\ctrlset{2}}{C}
+          \using{\respects{\Delta_3}{\ctrlset{1}}}
+        \end{prooftree}
+      \]
+
+    \end{enumerate}
+  \item[Left-commutative cuts] The cut formula is a side formula in the left
+    premise. The cut is then simply moved up to the premises, where the
+    inductive hypothesis is used.
+
+    \begin{enumerate}
+    \item Case $\otimes L$.
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1, C, D}{\ctrlset{1}}{A}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, C \otimes D}{\ctrlset{1}}{A}
+            \using{\otimes L}
+          \]
+          \qquad
+          \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+        \end{prooftree}
+      \]
+
+      becomes
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1, C, D}{\ctrlset{1}}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C, D}{\ctrlset{1}\cup\ctrlset{2}}{B}
+            \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \using{\otimes L}
+        \end{prooftree}
+      \]
+
+    \item Case $\copyrule$.
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma, C}{\Delta_1, C}{\ctrlset{1}}{A}
+            \justifies
+            \zsyseq{\Gamma, C}{\Delta_1}{\ctrlset{1}}{A}
+          \]
+          \qquad
+          \zsyseq{\Gamma, C}{\Delta_2, A}{\ctrlset{2}}{B}
+          \justifies
+          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+        \end{prooftree}
+      \]
+
+      becomes
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma, C}{\Delta_1, C}{\ctrlset{1}}{A}
+            \qquad
+            \zsyseq{\Gamma, C}{\Delta_2, A}{\ctrlset{2}}{B}
+            \justifies
+            \zsyseq{\Gamma, C}{\Delta_1, C, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+            \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+          \]
+          \justifies
+          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \using{\copyrule}
+        \end{prooftree}
+      \]
+
+    \item Case $\rightarrow L$.
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{C}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_2, D}{\ctrlset{1}}{A}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \rightarrow_{\ctrlset{}}^S D
+            }{\ctrlset{} \cup \ctrlset{1}}{A}
+            \using{\respects{\Delta_2}{\ctrlset{}}}
+          \]
+          \quad
+          \zsyseq{\Gamma}{\Delta_3, A}{\ctrlset{2}}{B}
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3, C
+            \rightarrow_{\ctrlset{}}^S D}{\ctrlset{} \cup \ctrlset{1}\cup\ctrlset{2}}{B}
+          \using{\respects{\Delta_3}{\ctrlset{} \cup \ctrlset{1}}}
+        \end{prooftree}
+      \]
+
+      Notice that, from set theory is follows that
+
+      \[
+        \respects{\Delta_3}{\ctrlset{}\cup\ctrlset{1}} \implies
+        \respects{\Delta_3}{\ctrlset{}} \wedge \respects{\Delta_3}{\ctrlset{1}}
+      \]
+      \[
+        \respects{\Delta_2}{\ctrlset{}} \wedge \respects{\Delta_3}{\ctrlset{}}
+        \implies \respects{\Delta_2, \Delta_3}{\ctrlset{}}
+      \]
+
+      TODO: The second one is not true with control sets as sets of contexts!!!
+
+    \end{enumerate}
+  \end{description}
+\end{proof}
+
+--------------------------------------------------------------------------------
+
+  \[
+    \begin{prooftree}
+      \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+      \qquad
+      \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+      \justifies
+      \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+      \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+    \end{prooftree}
+  \]
+
 
 %%% Local Variables:
 %%% mode: latex

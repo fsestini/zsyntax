@@ -6,16 +6,15 @@
 
 \subsection{Controlled monotonicity}
 
-The calculus of Zsyntax revolves around the concept of controlled monotonicity:
-in the particular context of linear logic, linear implication is monotonic since
-$A \vdash B$ implies $A \otimes C \vdash B \otimes C$ for any $C$. Zsyntax
-preserves the characteristics of linear logic as a logic of resources, but has a
-non-monotonic logical consequence relation (and therefore, a linear implication
-operator), or rather one where such monotonicity is allowed in all but some
-specified cases. In this sense it is similar to other formalisms such as default
-logic. In the following we only repeat some of the definitions in [paper] on
-which the following sections built upon. Details and examples on how Zsyntax
-deals with monotonicity can be found in [paper].
+The calculus of Zsyntax revolves around the concept of controlled monotonicity.
+In linear logic, implication is monotonic since $A \vdash B$ implies
+$A \otimes C \vdash B \otimes C$ for any $C$. Zsyntax preserves the
+characteristics of linear logic as a logic of resources, but has a non-monotonic
+logical consequence relation, or rather one where such monotonicity is allowed
+in all but some specified cases. In this sense it is similar to other formalisms
+such as default logic. In the following we only repeat some of the definitions
+in [paper] on which the following sections built upon. Details and examples on
+how Zsyntax deals with monotonicity can be found in [paper].
 
 \begin{definition}[Elementary bases]
   \begin{enumerate}
@@ -86,131 +85,15 @@ the Zsyntax natural deduction-style calculus in [paper], that not only describes
 the biological transition but also takes into account the control sets involved
 in it.
 
-\subsection{An alternative natural deduction calculus}
+\subsection{Reasons for a different Z-conditional operator}
 
-As we have seen, the logical framework of Zsyntax is dynamic in the sense that
-knowledge about biochemical reactions changes over time as facts are
-discovered. In other terms, this means that the contents of elementary bases
-and control sets that we consider as part of our system change.
+The alternative natural deduction formalization of Zsyntax given in the
+following sections, as well as the sequent calculus based on it, use a different
+kind of Z-conditional (linear implication) that the one described in [paper].
+The reason is that the one presended in [paper] has an asymmetry between
+introduction and elimination rules.
 
-To give a precise definition of proof (in natural deduction style) or derivation
-(in sequent calculus), however, we need a way to refer to a particular
-\emph{current state} of the system, that is, to the current value of the
-elementary bases and control sets. We thus give the concept of a \emph{world},
-which is just a structure that describes the state of the system in a given
-point in time.
-
-\begin{definition}[World]
-  A \emph{world assignment} is a map of type
-  $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*)$.  A
-  \emph{world} $w$ is a pair of world assignments, respectively called the
-  \emph{control} map and the \emph{elementary} map.
-
-  \[
-    (w_{\text{ctrl}}, w_{\text{elem}}) \in W \equiv
-    (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
-    \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
-  \]
-\end{definition}
-
-Elementary bases and control sets are therefore from now on considered in
-reference to a particular world $w$: the only difference is that the control set
-of a formula $A \rightarrow B$ is given by $w_{\text{ctrl}}(A,B)$, whereas the set
-of elementary bases is given by $w_{\text{elem}}(A,B)$. Thus, the $\rightarrow$
-elimination rule can be rewritten as
-
-\[
-  \begin{prooftree}
-    \Gamma, A \rightarrow B \, : \,
-    \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
-    \justifies
-    \Gamma, B
-  \end{prooftree}
-\]
-
-where $\elembasesw{\Gamma}{w}$ is exactly as $\elembases{\Gamma}$ but using $w$
-for the elementary bases of the conditionals.
-
-\begin{definition}[Enhanced provability judgement]
-  Enhanced provability judgements are judgements of the form
-
-  \[
-    \Gamma \models_{\ctrlset{}}^w \Delta
-  \]
-
-  where $\Gamma, \Delta$ are lists of formulas, $\ctrlset{}$ is a control set
-  and $w \in W$ is a world.
-\end{definition}
-
-The intuitive meaning of affirming a judgement of the form
-$\Delta \models_{\ctrlset{}}^w \nabla$ is to know that there exists a sequence
-of Zsyntax rule applications with which it is possible to reach the Z-state
-$\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, under the elementary bases
-and control sets given by the world $w$, provided that $\Gamma$ is compatible
-with the control set $\ctrlset{}$.
-
-\paragraph{World extension}
-
-A world $w$ codifies our knowledge given by the theorems (i.e., biological
-transitions) so far proved. Worlds are dynamic objects in the sense that they
-change as new reactions are discovered. In particular, we gain new information
-on the control set $\ctrlset{A \rightarrow B}$ whenever a new reaction of the
-form $\Gamma, A \models B$ is discovered. We therefore define a world extension
-operation as follows:
-
-\begin{definition}[World extension]
-  A derivation $\Gamma, A \models_{\ctrlset{}} B$ extends a world $w$ to produce
-  a world $w'$, written $w[\Gamma, A \models_{\ctrlset{}} B] = w'$, as follows:
-
-  \[
-    w[\Gamma, A \models_{\ctrlset{}} B]_{\text{ctrl}}(C,D) =
-    \begin{cases}
-      w_{\text{ctrl}}(A,B) \cup \ctrlset{}, & \text{if } A \rightarrow B \equiv
-      C \rightarrow D \\
-      w_{\text{ctrl}}(C,D), & \text{otherwise}
-    \end{cases}
-  \]
-  \[
-    w[\Gamma, A \models_{\ctrlset{}} B]_{\text{elem}}(C,D) =
-    \begin{cases}
-      w_{\text{elem}}(A,B) \cup w_{\text{elem}}(\Gamma), & \text{if } A \rightarrow B \equiv
-      C \rightarrow D \\
-      w_{\text{elem}}(C,D), & \text{otherwise}
-    \end{cases}
-  \]
-\end{definition}
-
-\paragraph{Technical detail about worlds}
-
-Proofs in the natural deduction calculus (and, analogously, derivations in the
-sequent calculus) consider a fixed world in all parts of the proof. In other
-terms, the \emph{current} world is of course allowed to (and will) change
-between proofs (this is how the system is dynamic), but it is \strong{not}
-allowed to change \strong{within} a proof. Even though it wouldn't be difficult
-to give a natural deduction calculus that accounts for world dynamics within the
-same proof, it becomes problematic when dealing with the corresponding sequent
-calculus derivations, and in particular in the proof of cut elimination. For
-this reason, we choose to consider only proofs with fixed worlds, and in
-particular we require that the world considered in the proof is aware of all
-transitions of the form $\Gamma, A \models B$ that may have been
-\emph{discovered} for the first time from the proof itself. This is actually a
-quite reasonable thing to do: given the dynamic nature of the calculus, every
-previously established theorem must be re-checked every time the current world
-is changed with new information. Therefore, it only saves time (and computation)
-to eagerly check a proof with a world as up-to-date as possible.
-
-We now give a translation from the calculus given in [paper] to our enhanced
-calculus, which will be formed by inference rules having as premises and
-conclusion judgements of the form $\Gamma \models_{\ctrlset{}}^w \Delta$.
-
-\paragraph{Empirical rules}
-
-Empirical rules are not part of the calculus, but are treated as axioms as
-hinted in Section [TODO] of [paper].
-
-\paragraph{$\rightarrow$ introduction}
-
-The rule in [paper] is as follows:
+The introduction rule for the Z-conditional is given in [paper] as follows:
 
 \[
   \begin{prooftree}
@@ -225,31 +108,309 @@ The rule in [paper] is as follows:
   \end{prooftree}
 \]
 
-Thus, whenever it can be shown that $\Gamma, A \vdash_{\ctrlset{}} B$ for some
-$\ctrlset{}$, $\Gamma$ may be considered \emph{ipso facto} of type
-$A \rightarrow B$, that is
-$\Gamma, \Delta \vdash_{\emptyset} A \rightarrow B, \Delta$.
-Notice, however, that in this process we gain knowledge of the fact that
-$\Gamma, A \models B$, so the \emph{world} against which the side conditions are
-checked must be updated accordingly (or rather, must already be up to date, for
-what we said before). This leads to the following rule:
+This rule introduces a particular \emph{instance} of $A \rightarrow B$.  Even
+though the conclusion of the rule shows a generic forula $A \rightarrow B$, the
+reason we have such a formula is because we know that a particular aggregate
+$\Gamma$, with its particular elementary base, when paired with $A$ has a
+transition to $B$. This transition (which is just a proof in the natural
+deduction calculus) of course depends of the fact that the context in which this
+transition is placed respects all control sets involved in it.
+
+This introduction rule forgets all these details, as it unifies all proofs (or
+reactions) of the form $\Gamma, A \vdash B$ under the type $A \rightarrow B$.
+To be fair, information is not actually thrown away, as it is supposed to be
+remembered as part of the control sets and elementary bases associated to the
+type $A \rightarrow B$. This however does not solve the asymmetry between the
+two rules. In fact, consider the elimination rule:
 
 \[
   \begin{prooftree}
-    \Gamma, A \vdash_{\ctrlset{}}^{w} B
+    \Gamma, A \rightarrow B \, : \, \elembases{\Gamma} \cap \ctrlset{A\rightarrow B}^* =
+    \emptyset
     \justifies
-    \Gamma, \Delta \vdash_{\emptyset}^{w} A
-    \rightarrow B, \Delta
-    \using{w[\Gamma,A\vdash_{\ctrlset{}}B] = w}
+    \Gamma, B
   \end{prooftree}
 \]
 
-Here, the side condition $w[\Gamma,A\vdash_{\ctrlset{}}B] = w$ means that the
-proof may happen in an arbitrary world, provided it already contains the
-additional knowledge that the premise has just established. In other words, we
-require that the world against which we check the validity of the proof is a
-fixed point with respect to the extension operation represented by
-$\Gamma,A\models_{\ctrlset{}}B$.
+From the definition of control set in [paper], we have that the deduction above
+is allowed only if the context $\Gamma$ ``respects'' the control set
+$\ctrlset{A\rightarrow B}^*$, in the sense that it is forbidden if $\Gamma$
+is known to block \emph{some instance} of $A \rightarrow B$, that is, $\Gamma,
+\Delta, A \not \models B$ is known for \emph{some} $\Delta$.
+
+To see how this definition clashes with the introduction rule, consider the
+following example. Suppose we know that $\Gamma, A \vdash B$ in any possible
+context. In other words, the control set that we may want to associate with this
+reaction is empty, as it is always allowed to happen. Then, intuitively, it
+should be possible to derive the following:
+
+\[
+  \begin{prooftree}
+    \[
+      \Gamma, A, \Delta \qquad
+      \[
+        \Gamma, A
+        \leadsto
+        B
+      \]
+      \justifies
+      A \rightarrow B, A, \Delta
+      \using{\rightarrow\mathcal{I}}
+    \]
+    \justifies
+    B, \Delta
+    \using{\rightarrow\mathcal{E}}
+  \end{prooftree}
+\]
+
+as we know that the aggregate of type $A \rightarrow B$ is really $\Gamma$ is
+disguise, therefore we also know that $\Delta$ does not interact with its
+reaction.
+
+Suppose now that we know that $\Delta, \nabla, A \not \models B$ for some
+$\nabla$. In Zsyntax, this is sufficient to block the validity of the deduction
+above, since $\Delta$ would then violate the control set for $A \rightarrow B$
+(which refers to \emph{all} known transitions of type $A \rightarrow B$, and so
+also the one involving $\nabla$.) That is, a \emph{global property} of the
+biological aggregates of type $A \rightarrow B$, referenced by the elimination
+rule, prevents us to deduce a theorem that the introduction rule tells us to be
+\emph{locally} possible, because we know that the particular instance of
+$A \rightarrow B$ that we are eliminating comes form $\Gamma$, which is not
+really affected by the presence of $\Delta$.
+
+If we translate the calculus into sequents as is, this asymmetry between local
+instances and global properties, introduction and elimination rules, and thus
+between right and left sequent rules, inevitably prevents an elegant cut-free
+calculus to be found. To restore the symmetry, we decided to use a different
+kind of implication, one that stores keeps explicit track of its control set and
+elementary base. We write
+
+\[
+  A \limp_{\ctrlset{}}^{S} B
+\]
+
+to mean the type of a biological aggregate with elementary base $S$ that, if
+paired with an element of type $A$, reacts to give an element of type $B$. In
+other words, to know that $A \limp_{\ctrlset{}}^{S} B$ holds is to know that
+$\Gamma, S, A \models \Gamma, B$, for any $\Gamma$ that respects the control set
+$\ctrlset{}$.
+
+Since now every implicational formula carries its own elementary base and
+control set, we must redefine these concepts to account for the fact that they
+are local.
+
+\begin{definition}[Elementary base]
+  The elementary base $\elembases{A} \in \bioformulas^*$ of a formula $A$ is
+  defined inductively as follows:
+
+  \begin{enumerate}
+  \item $\elembases{A} = A$, if $A \in \bioformulas$;
+  \item $\elembases{A \limp_{\ctrlset{}}^S B} = S$;
+  \item $\elembases{A \otimes B} =  \elembases{A} \cup \elembases{B}$.
+  \end{enumerate}
+
+  where $\cup$ is list union.
+\end{definition}
+
+The definition of control set is the same as before, namely an element of
+$\mathcal{P}(\bioformulas^*)$. Introduction and elimination rules for this
+updated conditional operator are discussed in the next section.
+
+\subsection{An alternative natural deduction calculus}
+
+% As we have seen, the logical framework of Zsyntax is dynamic in the sense that
+% knowledge about biochemical reactions changes over time as facts are
+% discovered. In other terms, this means that the contents of elementary bases
+% and control sets that we consider as part of our system change.
+
+% To give a precise definition of proof (in natural deduction style) or derivation
+% (in sequent calculus), however, we need a way to refer to a particular
+% \emph{current state} of the system, that is, to the current value of the
+% elementary bases and control sets. We thus give the concept of a \emph{world},
+% which is just a structure that describes the state of the system in a given
+% point in time.
+
+% \begin{definition}[World]
+%   A \emph{world assignment} is a map of type
+%   $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*)$.  A
+%   \emph{world} $w$ is a pair of world assignments, respectively called the
+%   \emph{control} map and the \emph{elementary} map.
+
+%   \[
+%     (w_{\text{ctrl}}, w_{\text{elem}}) \in W \equiv
+%     (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
+%     \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
+%   \]
+% \end{definition}
+
+% Elementary bases and control sets are therefore from now on considered in
+% reference to a particular world $w$: the only difference is that the control set
+% of a formula $A \rightarrow B$ is given by $w_{\text{ctrl}}(A,B)$, whereas the set
+% of elementary bases is given by $w_{\text{elem}}(A,B)$. Thus, the $\rightarrow$
+% elimination rule can be rewritten as
+
+% \[
+%   \begin{prooftree}
+%     \Gamma, A \rightarrow B \, : \,
+%     \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
+%     \justifies
+%     \Gamma, B
+%   \end{prooftree}
+% \]
+
+% where $\elembasesw{\Gamma}{w}$ is exactly as $\elembases{\Gamma}$ but using $w$
+% for the elementary bases of the conditionals.
+
+We now give an alternative formalization of the rules of Zsyntax. The resulting
+calculus, called from now on \eznd{}, differs from \znd{} for how we treat the
+conditional operator. As explained in the previous section, the operator (and
+the resulting rules) used here yields a strictly stronger calculus, as it is
+possible to prove theorems that are not provable in plain \znd{}. The resulting
+lack of soundness w.r.t. \znd{} is not a problem in our opinion, as we think
+that the theorems that \znd{} misses should actually be provable. This calculus
+is nevertheless complete in a certain way: if a theorem holds in \znd{}, that it
+is possible to annotate all conditionals that appear in the proof in such a way
+that the resulting is also a proof in \eznd{}.
+
+The judgement \eznd{} deals with is the provability relation of Zsyntax,
+decorated with information about the control set of the biological reaction
+described by the relation.
+
+\begin{definition}[Enhanced provability judgement]
+  Enhanced provability judgements are judgements of the form
+
+  \[
+    \Gamma \models_{\ctrlset{}} \Delta
+  \]
+
+  where $\Gamma, \Delta$ are lists of formulas, and $\ctrlset{}$ is a control
+  set.
+\end{definition}
+
+% The intuitive meaning of affirming a judgement of the form
+% $\Delta \models_{\ctrlset{}}^w \nabla$ is to know that there exists a sequence
+% of Zsyntax rule applications with which it is possible to reach the Z-state
+% $\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, under the elementary bases
+% and control sets given by the world $w$, provided that $\Gamma$ is compatible
+% with the control set $\ctrlset{}$.
+
+The intuitive meaning of affirming a judgement of the form
+$\Delta \models_{\ctrlset{}} \nabla$ is to know that there exists a sequence of
+Zsyntax rule applications with which it is possible to reach the Z-state
+$\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, provided that $\Gamma$ is
+compatible with the control set $\ctrlset{}$.
+
+% \paragraph{World extension}
+
+% A world $w$ codifies our knowledge given by the theorems (i.e., biological
+% transitions) so far proved. Worlds are dynamic objects in the sense that they
+% change as new reactions are discovered. In particular, we gain new information
+% on the control set $\ctrlset{A \rightarrow B}$ whenever a new reaction of the
+% form $\Gamma, A \models B$ is discovered. We therefore define a world extension
+% operation as follows:
+
+% \begin{definition}[World extension]
+%   A derivation $\Gamma, A \models_{\ctrlset{}} B$ extends a world $w$ to produce
+%   a world $w'$, written $w[\Gamma, A \models_{\ctrlset{}} B] = w'$, as follows:
+
+%   \[
+%     w[\Gamma, A \models_{\ctrlset{}} B]_{\text{ctrl}}(C,D) =
+%     \begin{cases}
+%       w_{\text{ctrl}}(A,B) \cup \ctrlset{}, & \text{if } A \rightarrow B \equiv
+%       C \rightarrow D \\
+%       w_{\text{ctrl}}(C,D), & \text{otherwise}
+%     \end{cases}
+%   \]
+%   \[
+%     w[\Gamma, A \models_{\ctrlset{}} B]_{\text{elem}}(C,D) =
+%     \begin{cases}
+%       w_{\text{elem}}(A,B) \cup w_{\text{elem}}(\Gamma), & \text{if } A \rightarrow B \equiv
+%       C \rightarrow D \\
+%       w_{\text{elem}}(C,D), & \text{otherwise}
+%     \end{cases}
+%   \]
+% \end{definition}
+
+% \paragraph{Technical detail about worlds}
+
+% Proofs in the natural deduction calculus (and, analogously, derivations in the
+% sequent calculus) consider a fixed world in all parts of the proof. In other
+% terms, the \emph{current} world is of course allowed to (and will) change
+% between proofs (this is how the system is dynamic), but it is \strong{not}
+% allowed to change \strong{within} a proof. Even though it wouldn't be difficult
+% to give a natural deduction calculus that accounts for world dynamics within the
+% same proof, it becomes problematic when dealing with the corresponding sequent
+% calculus derivations, and in particular in the proof of cut elimination. For
+% this reason, we choose to consider only proofs with fixed worlds, and in
+% particular we require that the world considered in the proof is aware of all
+% transitions of the form $\Gamma, A \models B$ that may have been
+% \emph{discovered} for the first time from the proof itself. This is actually a
+% quite reasonable thing to do: given the dynamic nature of the calculus, every
+% previously established theorem must be re-checked every time the current world
+% is changed with new information. Therefore, it only saves time (and computation)
+% to eagerly check a proof with a world as up-to-date as possible.
+
+We now give a translation from the calculus \znd{} given in [paper] to our
+enhanced calculus \eznd{}, which will be formed by inference rules having as
+premises and conclusion judgements of the form
+$\Gamma \models_{\ctrlset{}} \Delta$.
+
+\paragraph{Empirical rules}
+
+Empirical rules are not part of the calculus, but are treated as axioms as
+hinted in Section [TODO] of [paper]. As an example, postulating that $A$
+transitions to $B$ provided $\ctrlset{}$ is respected is the same as affirming
+$\models A \rightarrow_{\ctrlset{}}^\emptyset B$.
+
+\paragraph{$\rightarrow$ introduction}
+
+% The rule in [paper] is as follows:
+
+% \[
+%   \begin{prooftree}
+%     \Gamma, \Delta \qquad
+%     \[
+%       \Gamma, A
+%       \leadsto
+%       B
+%     \]
+%     \justifies
+%     A \rightarrow B, \Delta
+%   \end{prooftree}
+% \]
+
+% Thus, whenever it can be shown that $\Gamma, A \vdash_{\ctrlset{}} B$ for some
+% $\ctrlset{}$, $\Gamma$ may be considered \emph{ipso facto} of type
+% $A \rightarrow B$, that is
+% $\Gamma, \Delta \vdash_{\emptyset} A \rightarrow B, \Delta$.
+% Notice, however, that in this process we gain knowledge of the fact that
+% $\Gamma, A \models B$, so the \emph{world} against which the side conditions are
+% checked must be updated accordingly (or rather, must already be up to date, for
+% what we said before). This leads to the following rule:
+
+We have the following rule:
+
+\[
+  \begin{prooftree}
+    \Gamma, A \models_{\ctrlset{}} B
+    \justifies
+    \Gamma, \Delta \models_{\emptyset}
+    A \rightarrow_{\ctrlset{}}^{\elembases{\Gamma}} B, \Delta
+  \end{prooftree}
+\]
+
+Notice how the information on elementary base and control set associated with
+the conditional just introduced is preserved locally in the formula itself.
+Also, the null control set in the conclusion is just a translation of the fact
+that going from $\Gamma$ to $A \rightarrow B$ is just a matter of symbols, and
+does not involve any real reaction.
+
+% Here, the side condition $w[\Gamma,A\vdash_{\ctrlset{}}B] = w$ means that the
+% proof may happen in an arbitrary world, provided it already contains the
+% additional knowledge that the premise has just established. In other words, we
+% require that the world against which we check the validity of the proof is a
+% fixed point with respect to the extension operation represented by
+% $\Gamma,A\models_{\ctrlset{}}B$.
 
 \paragraph{$\rightarrow$ elimination}
 
@@ -268,11 +429,16 @@ Can be straighforwardly translated to our formalism as follows:
 
 \[
   \begin{prooftree}
-    \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
+    \elembases{\Gamma} \notin \ctrlset{}
     \justifies
-    \Gamma, A \rightarrow B, A \vdash_{w_{\text{ctrl}}(A,B)}^w \Gamma, B
+    \Gamma, A \rightarrow_{\ctrlset{}}^S B, A \vdash_{\ctrlset{}} \Gamma, B
   \end{prooftree}
 \]
+
+The $\ctrlset{}$ in the conclusion witnesses the fact that not only
+$A\rightarrow B$ can be eliminated if $\Gamma$ respects the associated control
+set, but also that any other context in which the whole transition is placed
+must respect it.
 
 \paragraph{$\otimes$ introduction and elimination}
 
@@ -281,25 +447,25 @@ The $\otimes$ introduction and elimination rules are straighforward:
 \[
   \begin{prooftree}
     \justifies
-    \Gamma, A, B \models_{\emptyset}^w \Gamma, A \otimes B
+    \Gamma, A, B \models_{\emptyset} \Gamma, A \otimes B
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
     \justifies
-    \Gamma, A \otimes B \models_{\emptyset}^w \Gamma, A, B
+    \Gamma, A \otimes B \models_{\emptyset} \Gamma, A, B
   \end{prooftree}
 \]
 
 \paragraph{Identity and composition}
 
-Obviously, the trivial transition is allowed in any world:
+Obviously, the trivial transition is allowed:
 
 \[
   \begin{prooftree}
     \justifies
-    \Gamma \models_{\emptyset}^w \Gamma
+    \Gamma \models_{\emptyset} \Gamma
   \end{prooftree}
 \]
 
@@ -308,35 +474,57 @@ of Zsyntax rule applications, we need a way to compose such sequences:
 
 \[
   \begin{prooftree}
-    \Gamma \models_{\ctrlset{1}}^w \Delta
+    \Gamma \models_{\ctrlset{1}} \Delta
     \qquad
-    \Delta \models_{\ctrlset{2}}^w \nabla
+    \Delta \models_{\ctrlset{2}} \nabla
     \justifies
-    \Gamma \models_{\ctrlset{1} \cup \ctrlset{2}}^w \nabla
+    \Gamma \models_{\ctrlset{1} \cup \ctrlset{2}} \nabla
   \end{prooftree}
 \]
 
-Notice how composition forces the two subsequences to happen under the same
-world $w$. We then have the following properties, which will be particularly
-useful when implementing the constraint-solving part of the automated deduction
-engine.
+The following easy to establish result holds:
 
 \begin{proposition}
-  If $\Gamma \models_{\ctrlset{}}^w \Delta$, then any subderivation $\Gamma'
-  \models_{\ctrlset{}'}^{w'} \Delta'$ is such that $w = w'$.
+  The following rule is admissible:
+
+  \[
+    \begin{prooftree}
+      \Gamma \models_{\ctrlset{}} \Delta
+      \qquad
+      \nabla \notin \ctrlset{}
+      \justifies
+      \Gamma, \nabla \models_{\ctrlset{}} \Delta, \nabla
+    \end{prooftree}
+  \]
 \end{proposition}
 \begin{proof}
-  Straightforward induction on the derivation.
+  Straightforward induction on the derivations.
 \end{proof}
 
-\begin{proposition}
-  If $\Gamma \models_{\ctrlset{}}^w \Delta$, then for every subderivation
-  $\Gamma', A \models_{\ctrlset{}'}^w B$ it holds that $w[\Gamma', A
-  \models_{\ctrlset{}'} B] = w$.
-\end{proposition}
-\begin{proof}
-  Follows directly from the proposition above.
-\end{proof}
+The next section provides a sequent calculus that is proved sound and complete
+with respect to \eznd{}.
+
+% Notice how composition forces the two subsequences to happen under the same
+% world $w$. We then have the following properties, which will be particularly
+% useful when implementing the constraint-solving part of the automated deduction
+% engine.
+
+% \begin{proposition}
+%   If $\Gamma \models_{\ctrlset{}}^w \Delta$, then any subderivation $\Gamma'
+%   \models_{\ctrlset{}'}^{w'} \Delta'$ is such that $w = w'$.
+% \end{proposition}
+% \begin{proof}
+%   Straightforward induction on the derivation.
+% \end{proof}
+
+% \begin{proposition}
+%   If $\Gamma \models_{\ctrlset{}}^w \Delta$, then for every subderivation
+%   $\Gamma', A \models_{\ctrlset{}'}^w B$ it holds that $w[\Gamma', A
+%   \models_{\ctrlset{}'} B] = w$.
+% \end{proposition}
+% \begin{proof}
+%   Follows directly from the proposition above.
+% \end{proof}
 
 %%% Local Variables:
 %%% mode: latex

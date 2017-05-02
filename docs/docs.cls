@@ -37,6 +37,11 @@
 % Standard backward sequents
 \newcommand{\bkwseq}[3]{#1 ; #2 \Longrightarrow #3}
 \newcommand{\zsyseq}[4]{#1 ; #2 \Longrightarrow_{#3} #4}
+\newcommand{\zsyseqw}[5]{#1 ; #2 \Longrightarrow_{#3}^{#4} #5}
+
+\newcommand{\znd}{\textsf{Z}}
+\newcommand{\eznd}{\textsf{EZ}}
+\newcommand{\zss}{\textsf{ZS}}
 
 % Standard forward sequents
 \newcommand{\fwdseq}[3]{#1 ; #2 \longrightarrow #3}
@@ -123,7 +128,7 @@
 
 \newcommand{\ctrlset}[1]{\mathfrak{S}_{#1}}
 
-\newcommand{\respects}[2]{\biocore{#1} \, || \, #2}
+\newcommand{\respects}[2]{\elembases{#1} \notin #2}
 \newcommand{\plainrespects}[2]{#1 \, || \, #2}
 
 \newcommand{\labels}[2]{#1 \, \# \, #2}
