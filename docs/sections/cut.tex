@@ -1,0 +1,689 @@
+\begin{lemma}\label{otimeslemma}\mbox{}
+  \begin{enumerate}
+  \item If $\ztriseq{\Gamma}{\Delta_1}{\Omega}{\emptyset}{A}$ and
+    $\zfocseq{\Gamma}{\Delta_2}{B}$, then
+    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyset}{A \otimes B}$;
+  \item If $\zfocseq{\Gamma}{\Delta_1}{A}$
+    $\ztriseq{\Gamma}{\Delta_2}{\Omega}{\emptyset}{B}$, then
+    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyset}{A \otimes B}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  In both cases, in $\Omega$ is non-empty we do a left- or right- commuting case
+  with the inductive hypothesis. Therefore, we can just assume $\Omega$ to be
+  empty.
+
+  \begin{enumerate}
+  \item
+
+    By induction on the left premise. If the last rule is a focus, the thesis
+    follows by $\otimes R$ and focus. If it is $\rightarrow R$ then $A$ is an
+    implication, and the thesis follows from a blur on the left premise and a
+    $\otimes R$. If it is a $\rightarrow L$, the thesis follows by just
+    commuting with the right premise of the $\rightarrow L$ rule instance.
+
+  \item Same as the first case.
+
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}\mbox{}
+
+  \begin{enumerate}
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{1}}{A}$, then
+    \begin{enumerate}
+    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{2}{C}$ and
+      $\respects{\Omega', \Delta'}{\ctrlset{1}}$, then
+
+      $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega'}{
+        \ctrlset{1} \cup \ctrlset{2}}{C}$.
+    \item If $\ztriseq{\Gamma}{\Delta', A}{\Omega'}{2}{C}$ and
+      $\respects{\Omega', \Delta'}{\ctrlset{1}}$, then
+
+      $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega'}{
+        \ctrlset{1} \cup \ctrlset{2}}{C}$;
+    \end{enumerate}
+
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\emptyset}{A}$ and
+    $\zfocseq{\Gamma}{\Delta', A}{B}$, then
+
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\emptyset}{B}$.
+
+  \item If $\zfocseq{\Gamma}{\Delta}{A}$, then
+    \begin{enumerate}
+    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{\ctrlset{}}{C}$, then
+      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\ctrlset{}}{C}$.
+    \item If $\ztriseq{\Gamma}{\Delta', A}{\Omega'}{\ctrlset{}}{C}$, then
+      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\ctrlset{}}{C}$.
+    \end{enumerate}
+
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+
+  The proof proceeds by simultaneous double induction on all six cuts, either on
+  the height of the derivation or on the size of cut formula. Again, we use the
+  proof in [cmu paper] as a model.
+
+  \paragraph{Cut 1a}
+
+  \begin{enumerate}
+  \item Case $\otimes L$, lact1, lact2 on the left premise are treated as left
+    commutative cases similarly to [proof of cut for backward calculus].
+
+  \item Left focus.
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma}{\Delta}{A}
+          \quad
+          A\ \text{focusable}
+          \justifies
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{A}
+        \]
+        \quad
+        \ztriseq{\Gamma}{\Delta'}{\Omega', A}{\ctrlset{}}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\Omega'}{\ctrlset{}}{C}
+      \end{prooftree}
+    \]
+
+    then, the thesis follows by induction hypothesis and cut 3a.
+
+  \item $\otimes L$, right commutative.
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{}}{A}
+        \quad
+        \[
+          \ztriseq{\Gamma}{\Delta'}{\Omega', C, D, A}{\ctrlset{}'}{C}
+          \justifies
+          \ztriseq{\Gamma}{\Delta'}{\Omega', C \otimes D, A}{\ctrlset{}'}{C}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega', C \otimes D}{\ctrlset{} \cup
+          \ctrlset{}'}{C}
+        \using{\respects{\Omega', \Delta', C \otimes D}{\ctrlset{}}}
+      \end{prooftree}
+    \]
+
+    then, by inductive hypothesis and remembering that
+    $\respects{\Omega', \Delta', C \otimes D}{\ctrlset{}}$ implies
+    $\respects{\Omega', \Delta', C, D}{\ctrlset{}}$, we have
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{}}{A}
+          \quad
+          \ztriseq{\Gamma}{\Delta'}{\Omega', C, D, A}{\ctrlset{}'}{C}
+          \justifies
+          \ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega', C, D}{\ctrlset{} \cup
+            \ctrlset{}'}{C}
+          \using{\respects{\Omega', \Delta', C, D}{\ctrlset{}}}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega', C \otimes D}{\ctrlset{} \cup
+          \ctrlset{}'}{C}
+      \end{prooftree}
+    \]
+
+  \item Case act with cut formula as side formula are all easy right commutative
+    cases.
+
+  \item Case right premise is act on the cut formula. Then the thesis follows by
+    cut 1b.
+
+  \end{enumerate}
+
+  \paragraph{Cut 1b}
+
+  If $\Omega$ in the second premise is non-empty, we treat the cut as an usual
+  right-commutative case, similarly to [cut proof backw calculus]. Otherwise, we
+  can assume it to be empty.
+
+  \begin{enumerate}
+  \item Case $\otimes L$ and act in the left premise are all straightforward
+    left commutative cases, as before.
+
+  \item Left focus.
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma}{\Delta}{A}
+          \quad
+          A\ \text{focusable}
+          \justifies
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{A}
+        \]
+        \quad
+        \ztriseq{\Gamma}{\Delta', A}{\Omega'}{\ctrlset{}}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega'}{\ctrlset{}}{C}
+      \end{prooftree}
+    \]
+
+    then, the thesis follows by induction hypothesis and cut 3b.
+
+  \item Case $\rightarrow L$, left commutative.
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma}{\Delta_1}{C}
+          \qquad
+          \ztriseq{\Gamma}{\Delta_2}{D}{\ctrlset{1}}{A}
+          \justifies
+          \ztriseq{\Gamma}{\Delta_1, \Delta_2, C \rightarrow_{\ctrlset{}}^S D}
+          {\cdot}{\ctrlset{} \cup \ctrlset{1}}{A}
+          \using{\respects{\Delta_2}{\ctrlset{}}}
+        \]
+        \quad
+        \ztriseq{\Gamma}{\Delta_3, A}{\cdot}{\ctrlset{2}}{E}
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3,
+          C \rightarrow_{\ctrlset{}}^S D}{\cdot}{\ctrlset{} \cup
+          \ctrlset{1} \cup \ctrlset{2}}{E}
+        \using{\respects{\Delta_3}{\ctrlset{} \cup \ctrlset{1}}}
+      \end{prooftree}
+    \]
+
+    then, by inductive hypothesis
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{C}
+        \quad
+        \[
+          \ztriseq{\Gamma}{\Delta_2}{D}{\ctrlset{1}}{A}
+          \qquad
+          \ztriseq{\Gamma}{\Delta_3, A}{\cdot}{\ctrlset{2}}{E}
+          \justifies
+          \ztriseq{\Gamma}{\Delta_2, \Delta_3}{D}{\ctrlset{1}\cup\ctrlset{2}}{E}
+          \using{\respects{\Delta_3}{\ctrlset{1}}}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3,
+          C \rightarrow_{\ctrlset{}}^S D}{\cdot}{\ctrlset{} \cup
+          \ctrlset{1} \cup \ctrlset{2}}{E}
+        \using{\respects{\Delta_2, \Delta_3}{\ctrlset{}}}
+      \end{prooftree}
+    \]
+
+  \item Case $\copyrule$, left commutative. Same as $\rightarrow L$.
+
+  \item Case principal cut with $\rightarrow$.
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta}{A}{\ctrlset{}}{B}
+          \justifies
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}
+          {A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+        \]
+        \quad
+        \[
+          \zfocseq{\Gamma}{\Delta'}{A}
+          \qquad
+          \ztriseq{\Gamma}{\Delta''}{B}{\ctrlset{}'}{C}
+          \justifies
+          \ztriseq{\Gamma}{\Delta', \Delta'',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{\cdot}{\ctrlset{}
+            \cup \ctrlset{}'}{C}
+          \using{\respects{\Delta''}{\ctrlset{}}}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta', \Delta''}{\cdot}{\ctrlset{} \cup
+          \ctrlset{}'}{C}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis, cut 3a, and cut 1a we get
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma}{\Delta'}{A}
+          \qquad
+          \ztriseq{\Gamma}{\Delta}{A}{\ctrlset{}}{B}
+          \justifies
+          \ztriseq{\Gamma}{\Delta, \Delta'}{\cdot}{\ctrlset{}}{B}
+        \]
+        \quad
+        \ztriseq{\Gamma}{\Delta''}{B}{\ctrlset{}'}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta', \Delta''}{\cdot}{\ctrlset{} \cup
+          \ctrlset{}'}{C}
+        \using{\respects{\Delta''}{\ctrlset{}}}
+      \end{prooftree}
+    \]
+
+  \item Case $\rightarrow L$, right commutative. If $A$ is a side formula in the
+    first premise of the cut, we treat it as a left commutative case or a focus
+    case. Otherwise, $A$ must be a conditional and the conclusion of the first
+    premise must be $\rightarrow R$.
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta}{A}{\ctrlset{}}{B}
+          \justifies
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+        \]
+        \quad
+        \[
+          \zfocseq{\Gamma}{\Delta'}{C}
+          \qquad
+          \ztriseq{\Gamma}{\Delta'',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{D}{\ctrlset{}''}{E}
+          \justifies
+          \ztriseq{\Gamma}{\Delta', \Delta'',
+            C \rightarrow_{\ctrlset{}'}^{S} D,
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{\cdot}{\ctrlset{}'
+            \cup \ctrlset{}''}{E}
+          \using{\respects{\Delta'', \Delta}{\ctrlset{}'}}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta', \Delta'',
+          C \rightarrow_{\ctrlset{}'}^{S} D}{\cdot}{\ctrlset{}' \cup
+          \ctrlset{}''}{E}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta'}{C}
+        \quad
+        \[
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+          \qquad
+          \ztriseq{\Gamma}{\Delta'',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{D}{\ctrlset{}''}{E}
+          \justifies
+          \ztriseq{\Gamma}{\Delta, \Delta''}{D}{\ctrlset{}''}{E}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta', \Delta'',
+          C \rightarrow_{\ctrlset{}'}^{S} D}{\cdot}{\ctrlset{}' \cup
+          \ctrlset{}''}{E}
+        \using{\respects{\Delta, \Delta''}{\ctrlset{}'}}
+      \end{prooftree}
+    \]
+
+  \item Case $\copyrule$, right commutative is the same as $\rightarrow L$, right
+    commutative.
+
+  \item Case $\rightarrow R$. Again, if the cut formula is a side formula, we
+    treat the case as left commutative or focus. If the cut formula is active,
+    then the first premise must be an instance of $\rightarrow R$.
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta}{A}{\ctrlset{}}{B}
+          \justifies
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+        \]
+        \quad
+        \[
+          \ztriseq{\Gamma}{\Delta',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{C}{\ctrlset{}'}{D}
+          \justifies
+          \ztriseq{\Gamma}{\Delta',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{\cdot}{\emptyset}{
+            C \rightarrow_{\ctrlset{}'}^{\elembases{\Delta, \Delta'}} D}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\cdot}{\emptyset}{
+          C \rightarrow_{\ctrlset{}'}^{\elembases{\Delta, \Delta'}} D}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+          \qquad
+          \ztriseq{\Gamma}{\Delta',
+            A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}{C}{\ctrlset{}'}{D}
+          \justifies
+          \ztriseq{\Gamma}{\Delta, \Delta'}{C}{\ctrlset{}'}{D}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta, \Delta'}{\cdot}{\emptyset}{
+          C \rightarrow_{\ctrlset{}'}^{\elembases{\Delta, \Delta'}} D}
+      \end{prooftree}
+    \]
+
+  \end{enumerate}
+
+
+
+  \paragraph{Cut 2}
+
+  By induction on the right premise. If it is an identity, the thesis follows by
+  just picking the left premise. If it is a blur, the thesis follows by cut
+  1b. If it is an application of $\otimes R$, the thesis follows by inductive
+  hypothesis with the same type 2 cut and Lemma~\ref{otimeslemma}, depending on
+  whether the cut formula ends up in the left or right premise of $\otimes R$.
+
+  \paragraph{Cut 3}
+
+  Cuts of type 3a are all treated easily as right commutative cases, using the
+  inductive hypothesis and cut 3a and 3b. The only exception is when the cut
+  formula is principal in the right premise, hence $A \equiv C \otimes D$. But
+  then, we have
+
+  \[
+    \begin{prooftree}
+      \[
+        \zfocseq{\Gamma}{\Delta_1}{C}
+        \qquad
+        \zfocseq{\Gamma}{\Delta_2}{D}
+        \justifies
+        \zfocseq{\Gamma}{\Delta_1, \Delta_2}{C \otimes D}
+      \]
+      \quad
+      \[
+        \ztriseq{\Gamma}{\Delta}{\Omega, C, D}{\ctrlset{}}{E}
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\Omega, C \otimes D}{\ctrlset{}}{E}
+      \]
+      \justifies
+      \ztriseq{\Gamma}{\Delta_1, \Delta_2, \Delta}{\Omega}{\ctrlset{}}{E}
+    \end{prooftree}
+  \]
+
+  hence, by inductive hypothesis
+
+  \[
+    \begin{prooftree}
+      \zfocseq{\Gamma}{\Delta_1}{C}
+      \quad
+      \[
+        \zfocseq{\Gamma}{\Delta_2}{D}
+        \qquad
+        \ztriseq{\Gamma}{\Delta}{\Omega, C, D}{\ctrlset{}}{E}
+        \justifies
+        \ztriseq{\Gamma}{\Delta_2, \Delta}{\Omega, C}{\ctrlset{}}{E}
+      \]
+      \justifies
+      \ztriseq{\Gamma}{\Delta_1, \Delta_2, \Delta}{\Omega}{\ctrlset{}}{E}
+    \end{prooftree}
+  \]
+
+  Cuts of type 3b are only possible if the cut formula is a conditional. But
+  then, the left premise of the cut must have been derived with a blur, hence
+  the thesis follows by cut 1b.
+
+\end{proof}
+
+We define an auxiliary function on formulas, \textsf{exp}, as follows:
+
+\begin{definition}
+  The function $\textsf{exp} : \mathcal{L} \to \mathcal{L}^*$ is inductively
+  defined as follows:
+
+\begin{align*}
+  \textsf{exp}(p) & = p \\
+  \textsf{exp}(A \otimes B) & = \textsf{exp}(A), \textsf{exp}(B) \\
+  \textsf{exp}(A \rightarrow_{\ctrlset{}}^S B) & = A \rightarrow_{\ctrlset{}}^S B
+\end{align*}
+\end{definition}
+
+\begin{lemma}\label{explemma}
+  If $\ztriseq{\Gamma}{\Delta, \textsf{exp}(A)}{\Omega}{\ctrlset{}}{C}$,
+  then $\ztriseq{\Gamma}{\Delta}{\Omega, A}{\ctrlset{}}{C}$.
+\end{lemma}
+\begin{proof}
+  By induction on $A$. If $A$ is an atom or an implication, the thesis
+  follows by act. If $A \equiv C \otimes D$, then
+  $\textsf{exp}(A) = \textsf{exp}(C \otimes D) = \textsf{exp}(C),
+  \textsf{exp}(D)$, so by inductive hypothesis
+
+  \[
+    \begin{prooftree}
+      \[
+        \[
+          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C), \textsf{exp}(D)}{\Omega}{\ctrlset{}}{E}
+          \justifies
+          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C)}{\Omega, D}{\ctrlset{}}{E}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\Omega, C, D}{\ctrlset{}}{E}
+      \]
+      \justifies
+      \ztriseq{\Gamma}{\Delta}{\Omega, C \otimes D}{\ctrlset{}}{E}
+    \end{prooftree}
+  \]
+\end{proof}
+
+\begin{lemma}[Identity expansions]\label{idexp}
+  For any formula $A$,
+  \begin{enumerate}
+  \item $\ztriseq{\Gamma}{\cdot}{A}{\emptyset}{A}$;
+  \item $\zfocseq{\Gamma}{\textsf{exp}(A)}{A}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  Both proved simultaneously by induction on $A$. If $A$ is an atom, both follow
+  trivially. Otherwise,
+
+  \begin{enumerate}
+  \item If $A \equiv C \otimes D$, then by inductive hypothesis
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\textsf{exp}(A)}{A}
+        \qquad
+        \zfocseq{\Gamma}{\textsf{exp}(B)}{B}
+        \justifies
+        \zfocseq{\Gamma}{\textsf{exp}(A), \textsf{exp}(B)}{A \otimes B}
+        \using{\otimes R}
+      \end{prooftree}
+    \]
+
+    Then, by Lemma~\ref{explemma} and the derivation above we get the first
+    point.
+
+    \[
+      \begin{prooftree}
+        \[
+          \[
+            \zfocseq{\Gamma}{\textsf{exp}(A)}{A}
+            \qquad
+            \zfocseq{\Gamma}{\textsf{exp}(B)}{B}
+            \justifies
+            \zfocseq{\Gamma}{\textsf{exp}(A), \textsf{exp}(B)}{A \otimes B}
+            \using{\otimes R}
+          \]
+          \justifies
+          \ztriseq{\Gamma}{\textsf{exp}(A), \textsf{exp}(B)}{\cdot}{\emptyset}{A \otimes B}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\cdot}{A \otimes B}{\emptyset}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item If $A \equiv C \rightarrow_{\ctrlset{}}^S D$, then by inductive
+    hypothesis and Lemma~\ref{explemma} we get
+
+    \[
+      \begin{prooftree}
+        \[
+          \[
+            \[
+              \zfocseq{\Gamma}{\textsf{exp}(C)}{C}
+              \qquad
+              \ztriseq{\Gamma}{\cdot}{D}{\emptyset}{D}
+              \justifies
+              \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D,
+                \textsf{exp}(C)}{}{\ctrlset{}}{D}
+            \]
+            \justifies
+            \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D}{C}{\ctrlset{}}{D}
+          \]
+          \justifies
+          \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D}{\cdot}{\emptyset}{
+            C \rightarrow_{\ctrlset{}}^S D}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\cdot}{C \rightarrow_{\ctrlset{}}^S D}{\emptyset}{
+          C \rightarrow_{\ctrlset{}}^S D}
+      \end{prooftree}
+    \]
+
+    The second point follows by blur on the derivation above.
+  \end{enumerate}
+\end{proof}
+
+\begin{lemma}\label{idhelplemma}
+  The following are derivable:
+  \begin{enumerate}
+  \item $\ztriseq{\Gamma}{P}{\cdot}{\emptyset}{P}$;
+  \item $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}$;
+  \item $\ztriseq{\Gamma}{\cdot}{A \rightarrow_{\ctrlset{}}^S B,
+      A}{\ctrlset{}}{B}$;
+  \item $\ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyset}{A}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved easily with the same technique as the identity expansion
+  lemma.
+\end{proof}
+
+\begin{lemma}\label{activeinversion}\mbox{}
+  \begin{enumerate}
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, A \otimes B}{\ctrlset{}}{C}$, then
+    $\ztriseq{\Gamma}{\Delta}{\Omega, A, B}{\ctrlset{}}{C}$;
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, \Omega'}{\ctrlset{}}{C}$, then
+    $\ztriseq{\Gamma}{\Delta, \textsf{exp}(\Omega')}{\Omega}{\ctrlset{}}{C}$
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  Point 1 is proved by cut with
+  $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}$. Point 2 is proved by
+  repeated application of point 1 on $\otimes$ formulas until they become either
+  an atom or an implication, then by cut with
+  $\ztriseq{\Gamma}{P}{\cdot}{\emptyset}{P}$.
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\zsyseq{\Gamma}{\Omega}{\ctrlset{}}{A}$, then
+  $\ztriseq{\Gamma}{\cdot}{\Omega}{\ctrlset{}}{A}$.
+\end{theorem}
+\begin{proof}
+  The proof proceeds as in [cmu thesis], by proving that all rules of the
+  backward calculus are admissible in the focused calculus.
+
+  \begin{enumerate}
+  \item Case $\init$: $\zsyseq{\Gamma}{A}{\emptyset}{A}$. The thesis follows by
+    Lemma~\ref{idexp}.
+  \item Case $\copyrule$. Then, by inductive hypothesis, Lemma~\ref{idhelplemma}
+    and cut admissibility, we have
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyset}{A}
+        \qquad
+        \ztriseq{\Gamma, A}{\cdot}{\Omega, A}{\ctrlset{}}{C}
+        \justifies
+        \ztriseq{\Gamma, A}{\cdot}{\Omega}{\ctrlset{}}{C}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes L$. The thesis follows immediately by a single application
+    of the analogous $\otimes L$ rule in the focused calculus.
+  \item Case $\otimes R$. Then, by inductive hypothesis, Lemma~\ref{idhelplemma}
+    and cut admissibility, we have
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\cdot}{\Omega_2}{\emptyset}{B}
+        \quad
+        \[
+          \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyset}{A}
+          \qquad
+          \ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}
+          \justifies
+          \ztriseq{\Gamma}{\cdot}{\Omega_1, B}{\emptyset}{A \otimes B}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\cdot}{\Omega_1, \Omega_2}{\emptyset}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item Case $\rightarrow L$. Then, by inductive hypothesis, Lemma~\ref{idhelplemma}
+    and cut admissibility, we have
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyset}{A}
+        \quad
+        \[
+          \ztriseq{\Gamma}{\cdot}{
+            A, A \rightarrow_{\ctrlset{}}^S B
+          }{\ctrlset{}}{B}
+          \qquad
+          \ztriseq{\Gamma}{\cdot}{\Omega_2, B}{\ctrlset{}'}{C}
+          \justifies
+          \ztriseq{\Gamma}{\cdot}{
+            \Omega_2, A, A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{} \cup \ctrlset{}'}{C}
+          \using{\respects{\Omega}{\ctrlset{}}}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\cdot}{\Omega_1, \Omega_2,
+        A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{} \cup \ctrlset{}'}{C}
+      \end{prooftree}
+    \]
+
+  \item Case $\rightarrow R$. By inductive hypothesis and
+    Lemma~\ref{activeinversion}, we have
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\cdot}{\Omega, A}{\ctrlset{}}{B}
+        \justifies
+        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\ctrlset{}}{B}
+      \end{prooftree}
+    \]
+
+    It is an easy induction to see that
+    $\elembases{\Omega} = \elembases{\textsf{exp}(\Omega)}$. Therefore,
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\cdot}{\Omega, A}{\ctrlset{}}{B}
+          \justifies
+          \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\ctrlset{}}{B}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{\cdot}{\emptyset}{
+          A \rightarrow_{\ctrlset{}}^{\elembases{\Omega}} B}
+      \end{prooftree}
+    \]
+
+    Then, by repeated application of act and $\otimes L$, we get the conclusion
+    $\ztriseq{\Gamma}{\cdot}{\Omega}{\emptyset}{
+          A \rightarrow_{\ctrlset{}}^{\elembases{\Omega}} B}$.
+
+  \end{enumerate}
+\end{proof}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:
