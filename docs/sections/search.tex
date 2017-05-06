@@ -2,88 +2,40 @@
 
 \subsection{Sequent representation}
 
-% Taken from 4.1.1 of the thesis, and adapted to forward neutral sequents.
+During the preliminary rule generation, as well as during proof search, we need
+to refer to subformulas of the goal sequent. It is important to remark that we
+need to differentiate between two syntactically identical subformulas of
+different formulas. For example
 
-The subformula property gives us the core of the inverse method procedure. We
-start with initial sequents of the form $\fneuseq{\cdot}{p}{p}$, where the atom
-$p$ occurs as both a positive and a negative subformula of the decorated goal
-sequent. Since we need some way to refer to subformulas of the goal sequent, we
-label all subformulas with new fresh labels.
-We write $l \# A$ to denote that $l$ is the label for the formula
-$A$. Given a goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we define
-the following top-level labels: $\labels{u_i}{A_i}$, $\labels{l_j}{B_j}$ and
-$\labels{r}{Q}$. Furthermore, we label every non-atomic subformula of the
-sequent using a unique label. During inference, we refer to labelled sequents
-only. Hence, all derived and partially applied rules refer to labelled sequents.
+\[
+  \zfneuseq{\cdot}{(p \otimes q) \otimes (p \otimes q),
+    r \rightarrow (p \otimes q)}{\ctrlset{}}{p}
+\]
 
-Represented sequents consist of a collection of labels of resources and the
-label of the goal. The labels of the unrestricted context are organized in a
-set, whereas the labels of the linear context are organized in a binary map
-between labels and their multiplicities.
+Here, the \emph{same} formula $p \otimes q$ occurs three times as three
+\emph{different} subformulas. To make this distinction clear during proof
+search, as well as to have a way to easily refer and compare subformulas of the
+goal sequent, we \emph{label} every subformula with a unique label.
 
-\begin{definition}[Represented sequent]
-  A forward sequent is represented as follows:
+We write $l \# A$ to denote that $l$ is the label for the formula $A$. Given a
+goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we label every \emph{non-atomic}
+subformula of it sequent using a unique label (we consider atoms to be their own
+labels). During proof search, we refer to labels only. In particular, all
+derived rules refer to labelled sequents only.
+
+\begin{definition}[Labelled sequents]
+  A labelled sequent is a sequent of the form
 
   \[
-    u_1 \# A_1, \dots, u_m \# A_n ; l_1^{k_1} \# B_1, \dots, l_n^{k_n} \# B_k
-    \fneuseqsymb r \# Q
+    u_1, \dots, u_m ; l_1^{k_1}, \dots, l_n^{k_n} \fneuseqsymb_{\ctrlset{}} \gamma
   \]
+
+  where $u_1, \dots, u_m$ are labels for unrestricted formulas, $l_1, \dots,
+  l_n, \gamma$ are labels for linear formulas, and the $k_i$ in $l_i^{k_i}$ is
+  the multiplicity of that label in the linear context.
 \end{definition}
-
-\subsection{Subsumption}
-
-In the saturation-based search that we use in the forward direction, there is a
-form of non-determinism in selecting sequents for applying rules. It is
-therefore important that the database of sequents available as candidates is as
-less redundant as possible. We therefore need to check for \emph{sequent
-  subsumption} whenever a new sequent is created (\emph{forward
-  subsumption}). In implementing subsumption checks, it is important to detect
-failures as early as possible, because the vast majority of checks it likely to
-fail. The usual strategy is to perform a sequence of hierarchical tests that
-imply subsumption if they all succeed. Performing these checks in sequence
-allows us to stop as soon as one of them fails.
-
-\begin{definition}[Hierarchical subsumption tests]
-  A forward sequent $s_1 \equiv \Gamma; \Delta \longrightarrow C$ does not
-  subsume $s_2 \equiv \Gamma'; \Delta' \longrightarrow C'$, if
-
-  \begin{enumerate}
-  \item $C \neq C'$, or
-  \item $\Delta \not \subseteq \Delta'$, or
-  \item $\Gamma \not \subseteq \Gamma'$, or
-  \item $s_1 \not \prec s_2$.
-  \end{enumerate}
-
-  Where $C = C'$ compares both formulas and labels, $\Gamma \subseteq \Gamma'$
-  if for every $l \in \mathrm{dom}(\Gamma)$,
-  $\mathrm{mult}(\Gamma, l) \leq \mathrm{mult}(\Gamma', l)$, and similarly for
-  $\Delta$.
-\end{definition}
-
-It is trivial to verify that a sequent subsumes another sequent if and only if
-the subsumption test above fails.
 
 \subsection{Rules and rule application}
-
-% % From 4.1.5
-% Rules are precomputed to the specific labels of the subformulas of the goal
-% sequent. If the positive proposition $\labels{r}{A \otimes B}$ occurs in the
-% goal sequent, and $\labels{r_A}{A}, \labels{r_B}{B}$ are the labels of the
-% operands, then the following rule will be generated for this label:
-
-% \[
-%   \begin{prooftree}
-%     \Gamma_1; \Delta_1 \longrightarrow r_A
-%     \qquad
-%     \Gamma_2; \Delta_2 \longrightarrow r_B
-%     \justifies
-%     \Gamma_1, \Gamma_2; \Delta_1, \Delta_2 \rightarrow r
-%     \using{\otimes R}
-%   \end{prooftree}
-% \]
-
-% To apply a rule to a given input sequent, we have to first \emph{match} a
-% premiss of the rule to the input sequent.
 
 Derived rules are precomputed to specific frontier subformulas, or rather, to
 the labels associated to frontier subformulas. Derived rules can be applied to
@@ -96,25 +48,27 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
   A sequent schema is of the form
 
   \[
-    u_1, \dots, u_m ; l_1^{k_1}, \cdot, l_n^{k_n} \fneuseqsymb \gamma
+    u_1, \dots, u_m ; l_1^{k_1}, \dots, l_n^{k_n} \fneuseqsymb_{\zeta} \gamma
   \]
 
-  where $\gamma$ is either a label $r$ or $\cdot$.
+  where $\gamma$ is either a label $r$ or $\cdot$, and $\zeta$ is either a
+  control set $\ctrlset{}$ or $\cdot$.
 \end{definition}
 
 \begin{definition}[Matching]
-  We say that a schema $\sigma = \fneuseq{\Gamma_s}{\Delta_s}{\gamma_s}$ matches
-  an input sequent $s = \fneuseq{\Gamma}{\Delta}{r}$ if
+  We say that a schema $\sigma = \zfneuseq{\Gamma_s}{\Delta_s}{\zeta}{\gamma_s}$ matches
+  an input sequent $s = \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{r}$ if
 
   \begin{enumerate}
   \item $\Gamma_s \subseteq \Gamma$;
   \item $\Delta_s \subseteq \Delta$;
-  \item $\gamma_s \subseteq r$.
+  \item $\gamma_s = \cdot$ or $\gamma_s = r$;
+  \item $\zeta = \cdot$ or $\zeta = \ctrlset{}$.
   \end{enumerate}
 \end{definition}
 \begin{definition}[Match result]
   A result of the match, written $\sigma | s$, is a sequent-like structure
-  $\fneuseq{\Gamma_r}{\Delta_r}{\gamma_r}$, for which
+  $\zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}$, for which
 
   \begin{enumerate}
   \item $\Gamma_r = \Gamma \setminus \Gamma_s$;
@@ -124,220 +78,131 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
       \cdot, & \text{if } \gamma_s = r \\
       r,     & \text{if } \gamma_s = \cdot
     \end{cases}$
+  \item $\zeta_r =
+    \begin{cases}
+      \cdot, & \text{if } \zeta = r \\
+      \ctrlset{},     & \text{if } \zeta = \cdot
+    \end{cases}$
     % \item Like this in the thesis: $\gamma_r = \gamma$.
   \end{enumerate}
 \end{definition}
 
 \begin{example}
   Suppose we are deriving the rule associated to the formula $q \limp d \otimes
-  d \otimes n$.
+  d \otimes n$. The derivation can be expressed with the help of schematic
+  variables as follows:
 
   {
     \scriptsize{
       \[
         \begin{prooftree}
+          s
+          \quad
           \[
-            \[
-              \justifies
-              \factrelj{\btriseq{\cdot}{\cdot}{\cdot}{q}}{s_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
-            \]
             \justifies
-            \frfrelj{q}{s_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+            \frfrelj{q}{\cdot}{\fneuseq{\cdot}{q}{\cdot}}
           \]
-          \qquad
+          \,
           \[
             \[
-              \[
-                \justifies
-                \factrelj{\btriseq{\cdot}{d,d,n}{\cdot}{\cdot}}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
-              \]
               \justifies
-              \factrelj{\btriseq{\cdot}{\cdot}{d \otimes d \otimes n}{\cdot}}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
+              \factrelj{
+                \bkwseq{d,d,n}{\cdot}{\cdot}
+              }{
+                s
+              }{
+                \zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}
+              }
             \]
             \justifies
-            \flfrelj{d \otimes d \otimes n}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\gamma}}
+            \factrelj{
+              \bkwseq{\cdot}{d \otimes d \otimes n}{\cdot}
+            }{
+              s
+            }{
+              \zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}
+            }
           \]
           \justifies
-          \flfrelj{q \limp d \otimes d \otimes d}{s_1 \cdot s_2}{
-            \fneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{\gamma}
-          }
+          \zfneuseq{\Gamma_r, A_1}{\Delta_r, q}{\zeta_r}{\gamma_r}
         \end{prooftree}
       \]
     }
   }
 
-  The above derivation tells us that $s_1$ is required to have $q$ as conclusion
-  formula. Morover, $s_2$ is required to include $d, d, n$ in its linear
-  context. The goal $\gamma$ of the second premise sequent becomes the goal of
-  the conclusion sequent of the derived rule, whatever that is. All this can be
+  The sequent-like structure $\bkwseq{d,d,n}{\cdot}{\cdot}$ of the active
+  relation acts as our sequent schema for the resulting derived rule.  It tells
+  us that the premise sequent $s$ is required to include $d, d, n$ in its linear
+  context. The goal $\gamma_r$ of the premise, whatever that is, then becomes
+  the goal of the conclusion sequent of the derived rule. All this can be
   expressed in terms of sequent schemas, by saying that the premises of the
-  above rule must be matched agains the two schemas
+  above rule must be matched agains the schema
 
   \[
-    \fneuseq{\cdot}{\cdot}{q}
-  \]
-  \[
-    \fneuseq{\cdot}{d,d,n}{\cdot}
+    \zfneuseq{\cdot}{d,d,n}{\cdot}{\cdot}
   \]
 
-  Given the following results of matching $s_1$ and $s_2$ against the schemas
-
-  \[
-    \fneuseq{\Gamma_1}{\Delta_1}{\cdot}
-  \]
-  \[
-    \fneuseq{\Gamma_2}{\Delta_2}{r}
-  \]
-
-  These are assembled to form the conclusion sequent of the entire rule, that is
+  Matching (with success) an input sequent $s$ against this schema will produce
+  a result $\zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}$, from
+  which the the conclusion sequent of the entire rule can be assembled:
 
   \[
-    \fneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{r}
+    \zfneuseq{\Gamma_r, A_1}{\Delta_r, q}{\zeta_r}{\gamma_r}
   \]
-
 \end{example}
+
 
 \subsection{Search procedure}
 
 % From 4.1.6
 
-The search procedure is summarized as follows:
+The search procedure for an input goal sequent
+$\zsyseq{\Gamma}{\Delta}{\ctrlset{}}{C}$ is summarized as follows:
 
 \begin{enumerate}
-\item Label all subformulas of the goal sequent, and decorate using signs and
-  availabilities;
-\item Determine all initial sequents for atomic formulas with both signs;
-\item Specialize all left rules for negative subformulas, all right rules for
-  positive subformulas, and instances of the ``copy'' rule for unrestriced
-  subformulas;
-\item Starting from the initial sequents, apply the inference ruels in any order
-  that is guaranteed to saturate the search space. Add new facts to a database
-  used for forward subsumption;
-\item Stop when the goal sequent is matched, or if no rules apply.
+\item All subformulas of the goal sequent are labelled with unique label
+  symbols, and decorate using signs and availabilities;
+\item The frontier subformulas are computed and derived rules are generated from
+  them. All derived rules with zero premises are treated as initial sequents;
+\item Starting from the initial sequents, the derived inference rules are
+  applied in any order that is guaranteed to saturate the search
+  space. Conclusion sequents that are generated during these applications are
+  stored and used as premises during the next iterations;
+\item If a conclusion sequent $\zfneuseq{\Gamma'}{\Delta}{\ctrlset{}}{C}$ is
+  found that subsumes the goal, that is $\Gamma' \subseteq \Gamma$, exit with
+  success.
+\item If the search space is saturated before finding a sequent that subsumes
+  the goal, exit with failure.
 \end{enumerate}
 
 The procedure maintains two continually updated sequent databases:
 
 \begin{enumerate}
-\item The \strong{kept sequents} database contains new sequents that have not
-  been subsumed, but are not yet being considered for rule applications;
-\item The \strong{active sequents} database that contains all sequents that
+\item The \strong{kept sequents} database, that contains new sequents that have not
+  been encountered during previous iterations, but that are still to be
+  considered for rule applications;
+\item The \strong{active sequents} database, that contains all sequents that
   should be considered for rule applications.
 \end{enumerate}
 
-At each loop iteration, a sequent $s$ is selected and removed from the kept
-sequents database and inserted into the active sequents database
-(``activation''). Then, all specialized rules are matched against $s$ as the
-first premise.... [continues, but does not say anything]
+we follow the approach of [cmu thesis] and ``currify'' inference rules with
+multiple premises. More precisely, we treat all rules as essentially unary rules
+that produce either a conclusion sequent or a new, partially instantiated
+rule. At the end of each iteration, all rules that have been partially but not
+fully applied are added to the database of available rules for the next
+iterations, which is therefore dynamically growing.
 
-Completeness of the loop is a well known property, requiring only the following
-properties of the implementation:
-
-\begin{enumerate}
-\item \strong{Fair selection}: every sequent in the kept sequents database is
-  eventually selected for insertion into the active sequents database;
-\item \strong{Fair application}: if a rule can be fully satisfied by sequents in
-  the active sequents database (in any order), then the conclusion of this rule
-  is eventually considered for insertion into the kept sequents database.
-\end{enumerate}
-
-\subsection{Search procedure 2}
-
-% Taken from 5.6
-
-We extend the approach by treating all rules as essentially unary rules that
-produce either a conclusion sequent or a partially instantiated rule. Hence we
-have a dynamically growing collection of (partially applied) rules in the rule
-database.
-
-The inner (?) loop of the search procedure performs the following \emph{lazy
-  activation} step until either the goal sequent is subsumed, or no further
-rules are applicable to the active sequents. Activation contains a closely
-related procedure called \emph{percolation}.
-
-\begin{definition}[Lazy activation]
-  In the activation of a sequent $s$, that is, the transferring of $s$ from the
-  kept sequents database to the active sequents database, the following steps
-  are performed:
-
-  \begin{enumerate}
-  \item The sequent is renamed (???) and inserted into the active sequents
-    database;
-  \item All available rules are applied to $s$. If these applications produced
-    new rules $R$, then percolation is performed on $R$ to obtain the full
-    collection of new partially instantiated rules;
-  \item The new rules are added to the rule database;
-  \item All sequents generated during the above rule applications and
-    percolation are tested for subsumption in the global index (forward
-    subsumption). All unsubsumed sequents are added to the kept sequents
-    database.
-  \end{enumerate}
-\end{definition}
-
-\begin{definition}[Percolation]
-  To percolate a collection of rules $R$, the following two steps are performed
-  until there are no new additions to $R$:
-
-  \begin{enumerate}
-  \item For every sequent in the active set, every rule in $R$ is applied to it;
-  \item Any new rules generated are added to $R$.
-  \end{enumerate}
-\end{definition}
-
-A sequent is added to the kept sequents database if it is not globally subsumed
-by some sequent derived earlier.
-
-\subsection{The focused inverse method (to be redistributed)}
-
-% Taken from 6.3
-
-It is possible for a new sequent to be stronger than some sequents already in
-the database. In this case, the old weaker sequents are no longer considered for
-new derivations (backward subsumption).
-
-\subsubsection{Implementation details}
-
-% Taken from 6.3.1
-
-Given a proposition in the frontier, the focusing phase of the derived rule for
-it is completely predictable, sincere there are no disjunctive choices to be
-made. The active phase is also predictable, since we do not have additive
-connectives.
-
-My addition: Hence, every subformula in the frontier deterministically gives
-rise to a unique derived rule schema (which can of course be matched by actual
-premise sequents in infinite ways).
-
-Doubt: perche' parla di proposizioni e non di (sotto-)formule? Non avevamo detto
-che ogni non-atomic subformula e` distinta da altre subformule relative alla
-stessa proposizione (quindi sintatticamente uguali nel caso proposizionale).
-
-\subsection{Search loop}
-
-% taken from "A focusing inverse method theorem prover for first-order
-% linear logic"
-
-We use a lazy variant of the OTTER loop as the main loop of the search
-procedure. We maintain tow global sets of derived sequents:
-
-\begin{itemize}
-\item The \emph{active set} containing sequents to be considered as premises of
-  rules;
-\item The \emph{inactive set} that contains all facts that have not yet been
-  transferred to the active set.
-\end{itemize}
-
-The inner loop of the search procedure repeats the following lazy activation
+The loop of the search procedure repeats the following \emph{activation}
 step until either the goal sequent is subsumed (in which case the search is
 successful), or no further rules are applicable to the sequents in the acitve
 set and the inactive set is exhausted (in which case the search saturates).
 
-\begin{definition}[Lazy activation]
+\begin{definition}[Activation]
   To activate the sequent $s$, i.e., to transfer it from the inactive to the
   active set, the following steps are performed:
 
   \begin{enumerate}
-  \item After renaming (???), $s$ is inserted into the active set;
+  \item The sequent $s$ is inserted into the active set;
   \item All available rules are applied to $s$. If these applications produce
     new rules, say a set $R$, then the following two steps are performed in a
     loop until there are no additions to $R$:
@@ -348,10 +213,12 @@ set and the inactive set is exhausted (in which case the search saturates).
     \item any new rules generated are added to $R$.
     \end{enumerate}
 
-    This two-steps inner loop is called the \emph{percolation} phase.
+    Borrowing terminology from [cmu thesis], we call this two-steps loop the
+    \emph{percolation} phase.
   \item The collection of rules $R$ is added to the set of rules;
   \item All sequents generated during the above applications are tested for
-    subsumption, and the un-subsumed sequents are added to the inactive set.
+    subsumption against all previously generated sequents. All new
+    sequents are then added to the inactive set.
   \end{enumerate}
 \end{definition}
 
@@ -389,7 +256,6 @@ set and the inactive set is exhausted (in which case the search saturates).
     $s_1, \dots, s_{n+1}$ during such iteration.
   \end{itemize}
 \end{proof}
-
 
 %%% Local Variables:
 %%% mode: latex

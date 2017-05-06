@@ -45,6 +45,7 @@
 
 % Standard forward sequents
 \newcommand{\fwdseq}[3]{#1 ; #2 \longrightarrow #3}
+\newcommand{\zfwdseq}[4]{#1 ; #2 \longrightarrow_{#3} #4}
 
 % backward and forward neutral sequents symbols and macros
 \newcommand{\bneuseqsymb}{
@@ -53,7 +54,10 @@
 \newcommand{\fneuseqsymb}{
   \mathrel{\longrightarrow\!\!\!\!\!\!\!\!\longrightarrow}}
 \newcommand{\bneuseq}[3]{#1 ; #2 \bneuseqsymb #3}
+\newcommand{\zbneuseq}[4]{#1 ; #2 \bneuseqsymb_{#3} #4}
 \newcommand{\fneuseq}[3]{#1 ; #2 \fneuseqsymb #3}
+\newcommand{\zfneuseqempty}[2]{#1 ; #2 \fneuseqsymb \cdot}
+\newcommand{\zfneuseq}[4]{#1 ; #2 \fneuseqsymb_{#3} #4}
 
 % backward derived-rule relations
 \newcommand{\brfrel}[1]{\textsf{foc}^+_{\Uparrow}(#1)}
@@ -82,6 +86,13 @@
 % Focusing sequents
 \newcommand{\rfocseq}[3]{#1; #2 \gg #3}
 \newcommand{\lfocseq}[4]{#1; #2; #3 \ll #4}
+
+% Bio focusing sequent
+\newcommand{\ztriseq}[5]{#1; #2; #3 \Longrightarrow_{#4} #5}
+\newcommand{\zqseq}[6]{#1; #2; #3; #4 \Longrightarrow_{#5} #6}
+\newcommand{\zqseqem}[5]{#1; #2; #3; #4 \Longrightarrow_{\emptyset} #5}
+\newcommand{\zqseqct}[6]{#1; #2; #3; #4 \Longrightarrow_{\ctrlset{#5}} #6}
+\newcommand{\zfocseq}[3]{#1; #2 \gg_{\emptyset} #3}
 
 % Rule labels
 \newcommand{\init}{\textsc{init}}
@@ -162,3 +173,9 @@
   ; \labels{#4}{#5})}
 \newcommand{\dtlimpl}[6]{\limp \textsf{L}(#1, #2, \labels{#3}{#4} ; \labels{#5}{#6})}
 \newcommand{\dtfactor}[5]{\textsf{factor}(#1 . #2 . #3 ; \tyj{#4}{#5})}
+
+% Haskell terms
+\newcommand{\relsym}{\textsf{Rel}}
+\newcommand{\relty}[2]{\relsym\ #1\ #2}
+\newcommand{\inl}{\textsf{inl}}
+\newcommand{\inr}{\textsf{inr}}

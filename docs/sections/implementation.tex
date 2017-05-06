@@ -1,0 +1,41 @@
+\section{Implementation details}
+
+\subsection{The $\relsym$ type}
+
+As mentioned before, inference rules are implemented as sort of ``currified''
+functions that take a single premise sequent as input and return either the
+conclusion sequent (if there are no more premises in the rule) or a new,
+partially applied rule that waits for the next premises.
+
+In particular, a rule may be
+
+\begin{itemize}
+\item Zero-ary, that is, just a conclusion sequent;
+\item Unary, that is, a function from the type of sequents to the type of rules.
+\end{itemize}
+
+However, rules are really matched against input sequents, and these matches may
+fail. So to model a rule as a function from the type of sequents to the type of
+rules, we have to include a third case of ``failing rules'' as elements of the
+type itself.  All these three scenarios, as well as the particular types
+involved, can be abstracted away and modelled as elements of the following
+recursive type, that represents ``currified'' relations betweeen input elements
+of type $A$ and output elements of type $B$.
+
+\[
+  \relty{A}{B} = 1 + (B + (A \rightarrow \relty{A}{B}))
+\]
+
+\[
+  \mu : \relty{A}{(\relty{A}{B})} \to \relty{A}{B}
+\]
+\begin{align*}
+  \mu\ \inl \star & = \inl \star \\
+  \mu\ \inr(\inl{} c) & = c \\
+  \mu\ \inr(\inr{} g) & = \inr(\inr(\mu \circ g))
+\end{align*}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:

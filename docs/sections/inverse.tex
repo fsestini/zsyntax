@@ -9,255 +9,168 @@
 
 .... blah blah we need a forward calculus .... blah...
 
-\subsection{Forward sequent calculus}
+... blah we don't use the plain forward calculus directly, blah..
 
-Since weakening and contraction are admissible for the unrestricted
-zone, we can treat $\Gamma$ as a set.
+% \subsection{Forward sequent calculus}
 
-\begin{figure}[h]
-  \begin{mdframed}
-    \[
-      \begin{prooftree}
-        \justifies
-        \cdot ; P \longrightarrow P
-        \using{\init}
-      \end{prooftree}
-      \qquad \qquad
-      \begin{prooftree}
-        \Gamma; \Delta, A \longrightarrow C
-        \justifies
-        \Gamma \cup \{A\}; \Delta \longrightarrow C
-        \using{\copyrule}
-      \end{prooftree}
-    \]
+% Since weakening and contraction are admissible for the unrestricted
+% zone, we can treat $\Gamma$ as a set.
 
-    \[
-      \begin{prooftree}
-        \Gamma; \Delta \longrightarrow A
-        \qquad
-        \Gamma'; \Delta' \longrightarrow B
-        \justifies
-        \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
-        \using{\otimes R}
-      \end{prooftree}
-      \qquad \qquad
-      \begin{prooftree}
-        \Gamma; \Delta, A, B \longrightarrow C
-        \justifies
-        \Gamma; \Delta, A \otimes B \longrightarrow C
-        \using{\otimes L}
-      \end{prooftree}
-    \]
+% \begin{figure}[h]
+%   \begin{mdframed}
+%     \[
+%       \begin{prooftree}
+%         \justifies
+%         \zfwdseq{\cdot}{P}{\emptyset}{P}
+%         \using{\init}
+%       \end{prooftree}
+%       \qquad \qquad
+%       \begin{prooftree}
+%         \zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{C}
+%         \justifies
+%         \zfwdseq{\Gamma \cup \{A\}}{\Delta}{\ctrlset{}}{C}
+%         \using{\copyrule}
+%       \end{prooftree}
+%     \]
 
-    \[
-      \begin{prooftree}
-        \Gamma; \Delta \longrightarrow A
-        \qquad
-        \Gamma'; \Delta', B \longrightarrow C
-        \justifies
-        \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
-        \using{\limp L}
-      \end{prooftree}
-      \qquad \qquad
-      \begin{prooftree}
-        \Gamma; \Delta, A \longrightarrow B
-        \justifies
-        \Gamma; \Delta \longrightarrow A \limp B
-        \using{\limp R}
-      \end{prooftree}
-    \]
-  \end{mdframed}
-  \caption{Forward sequent calculus}
-\end{figure}
+%     \[
+%       \begin{prooftree}
+%         \Gamma; \Delta \longrightarrow A
+%         \qquad
+%         \Gamma'; \Delta' \longrightarrow B
+%         \justifies
+%         \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
+%         \using{\otimes R}
+%       \end{prooftree}
+%       \qquad \qquad
+%       \begin{prooftree}
+%         \Gamma; \Delta, A, B \longrightarrow C
+%         \justifies
+%         \Gamma; \Delta, A \otimes B \longrightarrow C
+%         \using{\otimes L}
+%       \end{prooftree}
+%     \]
 
-\begin{theorem}[Soundness]
-  If $\Gamma ; \Delta \longrightarrow C$, then
-  $\Gamma ; \Delta \Longrightarrow C$.
-\end{theorem}
-\begin{proof}
-  Just notice that every forward derivation is also a backward derivation, with
-  the difference that in the latter unrestricted contexts are copied in all
-  the premises. The details are a straightforward induction on the height of a
-  forward derivation, plus weakening for the backward calculus.
-\end{proof}
+%     \[
+%       \begin{prooftree}
+%         \Gamma; \Delta \longrightarrow A
+%         \qquad
+%         \Gamma'; \Delta', B \longrightarrow C
+%         \justifies
+%         \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
+%         \using{\limp L}
+%       \end{prooftree}
+%       \qquad \qquad
+%       \begin{prooftree}
+%         \Gamma; \Delta, A \longrightarrow B
+%         \justifies
+%         \Gamma; \Delta \longrightarrow A \limp B
+%         \using{\limp R}
+%       \end{prooftree}
+%     \]
+%   \end{mdframed}
+%   \caption{Forward sequent calculus}
+% \end{figure}
 
-\begin{theorem}[Completeness]
-  If $\Gamma ; \Delta \Longrightarrow C$, then
-  $\Gamma' ; \Delta \longrightarrow C$ for some $\Gamma' \subseteq \Gamma$.
-\end{theorem}
-\begin{proof}
-  Straightforward induction on the backward derivation.
-\end{proof}
+% \begin{theorem}[Soundness]
+%   If $\Gamma ; \Delta \longrightarrow C$, then
+%   $\Gamma ; \Delta \Longrightarrow C$.
+% \end{theorem}
+% \begin{proof}
+%   Just notice that every forward derivation is also a backward derivation, with
+%   the difference that in the latter unrestricted contexts are copied in all
+%   the premises. The details are a straightforward induction on the height of a
+%   forward derivation, plus weakening for the backward calculus.
+% \end{proof}
 
-\begin{example}
-  The following is an example derivation of
+% \begin{theorem}[Completeness]
+%   If $\Gamma ; \Delta \Longrightarrow C$, then
+%   $\Gamma' ; \Delta \longrightarrow C$ for some $\Gamma' \subseteq \Gamma$.
+% \end{theorem}
+% \begin{proof}
+%   Straightforward induction on the backward derivation.
+% \end{proof}
 
-  $$\frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}$$
+% \begin{example}
+%   The following is an example derivation of
 
-  where $R_1 \equiv n \otimes n \limp d$ and
-  $R_3 \equiv q \limp d \otimes d \otimes n$.
+%   $$\frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}$$
 
-  \[
-    \begin{prooftree}
-      \[
-        \[
-          \[
-            \frwdseq{\cdot}{q}{q}
-            \[
-              \[
-                \[
-                  \frwdseq{}{d}{d}
-                  \quad
-                  \frwdseq{}{d}{d}
-                  \justifies
-                  \frwdseq{}{d, d}{d \otimes d}
-                \]
-                \quad
-                \[
-                  \[
-                    \frwdseq{}{d}{d}
-                    \quad
-                    \[
-                      \frwdseq{}{n}{n}
-                      \quad
-                      \frwdseq{}{n}{n}
-                      \justifies
-                      \frwdseq{}{n, n}{n \otimes n}
-                    \]
-                    \justifies
-                    \frwdseq{}{n, n, n \otimes n \limp d}{d}
-                  \]
-                  \justifies
-                  \frwdseq{R_1}{n, n}{d}
-                \]
-                \justifies
-                \frwdseq{R_1}{n, d, d, n}{d \otimes d \otimes d}
-              \]
-              \justifies
-              \frwdseq{R_1}{n, d \otimes d \otimes n}{d \otimes d \otimes d}
-            \]
-            \justifies
-            \frwdseq{R_1}{q, n, q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
-          \]
-          \justifies
-          \frwdseq{R_1, R_3}{q, n}{d \otimes d \otimes d}
-        \]
-        \justifies
-        \frwdseq{R_1, R_3}{q \otimes n}{d \otimes d \otimes d}
-      \]
-      \justifies
-      \frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}
-    \end{prooftree}
-  \]
-\end{example}
+%   where $R_1 \equiv n \otimes n \limp d$ and
+%   $R_3 \equiv q \limp d \otimes d \otimes n$.
 
-...
+%   \[
+%     \begin{prooftree}
+%       \[
+%         \[
+%           \[
+%             \frwdseq{\cdot}{q}{q}
+%             \[
+%               \[
+%                 \[
+%                   \frwdseq{}{d}{d}
+%                   \quad
+%                   \frwdseq{}{d}{d}
+%                   \justifies
+%                   \frwdseq{}{d, d}{d \otimes d}
+%                 \]
+%                 \quad
+%                 \[
+%                   \[
+%                     \frwdseq{}{d}{d}
+%                     \quad
+%                     \[
+%                       \frwdseq{}{n}{n}
+%                       \quad
+%                       \frwdseq{}{n}{n}
+%                       \justifies
+%                       \frwdseq{}{n, n}{n \otimes n}
+%                     \]
+%                     \justifies
+%                     \frwdseq{}{n, n, n \otimes n \limp d}{d}
+%                   \]
+%                   \justifies
+%                   \frwdseq{R_1}{n, n}{d}
+%                 \]
+%                 \justifies
+%                 \frwdseq{R_1}{n, d, d, n}{d \otimes d \otimes d}
+%               \]
+%               \justifies
+%               \frwdseq{R_1}{n, d \otimes d \otimes n}{d \otimes d \otimes d}
+%             \]
+%             \justifies
+%             \frwdseq{R_1}{q, n, q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
+%           \]
+%           \justifies
+%           \frwdseq{R_1, R_3}{q, n}{d \otimes d \otimes d}
+%         \]
+%         \justifies
+%         \frwdseq{R_1, R_3}{q \otimes n}{d \otimes d \otimes d}
+%       \]
+%       \justifies
+%       \frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}
+%     \end{prooftree}
+%   \]
+% \end{example}
+
+% ...
 
 \subsection{Subformula property}
 
 The key technical property that makes the inverse method possible is the
 \emph{subformula property}. Logical calculi with the subformula property are
 such that derivations only contain subformulas of the conclusion formula. This
-property means, in our case, that we only need to consider sequents composed of
-subformulas of the goal sequent when searching for a cut-free proof.
+means, in our case, that we only need to consider sequents composed of
+subformulas of the goal sequent when searching for a cut-free proof. Since the
+number of such sequents is necessarily finite, a proof search procedure, like the
+one we are going to implement, that only considers subsequents of the goal
+sequent is guaranteed to terminate.
 
-We show that such property holds for our calculi by formalizing the idea in
-terms of a \emph{subformula relation} for propositions. To do so, we decorate
-subformulas with certain marks:
-
-\begin{itemize}
-\item \emph{Polarity}, written as a superscript + or - symbol;
-\item \emph{Availability}, written as a superscript ! (for ``unrestricted'') or
-  . (``linear''). Subformulas of an unrestricted formula \emph{do not} inherit
-  the decoration.
-\end{itemize}
-
-The availability signs determine whether the formula is allowed to occur in the
-unrestricted context, and thus serve as a guide for the copy rule.
-
-\begin{definition}
-  A decorated sequent is of the form $\Gamma^-_! ; \Delta^-_. \Longrightarrow
-  C^+_.$ .
-\end{definition}
-
-\begin{definition}[Decorated subformula relation]
-  The decorated subformula relation $\leq$ between decorated propositions is the
-  reflexive-transitive closure of the following cases:
-
-  \begin{alignat*}{2}
-    & A^{\pm}_{.} \leq (A \otimes B)_a^{\pm} \qquad & B^{\pm}_{.} \leq (A \otimes
-    B)_a^{\pm} \\
-    & A^{\mp}_{.} \leq (A \limp B)_a^{\pm} & B^{\pm}_{.} \leq (A \limp
-    B)_a^{\pm}
-  \end{alignat*}
-  \[
-    A^{\pm}_{.} \leq A^{\pm}_{!}
-  \]
-\end{definition}
-
-We assume the standard pointwise extension of this relation to sets of decorated
-propositions:
-
-\[
-  S \leq T \equiv \forall A \in S, \exists B \in T : A \leq B
-\]
-
-\begin{definition}
-  A decorated sequent $s_1 \equiv \Gamma^-_! ; \Delta^-_. \Longrightarrow C^+_.$
-  is a subsequent of the decorated sequent
-  $\Gamma'^-_! ; \Delta'^-_. \Longrightarrow C'^+_.$, written $s_1 \leq s_2$ if
-
-  \[
-    \subsequent{\Gamma'^-_! \cup \Delta'^-_. \cup C'^+_.}
-    {\Gamma^-_! \cup \Delta^-_. \cup C^+_.}
-  \]
-\end{definition}
-
-\begin{theorem}[Subformula property]
-  If $\Gamma'; \Delta' \Longrightarrow C'$ appears in a proof of
-  $\Gamma; \Delta \Longrightarrow C$, then
-
-  \[
-    \subsequent{\Gamma'; \Delta' \Longrightarrow C'}
-    {\Gamma; \Delta \Longrightarrow C}
-  \]
-\end{theorem}
-\begin{proof}
-  By straightforward inspection of the rules of the backward calculus. It
-  sufficies to observe that, if the following is such a rule:
-
-  \[
-    \begin{prooftree}
-      s_1 \quad s_2 \quad \dots \quad s_n
-      \justifies
-      s
-    \end{prooftree}
-  \]
-
-  then $s_i \leq s$ for all $i \in \{1, \dots, n\}$. The thesis follows by
-  transitivity of the subformula relation.
-\end{proof}
-
-The same reasoning holds for the forward calculus, where the subsequent relation
-is extended to forward sequents in the obvious way.
-
-\begin{corollary}
-  If $\Gamma'; \Delta' \longrightarrow C'$ appears in a proof of
-  $\Gamma; \Delta \longrightarrow C$, then
-
-  \[
-    \subsequent{
-      \Gamma'; \Delta' \longrightarrow C'
-    }{
-      \Gamma; \Delta \longrightarrow C
-    }
-  \]
-\end{corollary}
-\begin{proof}
-  Immediate.
-\end{proof}
-
-
+We do not show directly that such property holds for our calculus, but we limit
+ourselves to observe that every derivation in the Zsyntax forward calculus above
+corresponds to a structurally identical derivation in intuitionistic linear
+logic as in [cmu thesis]. It is then easy to convince ourselves that our
+calculus has the subformula property.
 
 %%% Local Variables:
 %%% mode: latex

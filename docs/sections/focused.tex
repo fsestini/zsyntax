@@ -1,34 +1,25 @@
 \section{Focused derivations}
 
-A backward focused proof has two phases. In the active phase all possible rules
-are applied in an arbitrary order to asynchronous propositions. When only
-synchronous propositions remain, one proposition is selected and a \emph{focused
-  phase} for that proposition begins.
+TODO what are focused derivations...
 
-As out backward linear sequent calculus is two-sided, we have left- and right-
-synchronous and asynchronous connectives.
+In our case, a focused derivation has two phases as usual, but the actions that
+are taken are slightly different. In the active phase all possible rules are
+applied to $\otimes$ propositions on the left of the sequent symbol. When only
+atoms or implications remain, one formula is selected and a \emph{focused phase}
+may begin if that formula is a $\otimes$ formula on the right.
 
-\begin{table}[h]
-  \centering
-  \begin{tabular}{|l|l|}
-    \hline
-    \textbf{symbol} & \textbf{meaning} \\
-    \hline
-    $P$ & left-synchronous ($\limp$) \\
-    $Q$ & right-synchronous ($\otimes$) \\
-    $L$ & left-asynchronous ($\otimes$) \\
-    $R$ & right-asynchronous ($\limp$) \\
-    \hline
-  \end{tabular}
-\end{table}
+Contrary to other focused calculi, we do not have a symmetric subdivision of the
+connectives into synchronous and asynchronous ones. In particular, the unusual
+non-invertibility of the $\rightarrow R$ rule prevents us to treat $\rightarrow$
+as a right asynchronous connective. Moreover, additional care is required when
+adapting the ideas of focused linear logic to our case. The reason is that
+Zsyntax derivations contains rule applications that are not commutative in
+general: since focusing is a way to group similar derivations under suitable
+equivalence classes, many derivations that are equivalent for plain linear logic
+are very different for Zsyntax. It is therefore necessary to weaken the amount
+of focusing in order to keep the calculus complete.
 
-The above table does not include the atomic propositions. For reasons explained
-in [thesis], here we are forced to treat them as synchronous. However, we can
-differenciate the atoms by means of a \emph{focusing bias}, which indicates
-whether the atomic proposition under focus must immediately be derived in an
-initial sequent.
-
-The backward focusing calculus consists of the following new kinds of sequents:
+Our backward focusing calculus consists of the following new kinds of sequents:
 
 \begin{table}[h]
   \centering
@@ -74,6 +65,8 @@ metavariable $P$ range over implications or atoms on the left of the sequent
 symbol, $R$ over implications on the right of the sequent symbol, and $p$ over
 atoms specifically.
 
+\begin{figure}[h]
+  \begin{mdframed}
 \[
   \begin{prooftree}
     \justifies
@@ -159,6 +152,11 @@ atoms specifically.
     \using{\rightarrow R}
   \end{prooftree}
 \]
+\end{mdframed}
+  \caption{Backward focused calculus}
+  \label{fig:bkwdfocused}
+\end{figure}
+
 
 \begin{theorem}[Soundness]\mbox{}
   \begin{enumerate}

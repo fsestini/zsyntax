@@ -1,270 +1,251 @@
 \section{Focused inverse method}
 
-The primary issue in the forward direction is to enumerate the propositions for
-which we need to derive inference rules. As the calculus of derived rules has
-only neutral sequents as premises and conclusions, we need only generate rules
-for propositions that occur in neutral sequents; we call them \emph{frontier
-  propositions}. To find the frontier propositions in a goal sequent, we
-abstractly replay the focusing and active phases to identify the phase
-transitions. Each transition from an active to a focal phase produces a frontier
-proposition.
+The next step is to think of how to use our forward derived rule calculus with
+the inverse method described in the preceding sections. As we already said, the
+key technical property that makes the inverse method possible is the
+\emph{subformula property}.  We do not directly show such property for our
+forward derived rule calculus, but we limit ourselves to observe that every
+derivation in our version of the calculus corresponds to a structurally
+identical derivation of the forward calculus for intuitionistic linear logic in
+[cmu thesis]. It is then easy to convince ourselves that our calculus has the
+subformula property.
+
+On a more technical level, the primary issue in the forward direction is to
+enumerate the formulas for which we need to derive inference rules. As the
+calculus of derived rules has only neutral sequents as premises and conclusions,
+we only need to generate rules for formulas that occur in neutral sequents; we
+call them \emph{frontier formulas} as in [cmu thesis]. To find the frontier
+formulas in a goal sequent, we abstractly replay the focusing and active phases
+to identify the phase transitions: each transition produces a frontier
+formula.
+
+To generate the frontier, we use \emph{decorated formulas} to keep track of the
+polarity as well as linearity of the formula.
 
 \[
-  \decminus{f(p)} = \emptyset \qquad
-  \decplus{f(p)} = \decplusminus{a(p)} = \{
-  \decplusminus{\declinear{p}} \} \qquad \text{if $p$ right-based}
-\]
-\[
-  \decplus{f(p)} = \emptyset \qquad
-  \decminus{f(p)} = \decminusplus{a(p)} = \{
-  \decminusplus{\declinear{p}} \} \qquad \text{if $p$ left-biased}
-\]
-\[
-  \decminus{f(A \otimes B)} = \decminus{a(A \otimes B)} \qquad
-  \decplus{f(A \otimes B)} = \decplus{f(A)}, \decplus{f(B)}
-\]
-\[
-  \decminus{a(A\otimes B)} = \decminus{a(A)}, \decminus{a(B)} \qquad
-  \decplus{a(A\otimes B)} = \decplus{f(A \otimes B)}, \decminuslinear{(A \otimes B)}
-\]
-\[
-  \decminus{f(A \limp B)} = \decplus{f(A)}, \decminus{f(B)} \qquad
-  \decplus{f(A \limp B)} = \decplus{a(A \limp B)}
-\]
-\[
-  \decminus{a(A \limp B)} = \decminus{f(A \limp B)}, \decminuslinear{(A \limp
-    B)}
-  \qquad
-  \decplus{a(A\limp B)} = \decminus{a(A)}, \decplus{a(B)}
+  \textsf{DecFormula} ::= \decplus{\declinear{A}} \, | \,
+    \decminus{\declinear{A}} \, | \,
+    \decunrestr{A}
 \]
 
-\begin{example}
-  Put example here...
-\end{example}
+where $A$ is a formula. Notice that we do not distinguish the polarity of
+unrestricted formulas, as they are all negative.
+
+\begin{definition}
+  The auxiliary fuctions \textsf{fr}, \textsf{foc}, and \textsf{act} are
+  inductively defined as follows:
+
+  \[
+    \begin{array}{c}
+      \decminus{\textsf{fr}(p)} = \{\decminus{\declinear{p}}\} \qquad
+      \decplus{\textsf{fr}(p)} = \emptyset \qquad
+      \textsf{foc}(p) = \emptyset \qquad
+      \textsf{act}(p) = \{\decminus{\declinear{p}}\} \\
+
+      \decplus{\textsf{fr}(A \otimes B)} = \textsf{foc}(A \otimes B) \qquad
+      \textsf{foc}(A \otimes B) = \textsf{foc}(A) \cup \textsf{foc}(B) \\
+
+      \textsf{act}(A \otimes B) = \textsf{act}(A) \cup \textsf{act}(B) \\
+
+      \decminus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} =
+      \textsf{foc}(A) \cup \textsf{act}(B) \qquad
+      \decplus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} =
+      \textsf{act}(A) \cup \{ \decplus{\declinear{B}} \} \cup \textsf{fr}(B) \\
+
+      \textsf{foc}(A \rightarrow_{\ctrlset{}}^S B) =
+      \decplus{\declinear{(A \rightarrow_{\ctrlset{}}^S B)}} \cup
+      \decplus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} \\
+
+      \textsf{act}(A \rightarrow_{\ctrlset{}}^S B) =
+      \decminus{\declinear{(A \rightarrow_{\ctrlset{}}^S B)}} \cup
+      \decminus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)}
+    \end{array}
+  \]
+\end{definition}
+
+% \[
+%   \decplus{f(p)} = \emptyset \qquad
+%   \decminus{f(p)} = \decminusplus{a(p)} = \{
+%   \decminusplus{\declinear{p}} \} \qquad \text{if $p$ left-biased}
+% \]
+% \[
+%   \decminus{f(A \otimes B)} = \decminus{a(A \otimes B)} \qquad
+%   \decplus{f(A \otimes B)} = \decplus{f(A)}, \decplus{f(B)}
+% \]
+% \[
+%   \decminus{a(A\otimes B)} = \decminus{a(A)}, \decminus{a(B)} \qquad
+%   \decplus{a(A\otimes B)} = \decplus{f(A \otimes B)}, \decminuslinear{(A \otimes B)}
+% \]
+% \[
+%   \decminus{f(A \limp B)} = \decplus{f(A)}, \decminus{f(B)} \qquad
+%   \decplus{f(A \limp B)} = \decplus{a(A \limp B)}
+% \]
+% \[
+%   \decminus{a(A \limp B)} = \decminus{f(A \limp B)}, \decminuslinear{(A \limp
+%     B)}
+%   \qquad
+%   \decplus{a(A\limp B)} = \decminus{a(A)}, \decplus{a(B)}
+% \]
 
 \begin{definition}[Frontier]
-  Given a goal $\Gamma;\Delta \Longrightarrow Q$, its frontier contains
+  Given a goal $\Gamma;\Delta \Longrightarrow Q$, its frontier is the set union
+  of the following:
 
   \begin{enumerate}
-  \item All top-level propositions in $\decunrestr{\decminus{\Gamma}},
+  \item All top-level formulas in $\decunrestr{\Gamma},
     \decminuslinear{\Delta}$, and $\decpluslinear{Q}$;
-  \item For any $A \in \Gamma, \Delta$, the collection $\decminus{f(A)}$;
-  \item the collection $\decplus{f(Q)}$.
+  \item For any $A \in \Gamma, \Delta$, the set $\decminus{\textsf{fr}(A)}$;
+  \item The set $\decplus{\textsf{fr}(Q)}$.
   \end{enumerate}
 \end{definition}
 
 In the preparatory phase for the inverse method, we calculate the frontier
-propositions of the goal sequent. There is no need to generate initial sequents
-separately, as the executions of (TODO: thesis says negative. why only
-negative??) atoms in the frontier directly give us the necessary initial
-sequents.
+formulas of the goal sequent. There is no need to generate initial sequents
+separately, as the generation of the derived rules on the frontier formulas
+already does that. In particular, for each formula $A$ in the frontier
 
-We that we do not consider negative left-biased atoms (or positive right-biased
-atoms) when constructing derived rules from the formulas in the
-frontier. Suppose we picked a negative left-biased atom $p$ from the frontier
-and tried to build the associated derived rule. This amounts to finding a
-derivation for $\relj{\flfrel{p}}{\Sigma}{s}$, which can only happen with an
-application of the $conj^-$ rule:
-
-\[
-  \begin{prooftree}
-    \fneuseq{\Gamma}{\Delta, p}{Q} \quad
-    \[
-      p \text{ left-biased}
-      \justifies
-      \flfrelj{p}{\fneuseq{\Gamma}{\Delta, p}{Q}}{\fneuseq{\Gamma}{\Delta}{Q}}
-      \using{conj^-}
-    \]
-    \justifies
-    \fneuseq{\Gamma}{\Delta, P}{Q}
-    \using{\focminusrule}
-  \end{prooftree}
-\]
-
-This leads to the following derived rule
-
-\[
-  \begin{prooftree}
-    \fneuseq{\Gamma}{\Delta, p}{Q}
-    \justifies
-    \fneuseq{\Gamma}{\Delta, p}{Q}
-  \end{prooftree}
-\]
-
-which is obviously redundant. The same happens if we tried to build a rule for a
-positive right-biased atom. Nevertheless, the $conj^+$ and $conj^-$ rules are
-essential to achieve completeness, as also shown by the example below.
+\begin{itemize}
+\item If $A$ is a positive linear atom or a positive linear conjunction, we
+  generate the corresponding $focus$ derived rule;
+\item If $A$ is a positive linear implication, we generate the corresponding
+  $\rightarrow R$ derived rule;
+\item If $A$ is a negative linear implication, we generate the corresponding
+  $\rightarrow L$ derived rule;
+\item If $A$ is a negative unrestricted implication, we generate the
+  corresponding $\copyrule$ derived rule.
+\end{itemize}
 
 \begin{example}
-  Example... where $d$ is right-biased and all other atoms are left-biased, and
-  $\Gamma \equiv R_1, R_2$.
+  Consider the goal sequent $\zsyseq{A_1, A_2}{q,n}{\ctrlset{}}{d \otimes d
+    \otimes d}$, where $\ctrlset{}$ is to be determined, and $A_1, A_2$ are
+  axioms defined as follows:
 
-  \[
+  \begin{align*}
+    A_1 & \equiv q \rightarrow_{\emptyset}^{\emptyset} d \otimes d \otimes n \\
+    A_2 & \equiv n \otimes n \rightarrow_{\{ q \}}^{\emptyset} d
+  \end{align*}
+
+  A derivation of such sequent in $\zss$ is as follows:
+
+  {\scriptsize{\[
     \begin{prooftree}
       \[
-        \[ q \text{ left-biased} \justifies \rfocseq{\Gamma}{q}{q}\]
+        \[\justifies\zsyseq{A_1, A_2}{q}{\emptyset}{q}\] \,
         \[
           \[
             \[
               \[
                 \[
-                  \[
-                    \[
-                      \[ d \text{ right-biased} \justifies \lfocseq{\Gamma}{\cdot}{d}{d} \]
-                      \justifies
-                      \btriseq{\Gamma}{d}{\cdot}{\cdot ; d}
-                    \]
-                    \justifies
-                    \rfocseq{\Gamma}{d}{d}
-                  \]
-                  \[
-                    \[
-                      \[ d \text{ right-biased} \justifies \lfocseq{\Gamma}{\cdot}{d}{d} \]
-                      \justifies
-                      \btriseq{\Gamma}{d}{\cdot}{\cdot ; d}
-                    \]
-                    \justifies
-                    \rfocseq{\Gamma}{d}{d}
-                  \]
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyset}{n}\]
+                  \quad
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyset}{n}\]
                   \justifies
-                  \rfocseq{\Gamma}{d,d}{d \otimes d}
+                  \zsyseq{A_1, A_2}{n,n}{\emptyset}{n \otimes n}
                 \]
+                \,
                 \[
                   \[
-                    \[
-                      \[
-                        \[ n \text{ left-biased} \justifies \rfocseq{\Gamma}{n}{n}\]
-                        \[ n \text{ left-biased} \justifies \rfocseq{\Gamma}{n}{n}\]
-                        \justifies
-                        \rfocseq{\Gamma}{n,n}{n \otimes n}
-                      \]
-                      \[
-                        d \text{ right-biased}
-                        \justifies
-                        \lfocseq{\Gamma}{\cdot}{d}{d}
-                      \]
-                      \justifies
-                      \lfocseq{\Gamma}{n,n}{n \otimes n \limp d}{d}
-                    \]
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
+                    \quad
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
                     \justifies
-                    \btriseq{\Gamma}{n,n}{\cdot}{\cdot ; d}
-                    \using{\copyrule}
+                    \zsyseq{A_1, A_2}{d, d}{\emptyset}{d \otimes d}
                   \]
+                  \quad
+                  \[\justifies\zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
                   \justifies
-                  \rfocseq{\Gamma}{n,n}{d}
+                  \zsyseq{A_1, A_2}{d, d, d}{\emptyset}{d \otimes d \otimes d}
                 \]
                 \justifies
-                \rfocseq{\Gamma}{n,d,d,n}{d \otimes d \otimes d}
+                \zsyseq{A_1, A_2}{n \otimes n \rightarrow_{\{ q \}}^{\emptyset} d,
+                  d, d, n,n}{\{ q \}}{d \otimes d \otimes d}
               \]
               \justifies
-              \btriseq{\Gamma}{n, d, d, n}{\cdot}{\cdot ; d \otimes d \otimes d}
-              \using{\rfoc}
+              \zsyseq{A_1, A_2}{d, d, n,n}{\{ q \}}{d \otimes d
+                \otimes d}
+              \using{\copyrule}
             \]
             \justifies
-            \btriseq{\Gamma}{n}{d \otimes d \otimes n}{\cdot ; d \otimes d \otimes d}
-            \using{\otimes L \times 3, \lact \times 3}
+            \zsyseq{A_1, A_2}{d \otimes d, n,n}{\{ q \}}{d \otimes d
+              \otimes d}
+            \using{\otimes L}
           \]
           \justifies
-          \lfocseq{\Gamma}{n}{d \otimes d \otimes n}{d \otimes d \otimes d}
-          \using{\lblur}
+          \zsyseq{A_1, A_2}{d \otimes d \otimes n,n}{\{ q \}}{d \otimes d
+            \otimes d}
+          \using{\otimes L}
         \]
         \justifies
-        \lfocseq{\Gamma}{q,n}{q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
-        \using{\limp L}
+        \zsyseq{A_1, A_2}{q \rightarrow_{\emptyset}^{\emptyset} d \otimes d
+          \otimes n, q,n}{\{ q \}}{d \otimes d \otimes d}
       \]
       \justifies
-      \btriseq{\Gamma}{q,n}{\cdot}{\cdot ; d \otimes d \otimes d}
+      \zsyseq{A_1, A_2}{q,n}{\{ q \}}{d \otimes d \otimes d}
       \using{\copyrule}
     \end{prooftree}
-  \]
-\end{example}
+  \]}}
 
-The frontier of the full goal sequent
+Let us see now how to derive the same goal sequent in the forward derived rule
+calculus. The frontier of the full goal sequent
 
 \[
-  \fneuseq{q \limp d\otimes d\otimes n, n \otimes n \limp d}{q,n}{d \otimes d
-    \otimes d}
+  \zfneuseq{q \limp d\otimes d\otimes n, n \otimes n \limp d}{q,n}{\ctrlset{}}
+  {d \otimes d \otimes d}
 \]
 
 is given by the top-level decorations
 
 \[
-  \decminusunrestr{(q \limp d \otimes d \otimes n)},
-  \decminusunrestr{(n \otimes n \limp d)},
+  \decunrestr{(q \limp d \otimes d \otimes n)},
+  \decunrestr{(n \otimes n \limp d)},
   \decminuslinear{q}, \decminuslinear{n},
   \decpluslinear{(d \otimes d \otimes d)}
 \]
 
 together with the additionally computed subformulas
-$\decminuslinear{d}, \decminuslinear{n}, \decpluslinear{d}$. The frontier
-formulas give rise to the initial derived rules as follows
+$\decminuslinear{d}, \decminuslinear{n}$. The frontier
+formulas give rise to the derived rules as follows
 
 \begin{itemize}
-\item $\decminuslinear{q}$ is a negative left-biased atom, hence it is ignored;
-  same for $\decminuslinear{n}$;
-\item $\decminuslinear{d}$ is a negative right-biased atom, hence we get an
-  initial sequent as follows:
+\item $\decminuslinear{q}$ is a negative atom, hence it is ignored.
+  Same for $\decminuslinear{n}$ and $\decminuslinear{d}$;
 
-  \[
-    \begin{prooftree}
-      \[
-        d \; \text{right-based}
-        \justifies
-        \relj{\flfrel{d}}{\cdot}{\fneuseq{\cdot}{\cdot}{d}}
-        \using{\linit}
-      \]
-      \justifies
-      \fneuseq{\cdot}{d}{d}
-      \using{\focminusrule}
-    \end{prooftree}
-  \]
-
-\item $\decpluslinear{d}$ is a positive right-biased atom, hence it is ignored;
-
-\item The negative unrestricted formula $q \limp d \otimes d \otimes d$ gives
+\item The unrestricted formula $q \limp d \otimes d \otimes d$ gives
   rise to a derived rule as follows
 
   {
     \scriptsize{
       \[
         \begin{prooftree}
-          \fneuseq{\Gamma}{\Delta, d, d, n}{Q}
+          \zfneuseq{\Gamma}{\Delta, d, d, n}{\ctrlset{}}{Q}
+          \quad
+          \[
+            \justifies
+            \frfrelj{q}{\cdot}{\fneuseq{\cdot}{q}{\cdot}}
+          \]
+          \,
           \[
             \[
-              \[
-                \[
-                  \justifies
-                  \factrelj{
-                    \btriseq{\cdot}{d,d,n}{\cdot}{\cdot}
-                  }{
-                    \fneuseq{\Gamma}{\Delta,d,d,n}{Q}
-                  }{
-                    \fneuseq{\Gamma}{\Delta}{Q}
-                  }
-                \]
-                \justifies
-                \factrelj{
-                  \btriseq{\cdot}{\cdot}{d \otimes d \otimes n}{\cdot}
-                }{
-                  \fneuseq{\Gamma}{\Delta,d,d,n}{Q}
-                }{
-                  \fneuseq{\Gamma}{\Delta}{Q}
-                }
-              \]
               \justifies
-              \flfrelj{d \otimes d \otimes n}{\fneuseq{\Gamma}{\Delta,d,d,n}{Q}}{\fneuseq{\Gamma}{\Delta}{Q}}
-            \]
-            \[
-              q \text{ left-biased}
-              \justifies
-              \frfrelj{q}{\cdot}{\fneuseq{\cdot}{q}{\cdot}}
+              \factrelj{
+                \bkwseq{d,d,n}{\cdot}{\cdot}
+              }{
+                \zfneuseq{\Gamma}{\Delta,d,d,n}{\ctrlset{}}{Q}
+              }{
+                \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+              }
             \]
             \justifies
-            \flfrelj{q \limp d \otimes d \otimes
-              d}{\fneuseq{\Gamma}{\Delta,d,d,n}{Q}}{\fneuseq{\Gamma}{\Delta,q}{Q}}
+            \factrelj{
+              \bkwseq{\cdot}{d \otimes d \otimes n}{\cdot}
+            }{
+              \zfneuseq{\Gamma}{\Delta,d,d,n}{\ctrlset{}}{Q}
+            }{
+              \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+            }
           \]
           \justifies
-          \fneuseq{\Gamma, R_3}{\Delta, q}{Q}
+          \zfneuseq{\Gamma, A_1}{\Delta, q}{\ctrlset{}}{Q}
         \end{prooftree}
       \]
     }
@@ -274,51 +255,70 @@ formulas give rise to the initial derived rules as follows
 
   \[
     \begin{prooftree}
-      \fneuseq{\Gamma}{\Delta, d, d, n}{Q}
+      \zfneuseq{\Gamma}{\Delta, d, d, n}{\ctrlset{}}{Q}
       \justifies
-      \fneuseq{\Gamma, R_3}{\Delta, q}{Q}
+      \zfneuseq{\Gamma, A_1}{\Delta, q}{\ctrlset{}}{Q}
     \end{prooftree}
   \]
 
 \item The negative unrestricted formula $n \otimes n \limp d$ gives rise to a
   derived rule as follows
 
-  \[
+  {\scriptsize{\[
     \begin{prooftree}
       \[
         \[
-          \[
-            n \text{ left-biased}
-            \justifies
-            \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
-          \]
-          \[
-            n \text{ left-biased}
-            \justifies
-            \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
-          \]
           \justifies
-          \frfrelj{n \otimes n}{\cdot}{\fneuseq{\cdot}{n,n}{\cdot}}
+          \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
         \]
         \[
-          d \text{ right-biased}
           \justifies
-          \flfrelj{d}{\cdot}{\fneuseq{\cdot}{\cdot}{d}}
+          \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
         \]
         \justifies
-        \flfrelj{n \otimes n \limp d}{\cdot}{\fneuseq{\cdot}{n,n}{d}}
+        \frfrelj{n \otimes n}{\cdot}{\fneuseq{\cdot}{n,n}{\cdot}}
+      \]
+      \[
+        \[
+          \justifies
+          \factrelj{
+            \bkwseq{d}{\cdot}{\cdot}
+          }{
+            \zfneuseq{\Gamma}{\Delta,d}{\ctrlset{}}{Q}
+          }{
+            \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+          }
+        \]
+        \justifies
+        \factrelj{
+          \bkwseq{\cdot}{d}{\cdot}
+        }{
+          \zfneuseq{\Gamma}{\Delta,d}{\ctrlset{}}{Q}
+        }{
+          \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+        }
+      \]
+      \quad
+      \[
+        \respects{\Delta}{\{ q \}}
+        \proofdotseparation=0ex
+        \proofdotnumber=0
+        \leadsto
+        \zfneuseq{\Gamma}{\Delta, d}{\ctrlset{}}{Q}
       \]
       \justifies
-      \fneuseq{R_1}{n,n}{d}
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{\ctrlset{}\cup\{q\}}{Q}
     \end{prooftree}
-  \]
+  \]}}
 
   that is
 
   \[
     \begin{prooftree}
+      \zfneuseq{\Gamma}{\Delta, d}{\ctrlset{}}{Q}
       \justifies
-      \fneuseq{R_1}{n,n}{d}
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{\ctrlset{}\cup\{q\}}{Q}
+      \using{\respects{\Delta}{\{ q \}}}
     \end{prooftree}
   \]
 
@@ -329,78 +329,56 @@ formulas give rise to the initial derived rules as follows
     \begin{prooftree}
       \[
         \[
-          d \text{ right-biased}
+          \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
+          \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
           \justifies
-          \frfrelj{d}{s_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+          \frfrelj{d \otimes d}{\cdot}{\fneuseq{\cdot}{d,d}{\cdot}}
         \]
-        \[
-          d \text{ right-biased}
-          \justifies
-          \frfrelj{d}{s_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
-        \]
+        \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
         \justifies
-        \frfrelj{d \otimes d
-        }{
-          s_1 \cdot s_2
-        }{
-          \fneuseq{\Gamma_1,\Gamma_2}{\Delta_1,\Delta_2}{\cdot}
-        }
-      \]
-      \[
-        d \text{ right-biased}
-        \justifies
-        \frfrelj{d}{s_3}{\fneuseq{\Gamma_3}{\Delta_3}{\cdot}}
+        \frfrelj{d \otimes d \otimes d}{\cdot}{\fneuseq{\cdot}{d,d,d}{\cdot}}
       \]
       \justifies
-      \frfrelj{d \otimes d \otimes d}{s_1 \cdot s_2 \cdot s_3
-      }{
-        \fneuseq{\Gamma_1, \Gamma_2, \Gamma_3}{\Delta_1, \Delta_2, \Delta_3}{\cdot}
-      }
+      \zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}
     \end{prooftree}
   \]
 
-  where $s_i \equiv \fneuseq{\Gamma_i}{\Delta_i}{d}$. Therefore
+  therefore, simply
 
   \[
     \begin{prooftree}
-      \fneuseq{\Gamma_1}{\Delta_1}{d}
-      \quad
-      \fneuseq{\Gamma_2}{\Delta_2}{d}
-      \quad
-      \fneuseq{\Gamma_3}{\Delta_3}{d}
       \justifies
-      \fneuseq{\Gamma_1, \Gamma_2, \Gamma_3}{\Delta_1, \Delta_2, \Delta_3}{d
-        \otimes d \otimes d}
+      \zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}
     \end{prooftree}
   \]
 
 \end{itemize}
 
-Then, the goal sequent can be derived as follows:
+Then, the goal sequent can be fully derived with just two rule applications as
+follows:
 
 \[
   \begin{prooftree}
     \[
-      \[
-        \justifies
-        \fneuseq{\cdot}{d}{d}
-      \]
-      \[
-        \justifies
-        \fneuseq{\cdot}{d}{d}
-      \]
-      \[
-        \justifies
-        \fneuseq{R_1}{n,n}{d}
-      \]
+      \[\justifies\zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}\]
       \justifies
-      \fneuseq{R_1}{d,d,n,n}{d \otimes d \otimes d}
+      \zfneuseq{A_2}{d,d,n,n}{\{q\}}{d \otimes d \otimes d}
     \]
     \justifies
-    \fneuseq{R_1, R_3}{q,n}{d \otimes d \otimes d}
+    \zfneuseq{A_1, A_2}{q, n}{\{q\}}{d \otimes d \otimes d}
   \end{prooftree}
 \]
 
+\end{example}
+
+The example above shows the power of combining the forward search of the inverse
+method with the use of big-step derived rules from the focused calculus.  The
+good proof-theoretical properties of our original sequent calculus allow us to
+derive many properties and do a lot of automatic work in the phase preliminary
+to proof-search, from the structure of the goal sequent only. This has the
+effect that many redundant or inessential steps are eliminated from the actual
+proof-search phase, where they would otherwise badly affect its computational
+complexity.
 
 %%% Local Variables:
 %%% mode: latex
