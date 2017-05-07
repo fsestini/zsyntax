@@ -16,47 +16,53 @@
 
 module Relation
   ( positiveFocalDispatch
-  , negativeFocalDispatch
-  , MatchResult(..)
-  , GoalResult(..)
-  , DLSequent(..)
-  , filterPartitionRel
+  , focal
+  , implLeft
+  , copyRule
+  , implRight
   ) where
 
-import SFormula (fromLFormula)
+-- import SFormula (fromLFormula)
 import Data.Monoid
 import Control.Applicative
 import Prelude hiding (fail)
 import Control.Monad.Fail
-import Formula
-import LabelledSequent
+-- import Formula
+import RelFormula
+--import LabelledSequent
 import Control.Monad hiding (fail)
 import Rel
-import Data.Foldable
-import DerivationTerm
-import ForwardSequent
+-- import Data.Foldable
+-- import DerivationTerm
+{-import ForwardSequent-}
 import LinearContext
-import TypeClasses
+{-import TypeClasses-}
 
 --------------------------------------------------------------------------------
 
--- | Type of labelled sequents decorated with derivation terms
-data DLSequent l a = DLS
-  { derivation :: DerTerm l a
-  , sequent :: LabelledSequent l a
-  }
+-- -- | Type of labelled sequents decorated with derivation terms
+-- data DLSequent l a = DLS
+--   { derivation :: DerTerm l a
+--   , sequent :: LabelledSequent l a
+--   }
 
-instance  (Eq a, Eq l) => Eq (DLSequent l a) where
-  (DLS _ s1) == (DLS _ s2) = s1 == s2
+-- instance  (Eq a, Eq l) => Eq (DLSequent l a) where
+--   (DLS _ s1) == (DLS _ s2) = s1 == s2
 
-instance (Ord a, Ord l) => Ord (DLSequent l a) where
-  compare (DLS _ s1) (DLS _ s2) = compare s1 s2
+-- instance (Ord a, Ord l) => Ord (DLSequent l a) where
+--   compare (DLS _ s1) (DLS _ s2) = compare s1 s2
 
-instance (Ord l, Ord a) => ForwardSequent (DLSequent l a) where
-  subsumes (DLS d1 s1) (DLS d2 s2) = d1 == d2 && ForwardSequent.subsumes s1 s2
+-- instance (Ord l, Ord a) => ForwardSequent (DLSequent l a) where
+--   subsumes (DLS d1 s1) (DLS d2 s2) = d1 == d2 && ForwardSequent.subsumes s1 s2
 
-instance Coercible (DLSequent l a) (LabelledSequent l a) where
-  coerce (DLS _ s) = s
+-- instance Coercible (DLSequent l a) (LabelledSequent l a) where
+--   coerce (DLS _ s) = s
+
+--------------------------------------------------------------------------------
+
+class IsFocusable (k :: FKind) where
+instance IsFocusable KAtom where
+instance IsFocusable KConj where
 
 --------------------------------------------------------------------------------
 
@@ -65,35 +71,20 @@ instance Coercible (DLSequent l a) (LabelledSequent l a) where
     A relation is an unbounded curried function of labelled sequents.  It is
     parameterized by the type of labels and biological atoms of the input
     labelled sequents, and by the codomain type of the relation. -}
-type Relation l a b = Rel (DLSequent l a) b
+-- type Relation l a b = Rel (DLSequent l a) b
+type Relation eb cs l a b = Rel (NeutralLabelledSequent eb cs l a) b
 
 --------------------------------------------------------------------------------
 -- Sequent schemas.
 
--- | Type of unrestricted contexts which appear in sequent schemas.
-newtype SchemaUCtxt l a = SUC (LUnrestrCtxt l a)
-
 -- | Type of linear contexts which appear in sequent schemas.
-newtype SchemaLCtxt l a = SLC (LLinearCtxt l a)
-
-{-| Matches a context against a schema.
-    Returns the result in a MonadFail instance, which signals the error in case
-    the match fails. -}
-matchCtxt
-  :: forall m ctxt l a . (MonadFail m, Context ctxt (Label l a))
-  => ctxt -> ctxt -> m (ctxt)
-matchCtxt schema ctxt =
-  asFoldable (foldrM (removeM @_ @(Label l a) @_) ctxt) schema
-
-matchUnrestrCtxt
-  :: forall m l a . (MonadFail m, Ord a, Ord l)
-  => SchemaUCtxt l a -> LUnrestrCtxt l a -> m (LUnrestrCtxt l a)
-matchUnrestrCtxt (SUC suc) uc = (matchCtxt @_ @_ @ l @ a) suc uc
+newtype SchemaLCtxt eb cs l a = SLC (LCtxt eb cs l a)
 
 matchLinearCtxt
-  :: forall m l a . (MonadFail m, Ord a, Ord l)
-  => SchemaLCtxt l a -> LLinearCtxt l a -> m (LLinearCtxt l a)
-matchLinearCtxt (SLC slc) lc = matchCtxt @ _ @ _ @ l @ a slc lc
+  :: (MonadFail m, Ord a, Ord l)
+  => SchemaLCtxt eb cs l a -> LCtxt eb cs l a -> m (LCtxt eb cs l a)
+matchLinearCtxt (SLC slc) lc = undefined -- asFoldable (foldrM (removeM) lc) slc
+  --matchCtxt slc lc
 
 --------------------------------------------------------------------------------
 -- Act relations.
@@ -102,164 +93,76 @@ matchLinearCtxt (SLC slc) lc = matchCtxt @ _ @ _ @ l @ a slc lc
 
     An active relations has the form
 
-      act(gamma ; delta ; omega ==> xi)[...] -> gamma' ; delta' -->> res
+      act(delta ; omega ==>_zeta xi)[...] -> gamma' ; delta' -->> res
 
     where either
-    1. xi is a formula and res is empty, or
-    2. xi is empty and res is a formula.
+    1. xi is a formula, zeta is a control set, and res is empty, or
+    2. xi is empty, zeta is empty, and res is a formula.
     -}
 data ActCase = FullXiEmptyResult | EmptyXiFullResult
 
-{-| Type of act schema goals.
+data SequentSchema :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
+  SSEmptyGoal :: (LCtxt eb cs l a) -> SequentSchema eb cs EmptyXiFullResult l a
+  SSFullGoal
+    :: (LCtxt eb cs l a)
+    -> cs a
+    -> ORelFormula eb cs l a
+    -> SequentSchema eb cs FullXiEmptyResult l a
 
-    A schema goal can either be a label against which the input sequent is
-    matched, or empty, in which case the match is always successful. -}
-data SchemaGoal :: ActCase -> * -> * -> * where
-  LabelGoal :: Label l a -> SchemaGoal FullXiEmptyResult l a
-  EmptyGoal :: SchemaGoal EmptyXiFullResult l a
-
-{-| Type of act schemas.
-
-    An act schema is the propositional part of an act relation, where the omega
-    part is empty. It is composed of an unrestricted context, a linear context,
-    and a schema goal. -}
-data SequentSchema actcase l a =
-  Sch (LUnrestrCtxt l a)
-      (LLinearCtxt l a)
-      (SchemaGoal actcase l a)
-
-{-| Type of goal results of an act relation.
-
-    Such result is either a label of a formula, in which case the xi part of the
-    corresponding act relation is empty, or it is empty, in which case the xi
-    part of the corresponding act relation is a label of a formula. -}
-data GoalResult :: ActCase -> * -> * -> * where
-  LabelResult :: Label l a -> GoalResult EmptyXiFullResult l a
-  EmptyResult :: GoalResult FullXiEmptyResult l a
-
-{-| Type of the goal part of an act scheme.
-
-    It can either be a formula label or empty. -}
-data Xi :: ActCase -> Pole -> * -> * -> * where
-  FullXi :: LFormula p l a -> Xi FullXiEmptyResult p l a
-  EmptyXi :: Xi EmptyXiFullResult p l a
-
-{-| Type of act relations match results.
-
-    It is composed of an unrestricted context, a linear context, and a goal
-    result parameterized, among others, by an ActCase. -}
-data MatchResult actcase l a =
-  MRes (LUnrestrCtxt l a)
-       (LLinearCtxt l a)
-       (GoalResult actcase l a)
+data MatchResult :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
+  MREmptyGoal
+    :: UCtxt eb cs l a
+    -> LCtxt eb cs l a
+    -> MatchResult eb cs FullXiEmptyResult l a
+  MRFullGoal
+    :: UCtxt eb cs l a
+    -> LCtxt eb cs l a
+    -> cs a
+    -> ORelFormula eb cs l a
+    -> MatchResult eb cs EmptyXiFullResult l a
 
 {-| Matches a labelled sequent against an act sequent schema.
     Returns the result in a MonadFail instance, which signals the error in case
     the match fails. -}
 match
-  :: (Eq a, Eq l, MonadFail m, Alternative m, Ord a, Ord l)
-  => SequentSchema c l a -> LabelledSequent l a -> m (MatchResult c l a)
-match (Sch gamma delta schGoal) (LS gamma' delta' goal) = do
-  gamma'' <- matchUnrestrCtxt (SUC gamma) gamma'
+  :: (Eq a, Eq l, Eq (cs a), MonadFail m, Alternative m, Ord a, Ord l)
+  => SequentSchema eb cs ac l a
+  -> NeutralLabelledSequent eb cs l a
+  -> m (MatchResult eb cs ac l a)
+match (SSEmptyGoal delta) (NLS gamma delta' cs goal) = do
   delta'' <- matchLinearCtxt (SLC delta) delta'
-  case schGoal of
-    LabelGoal l ->
-      guard (l == goal) >> (return $ MRes gamma'' delta'' EmptyResult)
-    EmptyGoal -> return $ MRes gamma'' delta'' (LabelResult goal)
+  return $ MRFullGoal gamma delta'' cs goal
+match (SSFullGoal delta cs goal) (NLS gamma delta' cs' goal') =
+  guard (goal == goal') >> guard (cs == cs') >>
+  MREmptyGoal gamma <$> matchLinearCtxt (SLC delta) delta'
 
-{-| Type of negative focused match results.
-
-    Negative focus relations always return a result sequent with non-empty
-    goal, so we explicitly indicate it in the type. The outcome is that result
-    sequents with empty goals are statically rejected as ill-typed. -}
-type NFocMatchResult l a = MatchResult EmptyXiFullResult l a
-
--- {-| Dispatching of negative synchronous formulas. Notice the type that enforces
---     input formulas to be both left synchronous and non-atomic. -}
--- negativeFocal
---   :: (Eq a, Eq l)
---   => LFormula LSRA l a -> Relation l a (NFocMatchResult l a)
--- negativeFocal = negativeFocalDispatch
-
-{-| Negative focal relation.
-    The fact that it returns a result sequent with non-empty goal is statically
-    enforced by the type of the function. -}
-negativeFocalDispatch
-  :: forall p l a.
-     (Eq a, Eq l, Ord a, Ord l)
-  => LFormula p l a -> Relation l a (DerTerm l a, NFocMatchResult l a)
-negativeFocalDispatch formula =
-  case formula of
-    FAtom (RBAtom a) -> return (Init a, MRes mempty mempty (LabelResult (A a)))
-    FAtom (LBAtom a) ->
-      liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
-      where schema = Sch mempty (singletonCtxt (A @l @a a)) EmptyGoal
-    FConj _ _ _ ->
-      leftActive mempty [OLF formula] (EmptyXi :: Xi EmptyXiFullResult p l a)
-    FImpl f1 f2 r -> do
-      (d1, MRes gamma1 delta1 xi) <- negativeFocalDispatch f2
-      (d2, MRes gamma2 delta2 EmptyResult) <- positiveFocalDispatch f1
-      return
-        ( ImplL d2 d1 (label f2) (fromLFormula f2) r
-        , MRes (gamma1 <> gamma2) (delta1 <> delta2) xi)
-
-type PFocMatchResult l a = MatchResult FullXiEmptyResult l a
-
-{-| Type of positive focused match results.
-
---     Positive focus relations always return a result sequent with empty
---     goal, so we explicitly indicate it in the type. The outcome is that result
---     sequents with non-empty goals are statically rejected as ill-typed. -}
--- positiveFocal
---   :: (Eq a, Eq l, Ord l, Ord a)
---   => LFormula LARS l a -> Relation l a (PFocMatchResult l a)
--- positiveFocal = positiveFocalDispatch
+type FocMatchRes eb cs l a = MatchResult eb cs FullXiEmptyResult l a
 
 {-| Positive focal relation.
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
-  :: forall p l a . (Eq a, Eq l, Ord l, Ord a)
-  => LFormula p l a -> Relation l a (DerTerm l a, PFocMatchResult l a)
+  :: (Monoid (cs a), Eq a, Eq (cs a), Eq l, Ord l, Ord a)
+  => RelFormula eb cs k l a -> Relation eb cs l a (FocMatchRes eb cs l a)
 positiveFocalDispatch formula =
   case formula of
-    FAtom (LBAtom a) ->
-      return (Init a, MRes mempty (singletonCtxt (A @l @a a)) EmptyResult)
-    FAtom (RBAtom a) ->
-      liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
-      where schema = Sch mempty mempty (LabelGoal (A a))
-    FImpl _ _ _ -> rightActive mempty [] formula
-    FConj f1 f2 r -> do
-      (d1, MRes gamma1 delta1 _) <- positiveFocalDispatch f1
-      (d2, MRes gamma2 delta2 _) <- positiveFocalDispatch f2
+    Atom _ -> return (MREmptyGoal mempty (singletonCtxt (NF formula)))
+    Impl _ _ _ _ _ -> liftFun $ \inputSeq -> match schema inputSeq
+      where schema = SSFullGoal mempty mempty (ORF formula)
+    Conj f1 f2 r -> do
+      MREmptyGoal gamma1 delta1 <- positiveFocalDispatch f1
+      MREmptyGoal gamma2 delta2 <- positiveFocalDispatch f2
       return
-        (ConjR d1 d2 r, MRes (gamma1 <> gamma2) (delta1 <> delta2) EmptyResult)
+        (MREmptyGoal (gamma1 <> gamma2) (delta1 <> delta2))
 
-{-| Right active relation, that is active relation of the form
-
-      act( ; delta ; omega ===> C)
-
-    where xi is C, hence a formula (and of course non-empty).
-
-    Notice how the type enforces that, xi being a formula and therefore
-    non-empty, the result sequent will have an empty goal. -}
-rightActive
-  :: (Eq a, Eq l, Ord l, Ord a)
-  => (LLinearCtxt l a)
-  -> [OLFormula l a]
-  -> LFormula p l a
-  -> Relation l a (DerTerm l a, MatchResult FullXiEmptyResult l a)
-rightActive delta omega formula =
-  case formula of
-    FAtom atom -> leftActive delta omega (FullXi formula)
-    FConj f1 f2 _ -> leftActive delta omega (FullXi formula)
-    FImpl f1 f2 r -> do
-      (d, res) <- rightActive delta ((OLF f1) : omega) f2
-      return (ImplR d (label f1) (fromLFormula f1) r, res)
+data ZetaXi :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
+  FullZetaXi
+    :: (cs a) -> (ORelFormula eb cs l a) -> ZetaXi eb cs FullXiEmptyResult l a
+  EmptyZetaXi :: ZetaXi eb cs EmptyXiFullResult l a
 
 {-| Left active relation, that is active relation of the form
 
-      act( ; delta ; omega ===> Q)
+      act(delta ; omega ===> Q)
 
     where xi is Q, hence a right-synchronous formula (and of course
     non-empty).
@@ -267,36 +170,80 @@ rightActive delta omega formula =
     Notice how the typeclass context enforces that the input formula is indeed
     right-synchronous. -}
 leftActive
-  :: forall p l a actcase . (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
-  => (LLinearCtxt l a)
-  -> [OLFormula l a]
-  -> Xi actcase p l a
-  -> Relation l a (DerTerm l a, MatchResult actcase l a)
-leftActive delta omega formula =
+  :: (Eq a, Eq l, Eq (cs a), Ord l, Ord a)
+  => (LCtxt eb cs l a)
+  -> [ORelFormula eb cs l a]
+  -> ZetaXi eb cs actcase l a
+  -> Relation eb cs l a (MatchResult eb cs actcase l a)
+  -- -> Relation l a (DerTerm l a, MatchResult actcase l a)
+leftActive delta omega zetaxi =
   case omega of
-    [] -> matchRel delta formula
-    (OLF (FConj f1 f2 r):rest) -> do
-      (d, res) <- leftActive delta (OLF f2 : OLF f1 : rest) formula
-      return
-        ( ConjL d (label f1) (fromLFormula f1) (label f2) (fromLFormula f2) r
-        , res)
-    (OLF (FImpl _ _ l):rest) -> leftActive (add (L @l @a l) delta) rest formula
-    (OLF (FAtom (LBAtom a)):rest) -> leftActive (add (A @l @a a) delta) rest formula
-    (OLF (FAtom (RBAtom a)):rest) -> leftActive (add (A @l @a a) delta) rest formula
+    [] -> matchRel delta zetaxi
+    (ORF (Conj f1 f2 _):rest) -> do
+      res <- leftActive delta (ORF f2 : ORF f1 : rest) zetaxi
+      return res
+    (ORF fr@(Impl _ _ _ _ _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
+    (ORF fr@(Atom _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
 
 {-| Active match relation.
     It requires the input xi formula (if any) to be right-synchronous (otherwise
     we would have a right active relation). -}
 matchRel
-  :: (IsRightSynchronous p, Eq a, Eq l, Ord l, Ord a)
-  => (LLinearCtxt l a)
-  -> Xi actcase p l a
-  -> Relation l a (DerTerm l a, MatchResult actcase l a)
-matchRel delta xi =
-  liftFun $ \(DLS der inputSeq) -> fmap ((,) der) $ match schema inputSeq
+  :: (Eq a, Eq l, Eq (cs a), Ord l, Ord a)
+  => (LCtxt eb cs l a)
+  -> ZetaXi eb cs actcase l a
+  -> Relation eb cs l a (MatchResult eb cs actcase l a)
+  -- -> Relation l a (DerTerm l a, MatchResult actcase l a)
+matchRel delta zetaxi =
+  liftFun $ \inputSeq -> match schema inputSeq
+  -- liftFun $ \(DER der inputSeq) -> fmap ((,) der) $ match schema inputSeq
   where
-    schema = Sch mempty delta goal
-    goal =
-      case xi of
-        EmptyXi -> EmptyGoal
-        FullXi f -> LabelGoal (label f)
+    schema =
+      case zetaxi of
+        EmptyZetaXi -> SSEmptyGoal delta
+        FullZetaXi cs g -> SSFullGoal delta cs g
+
+--------------------------------------------------------------------------------
+-- Forward derived rules
+
+focal
+  :: (IsFocusable k, ControlSet cs a, Ord l, Ord a)
+  => RelFormula eb cs k l a
+  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
+focal formula = do
+  (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
+  return $ NLS gamma delta mempty (ORF formula)
+
+implLeft
+  :: (BaseCtrl eb cs a, Ord l, Ord a)
+  => RelFormula eb cs KImpl l a
+  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
+implLeft fr@(Impl a _ cs b _) = do
+  (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
+  (MRFullGoal gamma2 delta2 cs' concl) <-
+    leftActive mempty [(ORF b)] EmptyZetaXi
+  guard (respects (elemBaseAll delta2) cs)
+  return $
+    NLS (gamma1 <> gamma2) (add (NF fr) (delta1 <> delta2)) (cs <> cs') concl
+
+copyRule
+  :: (BaseCtrl eb cs a, Ord l, Ord a)
+  => RelFormula eb cs KImpl l a
+  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
+copyRule fr@(Impl a _ cs b _) = do
+  (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
+  (MRFullGoal gamma2 delta2 cs' concl) <-
+    leftActive mempty [(ORF b)] EmptyZetaXi
+  guard (respects (elemBaseAll delta2) cs)
+  return $
+    NLS (add (ORF fr) (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl
+
+implRight
+  :: (BaseCtrl eb cs a, Ord l, Ord a)
+  => RelFormula eb cs KImpl l a
+  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
+implRight fr@(Impl a eb cs b _) = do
+  (MREmptyGoal gamma delta) <-
+    leftActive mempty [(ORF a)] (FullZetaXi cs (ORF b))
+  guard ((elemBaseAll delta) == eb)
+  return $ NLS gamma delta mempty (ORF fr)
