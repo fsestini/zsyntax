@@ -16,10 +16,11 @@
 
 module Relation
   ( positiveFocalDispatch
-  , focal
+  , focus
   , implLeft
   , copyRule
   , implRight
+  , Rule
   ) where
 
 -- import SFormula (fromLFormula)
@@ -72,7 +73,7 @@ instance IsFocusable KConj where
     parameterized by the type of labels and biological atoms of the input
     labelled sequents, and by the codomain type of the relation. -}
 -- type Relation l a b = Rel (DLSequent l a) b
-type Relation eb cs l a b = Rel (NeutralLabelledSequent eb cs l a) b
+type Relation eb cs l a b = Rel (NeutralSequent eb cs l a) b
 
 --------------------------------------------------------------------------------
 -- Sequent schemas.
@@ -127,12 +128,12 @@ data MatchResult :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
 match
   :: (Eq a, Eq l, Eq (cs a), MonadFail m, Alternative m, Ord a, Ord l)
   => SequentSchema eb cs ac l a
-  -> NeutralLabelledSequent eb cs l a
+  -> NeutralSequent eb cs l a
   -> m (MatchResult eb cs ac l a)
-match (SSEmptyGoal delta) (NLS gamma delta' cs goal) = do
+match (SSEmptyGoal delta) (NS gamma delta' cs goal) = do
   delta'' <- matchLinearCtxt (SLC delta) delta'
   return $ MRFullGoal gamma delta'' cs goal
-match (SSFullGoal delta cs goal) (NLS gamma delta' cs' goal') =
+match (SSFullGoal delta cs goal) (NS gamma delta' cs' goal') =
   guard (goal == goal') >> guard (cs == cs') >>
   MREmptyGoal gamma <$> matchLinearCtxt (SLC delta) delta'
 
@@ -206,44 +207,46 @@ matchRel delta zetaxi =
 --------------------------------------------------------------------------------
 -- Forward derived rules
 
-focal
+type Rule eb cs l a = Relation eb cs l a (NeutralSequent eb cs l a)
+
+focus
   :: (IsFocusable k, ControlSet cs a, Ord l, Ord a)
   => RelFormula eb cs k l a
-  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
-focal formula = do
+  -> Relation eb cs l a (NeutralSequent eb cs l a)
+focus formula = do
   (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
-  return $ NLS gamma delta mempty (ORF formula)
+  return $ NS gamma delta mempty (ORF formula)
 
 implLeft
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => RelFormula eb cs KImpl l a
-  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
-implLeft fr@(Impl a _ cs b _) = do
+  => ImplFormula eb cs IRegular l a
+  -> Relation eb cs l a (NeutralSequent eb cs l a)
+implLeft fr@(ImplF a _ cs b _) = do
   (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
   (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(ORF b)] EmptyZetaXi
   guard (respects (elemBaseAll delta2) cs)
   return $
-    NLS (gamma1 <> gamma2) (add (NF fr) (delta1 <> delta2)) (cs <> cs') concl
+    NS (gamma1 <> gamma2) (add (NF (Impl' fr)) (delta1 <> delta2)) (cs <> cs') concl
 
 copyRule
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => RelFormula eb cs KImpl l a
-  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
-copyRule fr@(Impl a _ cs b _) = do
+  => Axiom eb cs l a
+  -> Relation eb cs l a (NeutralSequent eb cs l a)
+copyRule fr@(ImplF a EmptySpot cs b _) = do
   (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
   (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(ORF b)] EmptyZetaXi
   guard (respects (elemBaseAll delta2) cs)
   return $
-    NLS (add (ORF fr) (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl
+    NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => RelFormula eb cs KImpl l a
-  -> Relation eb cs l a (NeutralLabelledSequent eb cs l a)
-implRight fr@(Impl a eb cs b _) = do
+  => ImplFormula eb cs IRegular l a
+  -> Relation eb cs l a (NeutralSequent eb cs l a)
+implRight fr@(ImplF a (FullSpot eb) cs b _) = do
   (MREmptyGoal gamma delta) <-
     leftActive mempty [(ORF a)] (FullZetaXi cs (ORF b))
   guard ((elemBaseAll delta) == eb)
-  return $ NLS gamma delta mempty (ORF fr)
+  return $ NS gamma delta mempty (ORF (Impl' fr))
