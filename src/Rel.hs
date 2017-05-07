@@ -18,6 +18,7 @@ import Data.Profunctor
 import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
+import Control.Applicative
 
 {-| A Rel object represents a curried function with an unbounded, unspecified
     number of input arguments, possibly zero.
@@ -63,3 +64,8 @@ instance Monad (Rel a) where
 
 instance MonadFail (Rel a) where
   fail _ = Rel Nothing
+
+instance Alternative (Rel a) where
+  empty = Rel Nothing
+  (Rel Nothing) <|> rel = rel
+  rel <|> _ = rel
