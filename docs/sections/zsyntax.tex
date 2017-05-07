@@ -6,15 +6,18 @@
 
 \subsection{Controlled monotonicity}
 
-The calculus of Zsyntax revolves around the concept of controlled monotonicity.
-In linear logic, implication is monotonic since $A \vdash B$ implies
-$A \otimes C \vdash B \otimes C$ for any $C$. Zsyntax preserves the
-characteristics of linear logic as a logic of resources, but has a non-monotonic
-logical consequence relation, or rather one where such monotonicity is allowed
-in all but some specified cases. In this sense it is similar to other formalisms
-such as default logic. In the following we only repeat some of the definitions
-in [paper] on which the following sections built upon. Details and examples on
-how Zsyntax deals with monotonicity can be found in [paper].
+The property that separates the calculus of Zsyntax from plain linear logic is
+its concept of controlled monotonicity. In linear logic, implication is
+monotonic since $A \vdash B$ implies $A \otimes C \vdash B \otimes C$ for any
+$C$. Zsyntax preserves the characteristics of linear logic as a logic of
+resources, but has a non-monotonic logical consequence relation, or rather one
+where such monotonicity is normally allowed apart from some specified cases. In
+this sense it is similar to other formalisms such as default logic [TODO add
+reference]. In the following we only repeat some of the definitions in [paper]
+on which the following sections built upon. Details and examples on how Zsyntax
+deals with monotonicity can be found in [paper].
+
+
 
 \begin{definition}[Elementary bases]
   \begin{enumerate}
@@ -79,21 +82,28 @@ definition, the controlled $\rightarrow$ elimination rule becomes the following:
   \end{prooftree}
 \]
 
-In the following section we will give a slightly modified (but nevertheless
-still precise and extremely faithful to the original) provability relation for
-the Zsyntax natural deduction-style calculus in [paper], that not only describes
-the biological transition but also takes into account the control sets involved
-in it.
+\subsection{Reasons for a different monotonicity control}
 
-\subsection{Reasons for a different Z-conditional operator}
+In the sections that follow, we will define an alternative provability relation
+$\models$ for Zsyntax (which is just a different way to present the natural
+deduction-style calculus as in [paper]), that is strictly related to the
+one in [paper]. The purpose is to give a precise formalization of the
+logic that we intend to implement, and at the same time establish the
+similarities (and differences) with the original formulation.
 
-The alternative natural deduction formalization of Zsyntax given in the
-following sections, as well as the sequent calculus based on it, use a different
-kind of Z-conditional (linear implication) that the one described in [paper].
-The reason is that the one presended in [paper] has an asymmetry between
-introduction and elimination rules.
+Our provability relation , as well as the sequent calculus based on it, uses a
+different kind of Z-conditional (linear implication) that the one described in
+[paper], and a different (weaker) definition of control set.  The reason for the
+first is logical, and lies in an asymmetry between introduction and elimination
+rules of the conditional operator as presended in [paper]. The second has more
+technical reasons, as it seemed necessary in order to get a satisfactory
+cut-free sequent calculus.
 
-The introduction rule for the Z-conditional is given in [paper] as follows:
+\subsubsection{Conditional operator}
+
+We now recall the definition of the Z-conditional operator in [paper], and
+illustrate how the one used here is different. The introduction rule for the
+Z-conditional is given in [paper] as follows:
 
 \[
   \begin{prooftree}
@@ -119,9 +129,9 @@ transition is placed respects all control sets involved in it.
 This introduction rule forgets all these details, as it unifies all proofs (or
 reactions) of the form $\Gamma, A \vdash B$ under the type $A \rightarrow B$.
 To be fair, information is not actually thrown away, as it is supposed to be
-remembered as part of the control sets and elementary bases associated to the
+remembered as part of the control sets and elementary bases associated with the
 type $A \rightarrow B$. This however does not solve the asymmetry between the
-two rules. In fact, consider the elimination rule:
+two rules. In fact, consider the elimination rule given in [paper]:
 
 \[
   \begin{prooftree}
@@ -165,7 +175,7 @@ should be possible to derive the following:
 
 as we know that the aggregate of type $A \rightarrow B$ is really $\Gamma$ is
 disguise, therefore we also know that $\Delta$ does not interact with its
-reaction.
+reaction with $A$.
 
 Suppose now that we know that $\Delta, \nabla, A \not \models B$ for some
 $\nabla$. In Zsyntax, this is sufficient to block the validity of the deduction
@@ -173,16 +183,16 @@ above, since $\Delta$ would then violate the control set for $A \rightarrow B$
 (which refers to \emph{all} known transitions of type $A \rightarrow B$, and so
 also the one involving $\nabla$.) That is, a \emph{global property} of the
 biological aggregates of type $A \rightarrow B$, referenced by the elimination
-rule, prevents us to deduce a theorem that the introduction rule tells us to be
-\emph{locally} possible, because we know that the particular instance of
-$A \rightarrow B$ that we are eliminating comes form $\Gamma$, which is not
-really affected by the presence of $\Delta$.
+rule, prevents us to deduce a theorem that we certainly know to be
+\emph{locally} possible, because we know from the introduction rule that the
+particular instance of $A \rightarrow B$ that we are eliminating comes form
+$\Gamma$, which is not really affected by the presence of $\Delta$.
 
 If we translate the calculus into sequents as is, this asymmetry between local
 instances and global properties, introduction and elimination rules, and thus
 between right and left sequent rules, inevitably prevents an elegant cut-free
 calculus to be found. To restore the symmetry, we decided to use a different
-kind of implication, one that stores keeps explicit track of its control set and
+kind of implication, one that keeps explicit track of its control set and
 elementary base. We write
 
 \[
@@ -195,28 +205,78 @@ other words, to know that $A \limp_{\ctrlset{}}^{S} B$ holds is to know that
 $\Gamma, S, A \models \Gamma, B$, for any $\Gamma$ that respects the control set
 $\ctrlset{}$.
 
-Since now every implicational formula carries its own elementary base and
-control set, we must redefine these concepts to account for the fact that they
-are local.
+Notice that, even though this new definitions allow us to restore some form of
+symmetry between left and right rules for the conditional operator, the
+resulting logic is still intrinsically non-commutative, as the success of a
+derivation depends on the order in which inference rules are used. This is of
+course a property that we want our logical system to have, if deductions are to
+represent biological reactions. The price to be paid is in the resulting proof
+theory, which gets more complicated and lacks other properties that more
+standard logics have. As an example, despite what is said in [paper], the
+deduction theorem fails to hold even in plain Zsyntax. In particular
+
+\[
+  \Gamma \vdash A \rightarrow B \not\implies \Gamma, A \vdash B
+\]
+
+As an example, consider $\Gamma \equiv A, A \rightarrow B, B \otimes B
+\rightarrow C$, where $A \rightarrow B$ is only allowed to be used if $B$ is not
+in the context. Then, $\Gamma \vdash B \rightarrow C$ is easily proved by first
+eliminating $A \rightarrow B$ and then introducting $B$ to prove the conclusion.
+However, there is no way to prove $\Gamma, B \vdash C$, as the presence of $B$
+prevents $A \rightarrow B$ to be used.
+
+The introduction of our modified conditional operator requires a new
+definition of elementary base for a formula and for a (multi)set of formulas.
 
 \begin{definition}[Elementary base]
-  The elementary base $\elembases{A} \in \bioformulas^*$ of a formula $A$ is
-  defined inductively as follows:
+  The elementary base $\elembases{A} \subseteq \bioformulas$ of a formula $A$ is
+  inductively defined as follows:
 
   \begin{enumerate}
-  \item $\elembases{A} = A$, if $A \in \bioformulas$;
-  \item $\elembases{A \limp_{\ctrlset{}}^S B} = S$;
-  \item $\elembases{A \otimes B} =  \elembases{A} \cup \elembases{B}$.
+  \item $\elembases{A} = \{ A \}$, if $A \in \bioformulas$;
+  \item $\elembases{A \otimes B} = \elembases{A} \cup \elembases{B}$;
+  \item $\elembases{A \rightarrow_{\ctrlset{}}^S B} = S$.
   \end{enumerate}
-
-  where $\cup$ is list union.
 \end{definition}
 
-The definition of control set is the same as before, namely an element of
-$\mathcal{P}(\bioformulas^*)$. Introduction and elimination rules for this
-updated conditional operator are discussed in the next section.
+\subsubsection{Control sets}
 
-\subsection{An alternative natural deduction calculus}
+As we said above, our weaker (with respect to the one given in [paper]) notion
+of control sets has purely technical reasons. In particular, in order for the
+proof of cut elimination to go through, we need the following fact about control
+sets to hold:
+
+\[
+  \forall \Delta_1, \Delta_2, \ctrlset{},\quad
+  \Delta_1 \notin \ctrlset{} \wedge \Delta_2 \notin \ctrlset{}
+  \implies
+  \Delta_1, \Delta_2 \notin \ctrlset{}
+\]
+
+where $\Delta_1, \Delta_2$ is the usual multiset union. This is of course not
+true in general, at least for the notion of control set given in [paper].  We
+speculate, however, that our contrained notion is still enough to cover many
+interesting applications in molecular biology, so to justify the development of
+an automated theorem prover based on it.
+
+The constraint above basically forces the following concrete definition of
+control set upon us:
+
+\begin{definition}
+  \begin{enumerate}
+  \item A control set is a subset $\ctrlset{} \subseteq \bioformulas$;
+  \item A (multi)set of formulas $\Delta$ \emph{respects} a control set
+    $\ctrlset{}$, written $\respects{\Delta}{\ctrlset{}}$, if
+
+    \[
+      \forall A \in \ctrlset{}, A \notin \elembases{\Delta}
+    \]
+
+  \end{enumerate}
+\end{definition}
+
+\subsection{The calculus \eznd{}}
 
 % As we have seen, the logical framework of Zsyntax is dynamic in the sense that
 % knowledge about biochemical reactions changes over time as facts are
@@ -261,20 +321,22 @@ updated conditional operator are discussed in the next section.
 % where $\elembasesw{\Gamma}{w}$ is exactly as $\elembases{\Gamma}$ but using $w$
 % for the elementary bases of the conditionals.
 
-We now give an alternative formalization of the rules of Zsyntax. The resulting
-calculus, called from now on \eznd{}, differs from \znd{} for how we treat the
-conditional operator. As explained in the previous section, the operator (and
-the resulting rules) used here yields a strictly stronger calculus, as it is
-possible to prove theorems that are not provable in plain \znd{}. The resulting
-lack of soundness w.r.t. \znd{} is not a problem in our opinion, as we think
-that the theorems that \znd{} misses should actually be provable. This calculus
-is nevertheless complete in a certain way: if a theorem holds in \znd{}, that it
-is possible to annotate all conditionals that appear in the proof in such a way
-that the resulting is also a proof in \eznd{}.
+We now give an alternative formalization of the rules of Zsyntax, that uses the
+modified conditional operator. As explained in the previous section, this yields
+a strictly stronger calculus as far with respect to proofs involving
+conditionals (if we forget our weaker notion of control set), as it is possible
+to prove theorems that are not provable in plain \znd{}. The resulting lack of
+soundness w.r.t. \znd{} is not a problem in our opinion, as we think that the
+theorems that \znd{} misses should actually be provable.
 
-The judgement \eznd{} deals with is the provability relation of Zsyntax,
-decorated with information about the control set of the biological reaction
-described by the relation.
+% This calculus is
+% nevertheless complete in a certain way: if a theorem holds in \znd{}, that it is
+% possible to annotate all conditionals that appear in the proof in such a way
+% that the resulting is also a proof in \eznd{}.
+
+\eznd{} proofs involve a judgement which is basically the provability relation
+of Zsyntax as in [paper], decorated with information about the control sets of
+the biological reactions described by the relation.
 
 \begin{definition}[Enhanced provability judgement]
   Enhanced provability judgements are judgements of the form
