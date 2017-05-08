@@ -1,82 +1,99 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module SFormula
-  ( SFormula(..)
+  ( SFormula
   , Sequent(..)
+  , sAtom
+  , sConj
+  , sImpl
   , neutralize
-  , fromLFormula
+--  , fromLFormula
   , BioFormula(..)
   ) where
 
-import Formula
+import RelFormula
 import TypeClasses (PickMonad(..))
 import Control.Monad
 import qualified Data.Set as S
+import UnrestrContext
+import LinearContext
+import Context
+import Data.Foldable
 
 --------------------------------------------------------------------------------
+
 -- Simple formulas
+newtype SFormula eb cs a = SF (OLFormula eb cs a ()) deriving Show
+newtype NSFormula eb cs a = NSF
+  { unNSF :: (NeutralFormula eb cs a ())
+  } deriving (Show)
+newtype SAxiom eb cs a = SA {unSA :: (Axiom eb cs a ())} deriving Show
 
--- | Type of simple formulas.
-data SFormula a
-  = SAtom (BioFormula a)
-  | SConj (SFormula a)
-          (SFormula a)
-  | SImpl (SFormula a)
-          (SFormula a)
-  deriving (Eq, Ord)
-infixl 4 `SConj`
-infixr 3 `SImpl`
+instance (Ord a, Ord (eb a), Ord (cs a)) =>
+         Eq (SFormula eb cs a) where
+  (SF (OLF f1)) == (SF (OLF f2)) = deepHetCompare f1 f2 == EQ
 
-fromLFormula :: LFormula p l a -> SFormula a
-fromLFormula (FAtom (LBAtom atom)) = SAtom atom
-fromLFormula (FAtom (RBAtom atom)) = SAtom atom
-fromLFormula (FConj f1 f2 _) = fromLFormula f1 `SConj` fromLFormula f2
-fromLFormula (FImpl f1 f2 _) = fromLFormula f1 `SImpl` fromLFormula f2
+instance (Ord a, Ord (eb a), Ord (cs a)) =>
+         Ord (SFormula eb cs a) where
+  compare (SF (OLF f1)) (SF (OLF f2)) = deepHetCompare f1 f2
+
+instance (Ord a, Ord (eb a), Ord (cs a)) => Eq (SAxiom eb cs a) where
+  (SA ax1) == (SA ax2) = compare ax1 ax2 == EQ
+
+instance (Ord a, Ord (eb a), Ord (cs a)) => Ord (SAxiom eb cs a) where
+  compare (SA ax1) (SA ax2) = deepImplCompare ax1 ax2
+
+sAtom :: BioFormula a -> SFormula eb cs a
+sAtom = SF . OLF . Atom
+
+sConj :: SFormula eb cs a -> SFormula eb cs a -> SFormula eb cs a
+sConj (SF (OLF f1)) (SF (OLF f2)) = SF (OLF (Conj f1 f2 ()))
+
+sImpl :: SFormula eb cs a
+      -> eb a
+      -> cs a
+      -> SFormula eb cs a
+      -> SFormula eb cs a
+sImpl (SF (OLF f1)) eb cs (SF (OLF f2)) = SF (OLF (Impl f1 eb cs f2 ()))
+
+fromLFormula
+  :: OLFormula eb cs a l -> SFormula eb cs a
+fromLFormula = SF . fmap (const ())
+
+fromLAxiom :: Axiom eb cs a l -> SAxiom eb cs a
+fromLAxiom = SA . fmap (const ())
 
 --------------------------------------------------------------------------------
 -- Sequents.
 
-data Sequent a = SQ (S.Set (SFormula a)) [SFormula a] (SFormula a)
+data Sequent eb cs a =
+  SQ (UnrestrCtxt (SAxiom eb cs a))
+     (LinearCtxt (SFormula eb cs a))
+     (SFormula eb cs a)
+  deriving Show
 
-neutralize :: (PickMonad m l, Ord a, Ord l) => Sequent a -> m (NeutralSequent l a)
-neutralize (SQ unrestr linear concl) = do
-  lUnrestr <- fmap S.fromList $ mapM toLabelled (S.toList unrestr)
-  (moreLinear, (ORSLF lConcl)) <- rightAsync concl
-  lLinear <- mapM leftAsync (linear ++ moreLinear)
-  return $ NSQ lUnrestr (join lLinear) lConcl
+neutralize
+  :: forall eb cs m l a . (PickMonad m l, Ord a, Ord l, Ord (eb a), Ord (cs a))
+  => Sequent eb cs a -> Maybe (cs a) -> m (GoalNeutralSequent eb cs a l)
+neutralize (SQ unrestr linear (SF (OLF concl))) goalCS =
+  GNS <$> nUnrestr <*> nLinear <*> (return goalCS) <*> nGoal
+  where
+    nUnrestr =
+      fmap fromFoldable $
+      mapM
+        ((traverse (const pick) . unSA) :: SAxiom eb cs a -> m (Axiom eb cs a l)) $
+      (asFoldable toList unrestr)
+    nLinear =
+      fmap fromFoldable $
+      mapM
+        ((traverse (const pick) . unNSF) :: NSFormula eb cs a -> m (NeutralFormula eb cs a l)) $
+      (asFoldable (concatMap neutralizeFormula . toList) linear)
+    nGoal = OLF <$> traverse (const pick) concl
 
-toLabelled :: PickMonad m l => SFormula a -> m (OLFormula l a)
-toLabelled (SAtom atom) = return (OLF (FAtom (LBAtom atom)))
-toLabelled (SConj f1 f2) = do
-  (OLF f1') <- toLabelled f1
-  (OLF f2') <- toLabelled f2
-  l <- pick
-  return (OLF (FConj f1' f2' l))
-toLabelled (SImpl f1 f2) = do
-  (OLF f1') <- toLabelled f1
-  (OLF f2') <- toLabelled f2
-  l <- pick
-  return (OLF (FImpl f1' f2' l))
-
-rightAsync
-  :: PickMonad m l
-  => SFormula a -> m ([SFormula a], ORSLFormula l a)
-rightAsync (SAtom atom) = return ([], ORSLF (FAtom (LBAtom atom)))
-rightAsync (SConj f1 f2) = do
-  (OLF f1') <- toLabelled f1
-  (OLF f2') <- toLabelled f2
-  l <- pick
-  return ([], ORSLF (FConj f1' f2' l))
-rightAsync (SImpl f1 f2) = do
-  (ctxt, concl) <- rightAsync f2
-  return (f1 : ctxt, concl)
-
-leftAsync :: PickMonad m l => SFormula a -> m [OLSLFormula l a]
-leftAsync (SAtom atom) = return [OLSLF (FAtom (LBAtom atom))]
-leftAsync (SConj f1 f2) = liftM2 (++) (leftAsync f1) (leftAsync f2)
-leftAsync (SImpl f1 f2) = do
-  (OLF f1') <- toLabelled f1
-  (OLF f2') <- toLabelled f2
-  l <- pick
-  return [OLSLF (FImpl f1' f2' l)]
+neutralizeFormula :: SFormula eb cs a -> [NSFormula eb cs a]
+neutralizeFormula (SF (OLF (Conj f1 f2 _))) =
+  neutralizeFormula (SF (OLF f1)) ++ neutralizeFormula (SF (OLF f2))
+neutralizeFormula (SF (OLF a@(Atom _))) = [NSF (NF a)]
+neutralizeFormula (SF (OLF f@(Impl' _))) = [NSF (NF f)]
