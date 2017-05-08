@@ -165,14 +165,22 @@
 
 % Derivation terms
 \newcommand{\dtinit}[1]{\textsf{init}(#1)}
-\newcommand{\dtcopy}[3]{\textsf{copy}(#1, \labels{#2}{#3})}
-\newcommand{\dtotimesr}[4]{\otimes \textsf{R}(#1, #2 ; \labels{#3}{#4})}
-\newcommand{\dtotimesl}[7]{\otimes
-  \textsf{L}(#1, \labels{#2}{#3}, \labels{#4}{#5} ; \labels{#6}{#7})}
-\newcommand{\dtlimpr}[5]{\limp \textsf{R}(#1, \labels{#2}{#3}
-  ; \labels{#4}{#5})}
-\newcommand{\dtlimpl}[6]{\limp \textsf{L}(#1, #2, \labels{#3}{#4} ; \labels{#5}{#6})}
-\newcommand{\dtfactor}[5]{\textsf{factor}(#1 . #2 . #3 ; \tyj{#4}{#5})}
+\newcommand{\dtcopy}[2]{\textsf{copy}(#1, #2)}
+\newcommand{\dtotimesr}[2]{\otimes \textsf{R}(#1, #2)}
+\newcommand{\dtotimesl}[3]{\otimes \textsf{L}(#1, #2, #3)}
+\newcommand{\dtlimpr}[2]{\limp \textsf{R}(#1, #2)}
+\newcommand{\dtlimpl}[5]{\limp \textsf{L}(#1, #2, #3, #4, #5)}
+
+% % Labelled derivation terms
+% \newcommand{\dtinit}[1]{\textsf{init}(#1)}
+% \newcommand{\dtcopy}[3]{\textsf{copy}(#1, \labels{#2}{#3})}
+% \newcommand{\dtotimesr}[4]{\otimes \textsf{R}(#1, #2 ; \labels{#3}{#4})}
+% \newcommand{\dtotimesl}[7]{\otimes
+%   \textsf{L}(#1, \labels{#2}{#3}, \labels{#4}{#5} ; \labels{#6}{#7})}
+% \newcommand{\dtlimpr}[5]{\limp \textsf{R}(#1, \labels{#2}{#3}
+%   ; \labels{#4}{#5})}
+% \newcommand{\dtlimpl}[6]{\limp \textsf{L}(#1, #2, \labels{#3}{#4} ; \labels{#5}{#6})}
+% \newcommand{\dtfactor}[5]{\textsf{factor}(#1 . #2 . #3 ; \tyj{#4}{#5})}
 
 % Haskell terms
 \newcommand{\relsym}{\textsf{Rel}}

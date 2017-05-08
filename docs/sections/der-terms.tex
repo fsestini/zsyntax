@@ -1,0 +1,288 @@
+\section{Derivation terms}
+
+Derivation trees are key mathematical entities when studying the proof theory of
+a logic, but are not very convenient as data structures to be manipulated by
+machines, particularly as they often contain redundant information. For this
+reason, we give below a definition of \emph{derivation terms}, which in our
+setting are just syntactic objects describing a derivation of a forward sequent
+in the forward calculus. In their definition, we must of course ensure to always
+be able to restore all details of a derivation from the term alone.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \seqpt{\dtinit{p}}{\zfwdseq{\cdot}{p}{\emptyset}{p}}
+      \end{prooftree}
+      \qquad\qquad
+      \begin{prooftree}
+        \seqpt{\mathcal{D}}{
+          \zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{C}}
+        \justifies
+        \seqpt{\dtcopy{\mathcal{D}}{A}}{
+          \zfwdseq{\Gamma \cup A}{\Delta}{\ctrlset{}}{C}}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta}{\emptyset}{A}}
+        \qquad
+        \seqpt{\mathcal{D'}}{\zfwdseq{\Gamma'}{\Delta'}{\emptyset}{B}}
+        \justifies
+        \seqpt{
+          \dtotimesr{\mathcal{D}}{\mathcal{D'}}
+        }{
+          \zfwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta'}{\emptyset}{A \otimes B}
+        }
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \seqpt{
+          \mathcal{D}
+        }{
+          \zfwdseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+        }
+        \justifies
+        \seqpt{
+          \dtotimesl{\mathcal{D}}{A}{B}
+        }{
+          \zfwdseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
+        }
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}}
+        \justifies
+        \seqpt{
+          \dtlimpr{\mathcal{D}}{A}
+        }{
+          \zfwdseq{\Gamma}{\Delta}{\emptyset}{A \limp B}
+        }
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta}{\emptyset}{A}}
+        \qquad
+        \seqpt{\mathcal{D'}}{\zfwdseq{\Gamma'}{\Delta', B}{\ctrlset{}'}{C}}
+        \justifies
+        \seqpt{
+          \dtlimpl{\mathcal{D}}{\mathcal{D'}}{B}{\ctrlset{}}{S}
+        }{
+          \zfwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta',
+            A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{}\cup\ctrlset{}'}{C}
+        }
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward calculus with derivation terms}
+  \label{fig:fwdderterm}
+\end{figure}
+
+The forward calculus given in Figure~\ref{fig:fwdderterm} serves as a full
+definition of our derivation terms. However, every derivation (in particular,
+during automated proof search) is going to be performed in the derived rule
+calculus. We therefore need a way to extract a derivation term for the forward
+calculus in Figure~\ref{fig:fwdderterm} from a derivation of the derived rule
+calculus in Figure~\ref{fig:fwdderrulecalculus}. This is no difficult task to
+achieve, as one would expect.
+
+For this purpose, we now extend the relations and rules of the forward derived
+rule calculus to produce derivation terms for the calculus in
+Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\seqpt{\dtinit{p}}{\zfneuseqempty{\cdot}{p}}}
+        \using{\init}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{R}}
+        }{\seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta}}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{
+          \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma_1}{\Delta_1}}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{
+          \seqpt{\mathcal{D}'}{\zfneuseqempty{\Gamma_2}{\Delta_2}}
+        }
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{
+          \seqpt{\dtotimesr{\mathcal{D}}{\mathcal{D}'}}{\zfneuseqempty{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A, B}{\zeta}{\xi}}
+        }{\Sigma}{\seqpt{\mathcal{D}}{s}}
+        \justifies
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A \otimes B}{\zeta}{\xi}}
+        }{\Sigma}{\seqpt{\dtotimesl{\mathcal{D}}{A}{B}}{s}}
+        \using{\otimes A}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{\zsyseq{\Delta, P}{\Omega}{\zeta}{\xi}}}{\Sigma}{
+          \seqpt{\mathcal{D}}{s}}
+        \justifies
+        \relj{\factrel{\zsyseq{\Delta}{\Omega, P}{\zeta}{\xi}}}{\Sigma}{
+          \seqpt{\mathcal{D}}{s}}
+        \using{\actrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\cdot}{\cdot}}
+        }{
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}}
+        }{
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta'}{\ctrlset{}}{C}}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\ctrlset{}}{C}}
+        }{
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}}
+        }{
+          \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta'}}
+        }
+        \using{\matchprimerule}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus with derivation terms}
+  \label{fig:fwdderrulecalculusderterms}
+\end{figure}
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        s_1 \quad \dots \quad s_n \quad
+        (\relj{\frfrel{Q}}{s_1 \dots s_n}{
+          \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{\cdot}}
+        })
+        \justifies
+        \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{Q}}
+        \using{\focplusrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \[
+          \relj{\frfrel{A}}{s_1, \dots, s_n}{
+            \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+          }
+          \proofdotseparation=1.2ex
+          \proofdotnumber=0
+          \leadsto
+          \relj{\factrel{
+              \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+          }{s}{
+            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}
+          }
+        \]
+        \quad
+        \[
+          \respects{\Delta_2}{\ctrlset{}}
+          \proofdotseparation=1.2ex
+          \proofdotnumber=0
+          \leadsto
+          s_1 \quad \dots \quad s_n \quad s
+        \]
+        \justifies
+        \seqpt{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\ctrlset{}}{S}}{
+          \zfneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2,
+          A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{}\cup\ctrlset{}'}{C}}
+        \using{\rightarrow L}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \[
+          \relj{\frfrel{A}}{s_1, \dots, s_n}{
+            \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma_1}{\Delta_1}}}
+          \proofdotseparation=1.2ex
+          \proofdotnumber=0
+          \leadsto
+          \relj{\factrel{
+              \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+          }{s}{
+            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}}
+        \]
+        \quad
+        \[
+          \respects{\Delta_2}{\ctrlset{}}
+          \proofdotseparation=1.2ex
+          \proofdotnumber=0
+          \leadsto
+          s_1 \quad \dots \quad s_n \quad s
+        \]
+        \justifies
+        \seqpt{\dtcopy{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\ctrlset{}}{\emptyset}}{
+          A \rightarrow_{\ctrlset{}}^{\emptyset} B}}
+        {\zfneuseq{\Gamma_1, \Gamma_2, A \rightarrow_{\ctrlset{}}^{\emptyset} B
+        }{\Delta_1, \Delta_2,
+        }{\ctrlset{}\cup\ctrlset{}'}{C}}
+        \using{\copyrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        s \qquad
+        \relj{\factrel{\zsyseq{\cdot}{A}{\ctrlset{}}{B}}}{s}{
+          \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta}}}
+        \justifies
+        \seqpt{\dtlimpr{\mathcal{D}}{A}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{A
+          \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}}
+        \using{\rightarrow R}
+      \end{prooftree}
+    \]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus with derivation terms}
+  \label{fig:fwdderrulecalculusderterms}
+\end{figure}
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:
