@@ -7,7 +7,7 @@ module UnrestrContext where
 import qualified Data.Set as S
 import Context
 
-newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid)
+newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid, Show)
 
 instance Ord a => Context (UnrestrCtxt a) a where
   add x (UC set) = UC (S.insert x set)
