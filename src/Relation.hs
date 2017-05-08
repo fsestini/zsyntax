@@ -35,28 +35,23 @@ import Control.Monad hiding (fail)
 import Rel
 -- import Data.Foldable
 -- import DerivationTerm
-{-import ForwardSequent-}
+import ForwardSequent
 import LinearContext
 {-import TypeClasses-}
 
 --------------------------------------------------------------------------------
 
--- -- | Type of labelled sequents decorated with derivation terms
--- data DLSequent l a = DLS
---   { derivation :: DerTerm l a
---   , sequent :: LabelledSequent l a
---   }
+-- | Type of labelled sequents decorated with derivation terms
+data DLSequent term eb cs a l = DLS
+  { derivation :: term
+  , sequent :: NeutralSequent eb cs a l
+  } deriving (Eq, Ord)
 
--- instance  (Eq a, Eq l) => Eq (DLSequent l a) where
---   (DLS _ s1) == (DLS _ s2) = s1 == s2
+instance (Ord l, Ord a, Eq (cs a)) =>
+         ForwardSequent (DLSequent term eb cs a l) where
+  subsumes (DLS _ s1) (DLS _ s2) = subsumes s1 s2
 
--- instance (Ord a, Ord l) => Ord (DLSequent l a) where
---   compare (DLS _ s1) (DLS _ s2) = compare s1 s2
-
--- instance (Ord l, Ord a) => ForwardSequent (DLSequent l a) where
---   subsumes (DLS d1 s1) (DLS d2 s2) = d1 == d2 && ForwardSequent.subsumes s1 s2
-
--- instance Coercible (DLSequent l a) (LabelledSequent l a) where
+-- instance Coercible (DLSequent a l) (LabelledSequent a l) where
 --   coerce (DLS _ s) = s
 
 --------------------------------------------------------------------------------
@@ -72,18 +67,18 @@ instance IsFocusable KConj where
     A relation is an unbounded curried function of labelled sequents.  It is
     parameterized by the type of labels and biological atoms of the input
     labelled sequents, and by the codomain type of the relation. -}
--- type Relation l a b = Rel (DLSequent l a) b
-type Relation eb cs l a b = Rel (NeutralSequent eb cs l a) b
+-- type Relation a l b = Rel (DLSequent a l) b
+type Relation eb cs a l b = Rel (NeutralSequent eb cs a l) b
 
 --------------------------------------------------------------------------------
 -- Sequent schemas.
 
 -- | Type of linear contexts which appear in sequent schemas.
-newtype SchemaLCtxt eb cs l a = SLC (LCtxt eb cs l a)
+newtype SchemaLCtxt eb cs a l = SLC (LCtxt eb cs a l)
 
 matchLinearCtxt
   :: (MonadFail m, Ord a, Ord l)
-  => SchemaLCtxt eb cs l a -> LCtxt eb cs l a -> m (LCtxt eb cs l a)
+  => SchemaLCtxt eb cs a l -> LCtxt eb cs a l -> m (LCtxt eb cs a l)
 matchLinearCtxt (SLC slc) lc = undefined -- asFoldable (foldrM (removeM) lc) slc
   --matchCtxt slc lc
 
@@ -103,33 +98,33 @@ matchLinearCtxt (SLC slc) lc = undefined -- asFoldable (foldrM (removeM) lc) slc
 data ActCase = FullXiEmptyResult | EmptyXiFullResult
 
 data SequentSchema :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
-  SSEmptyGoal :: (LCtxt eb cs l a) -> SequentSchema eb cs EmptyXiFullResult l a
+  SSEmptyGoal :: (LCtxt eb cs a l) -> SequentSchema eb cs EmptyXiFullResult a l
   SSFullGoal
-    :: (LCtxt eb cs l a)
+    :: (LCtxt eb cs a l)
     -> cs a
-    -> ORelFormula eb cs l a
-    -> SequentSchema eb cs FullXiEmptyResult l a
+    -> OLFormula eb cs a l
+    -> SequentSchema eb cs FullXiEmptyResult a l
 
 data MatchResult :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
   MREmptyGoal
-    :: UCtxt eb cs l a
-    -> LCtxt eb cs l a
-    -> MatchResult eb cs FullXiEmptyResult l a
+    :: UCtxt eb cs a l
+    -> LCtxt eb cs a l
+    -> MatchResult eb cs FullXiEmptyResult a l
   MRFullGoal
-    :: UCtxt eb cs l a
-    -> LCtxt eb cs l a
+    :: UCtxt eb cs a l
+    -> LCtxt eb cs a l
     -> cs a
-    -> ORelFormula eb cs l a
-    -> MatchResult eb cs EmptyXiFullResult l a
+    -> OLFormula eb cs a l
+    -> MatchResult eb cs EmptyXiFullResult a l
 
 {-| Matches a labelled sequent against an act sequent schema.
     Returns the result in a MonadFail instance, which signals the error in case
     the match fails. -}
 match
   :: (Eq a, Eq l, Eq (cs a), MonadFail m, Alternative m, Ord a, Ord l)
-  => SequentSchema eb cs ac l a
-  -> NeutralSequent eb cs l a
-  -> m (MatchResult eb cs ac l a)
+  => SequentSchema eb cs ac a l
+  -> NeutralSequent eb cs a l
+  -> m (MatchResult eb cs ac a l)
 match (SSEmptyGoal delta) (NS gamma delta' cs goal) = do
   delta'' <- matchLinearCtxt (SLC delta) delta'
   return $ MRFullGoal gamma delta'' cs goal
@@ -137,19 +132,19 @@ match (SSFullGoal delta cs goal) (NS gamma delta' cs' goal') =
   guard (goal == goal') >> guard (cs == cs') >>
   MREmptyGoal gamma <$> matchLinearCtxt (SLC delta) delta'
 
-type FocMatchRes eb cs l a = MatchResult eb cs FullXiEmptyResult l a
+type FocMatchRes eb cs a l = MatchResult eb cs FullXiEmptyResult a l
 
 {-| Positive focal relation.
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
   :: (Monoid (cs a), Eq a, Eq (cs a), Eq l, Ord l, Ord a)
-  => RelFormula eb cs k l a -> Relation eb cs l a (FocMatchRes eb cs l a)
+  => LFormula eb cs k a l -> Relation eb cs a l (FocMatchRes eb cs a l)
 positiveFocalDispatch formula =
   case formula of
     Atom _ -> return (MREmptyGoal mempty (singletonCtxt (NF formula)))
     Impl _ _ _ _ _ -> liftFun $ \inputSeq -> match schema inputSeq
-      where schema = SSFullGoal mempty mempty (ORF formula)
+      where schema = SSFullGoal mempty mempty (OLF formula)
     Conj f1 f2 r -> do
       MREmptyGoal gamma1 delta1 <- positiveFocalDispatch f1
       MREmptyGoal gamma2 delta2 <- positiveFocalDispatch f2
@@ -158,8 +153,8 @@ positiveFocalDispatch formula =
 
 data ZetaXi :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
   FullZetaXi
-    :: (cs a) -> (ORelFormula eb cs l a) -> ZetaXi eb cs FullXiEmptyResult l a
-  EmptyZetaXi :: ZetaXi eb cs EmptyXiFullResult l a
+    :: (cs a) -> (OLFormula eb cs a l) -> ZetaXi eb cs FullXiEmptyResult a l
+  EmptyZetaXi :: ZetaXi eb cs EmptyXiFullResult a l
 
 {-| Left active relation, that is active relation of the form
 
@@ -172,29 +167,29 @@ data ZetaXi :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
     right-synchronous. -}
 leftActive
   :: (Eq a, Eq l, Eq (cs a), Ord l, Ord a)
-  => (LCtxt eb cs l a)
-  -> [ORelFormula eb cs l a]
-  -> ZetaXi eb cs actcase l a
-  -> Relation eb cs l a (MatchResult eb cs actcase l a)
-  -- -> Relation l a (DerTerm l a, MatchResult actcase l a)
+  => (LCtxt eb cs a l)
+  -> [OLFormula eb cs a l]
+  -> ZetaXi eb cs actcase a l
+  -> Relation eb cs a l (MatchResult eb cs actcase a l)
+  -- -> Relation a l (DerTerm a l, MatchResult actcase a l)
 leftActive delta omega zetaxi =
   case omega of
     [] -> matchRel delta zetaxi
-    (ORF (Conj f1 f2 _):rest) -> do
-      res <- leftActive delta (ORF f2 : ORF f1 : rest) zetaxi
+    (OLF (Conj f1 f2 _):rest) -> do
+      res <- leftActive delta (OLF f2 : OLF f1 : rest) zetaxi
       return res
-    (ORF fr@(Impl _ _ _ _ _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
-    (ORF fr@(Atom _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
+    (OLF fr@(Impl _ _ _ _ _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
+    (OLF fr@(Atom _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
 
 {-| Active match relation.
     It requires the input xi formula (if any) to be right-synchronous (otherwise
     we would have a right active relation). -}
 matchRel
   :: (Eq a, Eq l, Eq (cs a), Ord l, Ord a)
-  => (LCtxt eb cs l a)
-  -> ZetaXi eb cs actcase l a
-  -> Relation eb cs l a (MatchResult eb cs actcase l a)
-  -- -> Relation l a (DerTerm l a, MatchResult actcase l a)
+  => (LCtxt eb cs a l)
+  -> ZetaXi eb cs actcase a l
+  -> Relation eb cs a l (MatchResult eb cs actcase a l)
+  -- -> Relation a l (DerTerm a l, MatchResult actcase a l)
 matchRel delta zetaxi =
   liftFun $ \inputSeq -> match schema inputSeq
   -- liftFun $ \(DER der inputSeq) -> fmap ((,) der) $ match schema inputSeq
@@ -207,46 +202,46 @@ matchRel delta zetaxi =
 --------------------------------------------------------------------------------
 -- Forward derived rules
 
-type Rule eb cs l a = Relation eb cs l a (NeutralSequent eb cs l a)
+type Rule eb cs a l = Relation eb cs a l (NeutralSequent eb cs a l)
 
 focus
   :: (IsFocusable k, ControlSet cs a, Ord l, Ord a)
-  => RelFormula eb cs k l a
-  -> Relation eb cs l a (NeutralSequent eb cs l a)
+  => LFormula eb cs k a l
+  -> Relation eb cs a l (NeutralSequent eb cs a l)
 focus formula = do
   (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
-  return $ NS gamma delta mempty (ORF formula)
+  return $ NS gamma delta mempty (OLF formula)
 
 implLeft
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => ImplFormula eb cs IRegular l a
-  -> Relation eb cs l a (NeutralSequent eb cs l a)
+  => ImplFormula eb cs IRegular a l
+  -> Relation eb cs a l (NeutralSequent eb cs a l)
 implLeft fr@(ImplF a _ cs b _) = do
   (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
   (MRFullGoal gamma2 delta2 cs' concl) <-
-    leftActive mempty [(ORF b)] EmptyZetaXi
+    leftActive mempty [(OLF b)] EmptyZetaXi
   guard (respects (elemBaseAll delta2) cs)
   return $
     NS (gamma1 <> gamma2) (add (NF (Impl' fr)) (delta1 <> delta2)) (cs <> cs') concl
 
 copyRule
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => Axiom eb cs l a
-  -> Relation eb cs l a (NeutralSequent eb cs l a)
+  => Axiom eb cs a l
+  -> Relation eb cs a l (NeutralSequent eb cs a l)
 copyRule fr@(ImplF a EmptySpot cs b _) = do
   (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
   (MRFullGoal gamma2 delta2 cs' concl) <-
-    leftActive mempty [(ORF b)] EmptyZetaXi
+    leftActive mempty [(OLF b)] EmptyZetaXi
   guard (respects (elemBaseAll delta2) cs)
   return $
     NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => ImplFormula eb cs IRegular l a
-  -> Relation eb cs l a (NeutralSequent eb cs l a)
+  => ImplFormula eb cs IRegular a l
+  -> Relation eb cs a l (NeutralSequent eb cs a l)
 implRight fr@(ImplF a (FullSpot eb) cs b _) = do
   (MREmptyGoal gamma delta) <-
-    leftActive mempty [(ORF a)] (FullZetaXi cs (ORF b))
+    leftActive mempty [(OLF a)] (FullZetaXi cs (OLF b))
   guard ((elemBaseAll delta) == eb)
-  return $ NS gamma delta mempty (ORF (Impl' fr))
+  return $ NS gamma delta mempty (OLF (Impl' fr))
