@@ -48,7 +48,7 @@ repeatPN x (Succ n) = (x NE.:| []) <> repeatPN x n
 
 --------------------------------------------------------------------------------
 
-newtype LinearCtxt a = LC (M.Map a PosNat) deriving (Eq, Ord)
+newtype LinearCtxt a = LC (M.Map a PosNat) deriving (Eq, Ord, Show)
 
 instance Foldable LinearCtxt where
   foldr f z (LC lc) = foldr f z listed
