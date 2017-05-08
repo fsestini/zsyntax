@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -11,6 +12,7 @@ module LinearContext
   , subCtxtOf
   ) where
 
+import Data.List (intersperse)
 import Control.Monad hiding (fail)
 import Data.Maybe (fromMaybe)
 import Data.Semigroup
@@ -20,6 +22,7 @@ import qualified Data.List.NonEmpty as NE
 import Control.Monad.Fail
 import Prelude hiding (fail)
 import Context
+import qualified TypeClasses as T (CanMap(..))
 
 --------------------------------------------------------------------------------
 -- Helper numeric datatype
@@ -48,7 +51,7 @@ repeatPN x (Succ n) = (x NE.:| []) <> repeatPN x n
 
 --------------------------------------------------------------------------------
 
-newtype LinearCtxt a = LC (M.Map a PosNat) deriving (Eq, Ord, Show)
+newtype LinearCtxt a = LC (M.Map a PosNat) deriving (Eq, Ord)
 
 instance Foldable LinearCtxt where
   foldr f z (LC lc) = foldr f z listed
@@ -73,3 +76,10 @@ instance (Ord a) => Context (LinearCtxt a) a where
                          then return . LC $ M.update minusOne x lc
                          else fail "element not in context"
   asFoldable f lc = f lc
+
+instance Show a => Show (LinearCtxt a) where
+  show (LC m) = concat . intersperse "," . map show . M.keys $ m
+
+instance T.CanMap LinearCtxt where
+  type Constr LinearCtxt x = Ord x
+  map f (LC m) = LC (M.mapKeys f m)

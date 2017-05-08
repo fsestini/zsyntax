@@ -1,9 +1,10 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
--- {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module TypeClasses
   ( CanPartitionEithers(..)
@@ -19,6 +20,8 @@ import qualified Data.Set as S
 import qualified Data.Either as E
 import qualified Data.Either as ET (partitionEithers)
 import Prelude hiding (map)
+import Data.Foldable
+import Data.Constraint
 
 class CanPartitionEithers f where
   partitionEithers :: f (Either a b) -> (f a, f b)
@@ -26,19 +29,15 @@ class CanPartitionEithers f where
 instance CanPartitionEithers [] where
   partitionEithers = ET.partitionEithers
 
-filterOut
-  :: (CanMap f, CanPartitionEithers f)
-  => f (Maybe a) -> f a
-filterOut coll = snd . partitionEithers $ map mapper coll
+filterOut :: Foldable f => f (Maybe a) -> [a]
+filterOut = snd . E.partitionEithers . fmap mapper . toList
   where
-    mapper Nothing = Left ()
+    mapper (Nothing) = Left ()
     mapper (Just x) = Right x
 
 class CanMap f where
-  map :: (a -> b) -> f a -> f b
-
-instance Functor f => CanMap f where
-  map = fmap
+  type Constr f x :: Constraint
+  map :: (Constr f a, Constr f b) => (a -> b) -> f a -> f b
 
 class CanFilter f where
   filter :: (a -> Bool) -> f a -> f a

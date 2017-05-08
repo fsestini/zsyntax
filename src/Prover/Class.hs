@@ -1,3 +1,5 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -9,10 +11,11 @@ import Data.Foldable
 import TypeClasses
 import Control.Monad hiding (fail)
 import Prelude hiding (fail)
-import Control.Monad.Fail
 import Control.Applicative
 
 import Prover.Structures
+       (SearchSequent, Stage(..), ActiveSequent, ActiveSequents,
+        ConclSequent, Rule, InactivesResult)
 
 -- The prover state must include a global index of all sequents that have been
 -- added to the inactive set.
@@ -20,7 +23,7 @@ class HasProverState seqty m where
   getRules :: m ([Rule seqty])
   addRule :: Rule seqty -> m ()
   addInactive :: SearchSequent BSChecked seqty -> m ()
-  popInactive :: m (Maybe (ActiveSequent seqty))
+  popInactive :: m (InactivesResult (ActiveSequent seqty))
   getActives :: m (ActiveSequents seqty)
   isNotFwdSubsumed :: SearchSequent SSChecked seqty
                    -> m (Maybe (SearchSequent FSChecked seqty))
@@ -29,21 +32,20 @@ class HasProverState seqty m where
 
 class HasProverEnvironment seqty m where
   isSubsequent
-    :: MonadFail mf
+    :: MonadPlus mf
     => ConclSequent seqty -> m (mf (SearchSequent SSChecked seqty))
   subsumesGoal
-    :: MonadFail mf
+    :: MonadPlus mf
     => SearchSequent FSChecked seqty -> m (mf seqty)
 
 haveGoal
   :: ( Monad m
-     , MonadFail mf
-     , Alternative mf
+     , MonadPlus mf
      , HasProverEnvironment seqty m
      , Foldable f
      )
   => f (SearchSequent FSChecked seqty) -> m (mf seqty)
-haveGoal = fmap (foldr (<|>) (fail "no goals")) . mapM subsumesGoal . toList
+haveGoal = fmap (foldr (<|>) mzero) . mapM subsumesGoal . toList
 
 addInactives
   :: (Traversable t, Monad m, HasProverState seqty m)
@@ -61,15 +63,16 @@ removeSubsumedByAll
 removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
-  :: (HasProverState seqty m, Monad m, Traversable t, CanPartitionEithers t)
-  => t (SearchSequent SSChecked seqty) -> m (t (SearchSequent FSChecked seqty))
-filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed
+  :: (HasProverState seqty m, Monad m, Foldable t)
+  => t (SearchSequent SSChecked seqty) -> m [SearchSequent FSChecked seqty]
+filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed . toList
 
 filterSubsequents
   :: ( HasProverEnvironment seqty m
      , Monad m
      , Traversable t
+     , Foldable t
      , CanPartitionEithers t
      )
-  => t (ConclSequent seqty) -> m (t (SearchSequent SSChecked seqty))
+  => t (ConclSequent seqty) -> m [SearchSequent SSChecked seqty]
 filterSubsequents = fmap filterOut . mapM isSubsequent

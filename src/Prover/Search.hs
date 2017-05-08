@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
@@ -8,22 +9,23 @@
 
 {-# OPTIONS_GHC -Wall #-}
 
-module Prover.Search (doSearch) where
+module Prover.Search (doSearch, SearchConstraint, SearchMonad(..)) where
 
 import Prelude hiding (fail, map)
 import Data.Foldable
-import Control.Applicative
+import Control.Monad
 import Control.Arrow ((***))
 import Rel (unRel)
-import Control.Monad.Fail
 import qualified Data.Set as S
 import TypeClasses
 
 import Prover.Class
 import Prover.Structures
-       (SearchSequent, Stage(..), Rule, ActiveSequent, ConclSequent,
-        RuleRes, ActiveSequents, initialIsBSChecked, initialIsFSChecked,
-        foldActives, applyRule)
+       (InactivesResult, NoInactivesReason(..), SearchSequent, Stage(..),
+        Rule, ActiveSequent, ConclSequent, RuleRes, ActiveSequents,
+        initialIsBSChecked, initialIsFSChecked, foldActives, applyRule)
+
+import Debug.Trace
 
 {-
 
@@ -46,46 +48,39 @@ import Prover.Structures
 
 -}
 
+class MonadPlus m => SearchMonad m where
+  failSaturated :: m a
+  failThresholdBreak :: m a
+
+type SearchConstraint m mf seqty =
+  (Monad m, SearchMonad mf, HasProverState seqty m
+   , HasProverEnvironment seqty m, Ord seqty, Eq seqty, Show seqty)
+
 doSearch
-  :: ( Monad m
-     , MonadFail mf
-     , Alternative mf
-     , HasProverState seqty m
-     , HasProverEnvironment seqty m
-     , Ord seqty
-     , Eq seqty
-     )
+  :: SearchConstraint m mf seqty
   => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (mf seqty)
 doSearch initialSequents initialRules = do
-  addInactives (map initialIsBSChecked initialList)
+  addInactives (fmap initialIsBSChecked initialList)
   addRules initialRules
-  (<|>) <$> (haveGoal (map initialIsFSChecked initialList)) <*> otterLoop
+  liftM2 mplus (haveGoal (fmap initialIsFSChecked initialList)) otterLoop
   where
     initialList = S.toList initialSequents
 
-otterLoop
-  :: forall m mf seqty .
-     ( Monad m
-     , MonadFail mf
-     , Alternative mf
-     , HasProverState seqty m
-     , HasProverEnvironment seqty m
-     , Ord seqty
-     , Eq seqty
-     )
-  => m (mf seqty)
+otterLoop :: SearchConstraint m mf seqty => m (mf seqty)
 otterLoop = do
   inactive <- popInactive
   case inactive of
-    Nothing -> return $ fail "search space saturated"
-    Just sequent -> do
-      res <- processNewActive sequent
-      subRes <- filterSubsequents (S.toList $ resSequents res)
-      unsubSeqs <- filterUnsubsumed subRes
-      unsubSeqs' <- removeSubsumedByAll unsubSeqs
-      addInactives unsubSeqs'
-      addRules (resRules res)
-      (<|>) <$> (haveGoal unsubSeqs) <*> otterLoop
+    Left Saturated -> return $ failSaturated
+    Left ThresholdBreak -> return $ failThresholdBreak
+    Right sequent ->
+      do
+        res <- processNewActive sequent
+        subRes <- filterSubsequents (S.toList $ resSequents res)
+        unsubSeqs <- filterUnsubsumed subRes
+        unsubSeqs' <- removeSubsumedByAll unsubSeqs
+        addInactives unsubSeqs'
+        addRules (resRules res)
+        liftM2 mplus (haveGoal unsubSeqs) otterLoop
 
 processNewActive
   :: (Monad m, HasProverState seqty m, Ord seqty)
@@ -109,15 +104,16 @@ resRules :: RuleAppRes seqty -> [Rule seqty]
 resRules r = snd r
 
 partitionRuleRes
-  :: (CanMap f, CanPartitionEithers f, Foldable f, Ord seqty)
+  :: (Foldable f, Ord seqty)
   => f (RuleRes seqty) -> RuleAppRes seqty
 partitionRuleRes =
-  (S.fromList . toList *** toList) . partitionEithers . filterOut . map unRel
+  (S.fromList . toList *** toList) .
+  partitionEithers . filterOut . fmap unRel . toList
 
 applyAll
-  :: (Ord seqty, Foldable f, CanPartitionEithers f, CanMap f)
+  :: (Ord seqty, Foldable f, CanPartitionEithers f)
   => f (Rule seqty) -> ActiveSequent seqty -> RuleAppRes seqty
-applyAll rules as = partitionRuleRes . map ($ as) $ rules
+applyAll rules as = partitionRuleRes . fmap ($ as) . toList $ rules
 
 percolate
   :: Ord seqty

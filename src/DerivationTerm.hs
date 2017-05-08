@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -5,10 +6,10 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 
-module DerivationTerm where
+module DerivationTerm (DerTerm(..), SimpleDerTerm, transitions) where
 
--- import Formula
 import RelFormula
+import SFormula
 
 class DerTerm term eb cs a l where
   init :: BioFormula a -> term
@@ -18,113 +19,70 @@ class DerTerm term eb cs a l where
   implR :: term -> ImplFormula eb cs IRegular a l -> term
   implL :: term -> term -> ImplFormula eb cs IRegular a l -> term
 
-instance DerTerm (SimpleDerTerm eb cs a l) eb cs a l where
+instance DerTerm (SimpleDerTerm a) eb cs a l where
   init = Init
-  copy = Copy
-  conjR = ConjR
-  conjL = ConjL
-  implR = ImplR
-  implL = ImplL
+  copy d ax = Copy d (fromLAxiom (mapEbCsI mapU mapU $ ax))
+  conjR d d' _ = ConjR d d'
+  conjL d (Conj f1 f2 _) = ConjL d (stripDown f1) (stripDown f2)
+  implR d (ImplF a _ _ _ _) = ImplR d (stripDown a)
+  implL d d' (ImplF _ _ _ b _) =
+    ImplL d d' (fromLFormula (mapEbCsF mapU mapU b))
+
+data U a = U deriving (Eq, Ord)
+
+mapU :: f a -> U a
+mapU = const U
+
+stripDown :: LFormula eb cs k a l -> SFormula U U a
+stripDown = fromLFormula . mapEbCsF mapU mapU
 
 {-| Derivation term of the labelled forward sequent calculus. -}
-data SimpleDerTerm eb cs a l :: *
-  {- init(p) :: . ; p # p ---> p -}
-      where
-  Init :: BioFormula a -> SimpleDerTerm eb cs a l
-  {-
-        D :: G, D, l # A ---> C
-    ---------------------------------
-    copy(D, l # A) :: G+l#A ; D ---> C
-  -}
-  Copy :: SimpleDerTerm eb cs a l -> Axiom eb cs a l -> SimpleDerTerm eb cs a l
-  {-
-        D :: G, D ---> A      D' :: G', D' ---> B
-     -----------------------------------------------
-     oR(D, D' ; r # A o B) :: G+G'; D, D' ---> A o B
-  -}
+data SimpleDerTerm a :: * where
+  Init :: BioFormula a -> SimpleDerTerm a
+  Copy :: SimpleDerTerm a -> SAxiom U U a -> SimpleDerTerm a
   ConjR
-    :: SimpleDerTerm eb cs a l
-    -> SimpleDerTerm eb cs a l
-    -> LFormula eb cs KConj a l
-    -> SimpleDerTerm eb cs a l
-  {-
-                  D :: G, D, l1 # A, l2 # B ---> C
-     ----------------------------------------------------------
-     oL(D, l1 # A, l2 # B, l # A o B) :: G, D, l # A o B ---> C
-  -}
+    :: SimpleDerTerm a
+    -> SimpleDerTerm a
+    -> SimpleDerTerm a
   ConjL
-    :: SimpleDerTerm eb cs a l
-    -> LFormula eb cs KConj a l
-    -> SimpleDerTerm eb cs a l
-  {-
-             D :: G, D, l # A ---> B
-    ----------------------------------------------
-    -oR(D, l # A ; r # A -o B) :: G, D ---> A -o B
-  -}
+    :: SimpleDerTerm a
+    -> SFormula U U a
+    -> SFormula U U a
+    -> SimpleDerTerm a
   ImplR
-    :: SimpleDerTerm eb cs a l
-    -> ImplFormula eb cs IRegular a l
-    -> SimpleDerTerm eb cs a l
-  {-
-        D :: G, D ---> r # A       D' :: G', D', l # B ---> C
-    -----------------------------------------------------------------
-    -oL(D, D', l # B ; s # A -o B) :: G+G' ; D, D', s # A -o B ---> C
-  -}
+    :: SimpleDerTerm a -> SFormula U U a -> SimpleDerTerm a
   ImplL
-    :: SimpleDerTerm eb cs a l -- D
-    -> SimpleDerTerm eb cs a l -- D'
-    -> ImplFormula eb cs IRegular a l
-    -> SimpleDerTerm eb cs a l
+    :: SimpleDerTerm a
+    -> SimpleDerTerm a
+    -> SFormula U U a
+    -> SimpleDerTerm a
 
--- {-| Derivation term of the labelled forward sequent calculus. -}
--- data DerTerm l a :: * where
---   {- init(p) :: . ; p # p ---> p -}
---   Init :: BioFormula a -> DerTerm l a
+deriving instance (Eq a, Ord a) => Eq (SimpleDerTerm a)
+deriving instance Ord a => Ord (SimpleDerTerm a)
 
---   {-
---         D :: G, D, l # A ---> C
---     ---------------------------------
---     copy(D, l # A) :: G+l#A ; D ---> C
---   -}
---   Copy :: DerTerm l a -> Label l a -> SFormula a -> DerTerm l a
+instance Show a => Show (SimpleDerTerm a) where
+  show (Init x) = "init(" ++ show x ++ ")"
+  show (Copy d a) = "copy(" ++ show d ++ "," ++ show a ++ ")"
+  show (ConjR d d') = "⊗R(" ++ show d ++ "," ++ show d' ++ ")"
+  show (ConjL d a b) = "⊗L(" ++ show d ++ "," ++ show a ++ "," ++ show b ++ ")"
+  show (ImplR d a) = "→R(" ++ show d ++ "," ++ show a ++ ")"
+  show (ImplL d d' b) = "→L(" ++ show d ++ "," ++ show d' ++ "," ++ show b ++ ")"
 
---   {-
---         D :: G, D ---> A      D' :: G', D' ---> B
---      -----------------------------------------------
---      oR(D, D' ; r # A o B) :: G+G'; D, D' ---> A o B
---   -}
---   ConjR :: DerTerm l a -> DerTerm l a -> l -> DerTerm l a
+--------------------------------------------------------------------------------
 
---   {-
---                   D :: G, D, l1 # A, l2 # B ---> C
---      ----------------------------------------------------------
---      oL(D, l1 # A, l2 # B, l # A o B) :: G, D, l # A o B ---> C
---   -}
---   ConjL
---     :: DerTerm l a
---     -> Label l a
---     -> SFormula a
---     -> Label l a
---     -> SFormula a
---     -> l
---     -> DerTerm l a
+conclusion :: SimpleDerTerm a -> SFormula U U a
+conclusion (Init a) = sAtom a
+conclusion (Copy d _) = conclusion d
+conclusion (ConjR d d') = sConj (conclusion d) (conclusion d')
+conclusion (ConjL d _ _) = conclusion d
+conclusion (ImplR d a) = sImpl a U U (conclusion d)
+conclusion (ImplL _ d' _) = conclusion d'
 
---   {-
---              D :: G, D, l # A ---> B
---     ----------------------------------------------
---     -oR(D, l # A ; r # A -o B) :: G, D ---> A -o B
---   -}
---   ImplR :: DerTerm l a -> Label l a -> SFormula a -> l -> DerTerm l a
-
---   {-
---         D :: G, D ---> r # A       D' :: G', D', l # B ---> C
---     -----------------------------------------------------------------
---     -oL(D, D', l # B ; s # A -o B) :: G+G' ; D, D', s # A -o B ---> C
---   -}
---   ImplL
---     :: DerTerm l a -- D
---     -> DerTerm l a -- D'
---     -> Label l a
---     -> SFormula a
---     -> l -- s
---     -> DerTerm l a
+transitions :: SimpleDerTerm a -> [(SFormula U U a, SFormula U U a)]
+transitions (Init _) = []
+transitions (Copy d _) = transitions d
+transitions (ConjR d1 d2) = transitions d1 ++ transitions d2
+transitions (ConjL d _ _) = transitions d
+transitions (ImplR d _) = transitions d
+transitions (ImplL d1 d2 b) =
+  transitions d1 ++ [(conclusion d1, b)] ++ transitions d2

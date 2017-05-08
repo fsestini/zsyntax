@@ -1,4 +1,5 @@
 module Main where
 
-main :: IO ()
-main = undefined
+import AppMonad
+
+main = loopIO

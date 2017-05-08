@@ -1,8 +1,12 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ExistentialQuantification #-}
+
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Rel
   ( Rel
@@ -19,6 +23,7 @@ import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
 import Control.Applicative
+import Data.Foldable
 
 {-| A Rel object represents a curried function with an unbounded, unspecified
     number of input arguments, possibly zero.
@@ -34,9 +39,9 @@ import Control.Applicative
 data Rel a b = Rel { unRel :: Maybe (Either b (a -> Rel a b)) }
 
 filterPartitionRel
-  :: (CanPartitionEithers t, CanMap t)
-  => t (Rel a b) -> (t b, t (a -> Rel a b))
-filterPartitionRel = partitionEithers . filterOut . map unRel
+  :: Foldable t -- (CanPartitionEithers t, CanMap t)
+  => t (Rel a b) -> ([b], [(a -> Rel a b)])
+filterPartitionRel = partitionEithers . filterOut . fmap unRel . toList
 
 liftMaybeToRel :: Maybe b -> Rel a b
 liftMaybeToRel m = Rel (fmap Left m)

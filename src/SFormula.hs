@@ -1,16 +1,27 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module SFormula
-  ( SFormula
+  ( SFormula(..)
+  , SAxiom(..)
   , Sequent(..)
   , sAtom
   , sConj
   , sImpl
   , neutralize
---  , fromLFormula
+  , sAxiomIsSFormula
+  , fromLFormula
+  , fromLAxiom
   , BioFormula(..)
+  , LFormula(..)
+  , pattern Impl
+  , OLFormula(..)
+  , ElemBase(..)
+  , ControlSet(..)
+  , ImplFormula(..)
+  , sAx
   ) where
 
 import RelFormula
@@ -21,15 +32,25 @@ import UnrestrContext
 import LinearContext
 import Context
 import Data.Foldable
+import qualified TypeClasses as T
 
 --------------------------------------------------------------------------------
 
 -- Simple formulas
-newtype SFormula eb cs a = SF (OLFormula eb cs a ()) deriving Show
+newtype SFormula eb cs a = SF (OLFormula eb cs a ())
 newtype NSFormula eb cs a = NSF
   { unNSF :: (NeutralFormula eb cs a ())
   } deriving (Show)
-newtype SAxiom eb cs a = SA {unSA :: (Axiom eb cs a ())} deriving Show
+newtype SAxiom eb cs a = SA {unSA :: (Axiom eb cs a ())}
+
+sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom eb cs a
+sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
+
+instance Show a => Show (SFormula eb cs a) where
+  show (SF (OLF f)) = deepShowFormula f
+
+instance Show a => Show (SAxiom eb cs a) where
+  show (SA ax) = deepShowImpl ax
 
 instance (Ord a, Ord (eb a), Ord (cs a)) =>
          Eq (SFormula eb cs a) where
@@ -59,11 +80,16 @@ sImpl :: SFormula eb cs a
 sImpl (SF (OLF f1)) eb cs (SF (OLF f2)) = SF (OLF (Impl f1 eb cs f2 ()))
 
 fromLFormula
-  :: OLFormula eb cs a l -> SFormula eb cs a
-fromLFormula = SF . fmap (const ())
+  :: LFormula eb cs k a l -> SFormula eb cs a
+fromLFormula = SF . OLF . fmap (const ())
 
 fromLAxiom :: Axiom eb cs a l -> SAxiom eb cs a
 fromLAxiom = SA . fmap (const ())
+
+sAxiomIsSFormula
+  :: ElemBase eb a
+  => SAxiom eb cs a -> SFormula eb cs a
+sAxiomIsSFormula (SA a) = SF . OLF $ (axiomIsFormula a)
 
 --------------------------------------------------------------------------------
 -- Sequents.

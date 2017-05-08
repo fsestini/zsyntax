@@ -3,6 +3,11 @@
 
 module Prover
   ( proverSearch
+  , SearchPair(..)
+  , SearchMonad(..)
   ) where
 
 import Prover.Transformer
+import Prover.Structures
+import Prover.Class
+import Prover.Search
