@@ -1,6 +1,6 @@
 \section{The Inverse Method}
 
-\subsection{Multiplicative non-determinism}
+\subsection{Rationale}
 
 ... TODO. .... rationale for a forward calulus...
 
@@ -155,7 +155,9 @@
 
 % ...
 
-\subsection{Subformula property}
+\subsection{Forward calculus}
+
+\subsubsection{Subformula property}
 
 The key technical property that makes the inverse method possible is the
 \emph{subformula property}. Logical calculi with the subformula property are
@@ -171,6 +173,423 @@ ourselves to observe that every derivation in the Zsyntax forward calculus above
 corresponds to a structurally identical derivation in intuitionistic linear
 logic as in [cmu thesis]. It is then easy to convince ourselves that our
 calculus has the subformula property.
+
+\subsection{Forward derived rules}
+
+In Section [TODO] we added a light form of focusing to our backward calculus
+that allows us to generate derived rules that speed up the proof search process.
+In this section we introduced the inverse method, another technique for
+automated deduction that is particularly useful in logics (as the one we are
+using) with multiplicative connectives since it perform proof search in the
+forward direction to eliminate multiplicative non-determinism. As the final
+objective is to use forward search and the inverse method in conjunction with
+(lightweight) focusing for Zsyntax, we need to adapt the backward calculus of
+derived rules of the previous section to the forward direction. Again, we follow
+[cmu thesis] as a model.
+
+\begin{definition}[Forward pre-sequent]
+  A forward presequent is a term of the form
+  $\zfneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$, where either
+
+  \begin{enumerate}
+  \item $\zeta = \gamma = \cdot$, or
+  \item $\zeta = \ctrlset{}$ and $\gamma = C$, for some control set $\ctrlset{}$
+    and formula $C$.
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}[Forward relation]
+  Forward relations are inductively defined as follows:
+
+  \begin{enumerate}
+  \item $\relj{\frfrel{A}}{\Sigma}{s}$, where $A$ is a formula, $\Sigma$ is a
+    list of forward neutral sequents, and $s$ is a forward presequent.
+  \item $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}} }{\Sigma}{s}$,
+    where $\Delta$, $\Omega$, $\Sigma$ and $s$ are as before, and either
+    \begin{enumerate}
+    \item $\zeta = \gamma = \cdot$, or
+    \item $\zeta = \ctrlset{}$ and $\xi = C$, for some control set $\ctrlset{}$
+      and formula $C$.
+    \end{enumerate}
+  \end{enumerate}
+\end{definition}
+
+Figure~\ref{fig:fwdderrulecalculus} show the calculus to derived forward
+relations as judgements. As now we consider the forward direction, the intuitive
+interpretation of a forward relation is now to go from a list of known premise
+sequents $\Sigma$ to the conclusion $s$ that follows from them according to how
+the relation has been derived.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\zfneuseqempty{\cdot}{p}}
+        \using{\init}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{R}}{
+          \zfneuseqempty{\Gamma}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\zfneuseqempty{\Gamma_2}{\Delta_2}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{
+          \zfneuseqempty{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A, B}{\zeta}{\xi}}
+        }{\Sigma}{s}
+        \justifies
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A \otimes B}{\zeta}{\xi}}
+        }{\Sigma}{s}
+        \using{\otimes A}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        \relj{\factrel{\zsyseq{\Delta, P}{\Omega}{\zeta}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\zsyseq{\Delta}{\Omega, P}{\zeta}{\xi}}}{\Sigma}{s}
+        \using{\actrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\cdot}{\cdot}}
+        }{
+          \zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}
+        }{
+          \zfneuseq{\Gamma}{\Delta'}{\ctrlset{}}{C}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\ctrlset{}}{C}}
+        }{
+          \zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}
+        }{
+          \zfneuseqempty{\Gamma}{\Delta'}
+        }
+        \using{\matchprimerule}
+      \end{prooftree}
+    \]
+
+  \end{mdframed}
+  \caption{Forward focused relations calculus}
+  \label{fig:fwdrulescalculus}
+\end{figure}
+
+As in the backward case, we use the forward relations to build a calculus of
+derived rules that has neutral (forward) sequents as premises and
+conclusions. Rules are again generated from focusable formulas, implications and
+axioms. The full calculus is shown in Figure~\ref{fig:fwdderrulecalculus}.
+
+\begin{figure}[h]
+  \begin{mdframed}
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+    \justifies
+    \zfneuseq{\Gamma}{\Delta}{\emptyset}{Q}
+    \using{\focplusrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \[
+      \relj{\frfrel{A}}{s_1, \dots, s_n}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      \relj{\factrel{
+            \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+        }{s}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}
+    \]
+    \quad
+    \[
+      \respects{\Delta_2}{\ctrlset{}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      s_1 \quad \dots \quad s_n \quad s
+    \]
+    \justifies
+    \zfneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2,
+      A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{}\cup\ctrlset{}'}{C}
+    \using{\rightarrow L}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \[
+      \relj{\frfrel{A}}{s_1, \dots, s_n}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      \relj{\factrel{
+            \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+        }{s}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}
+    \]
+    \quad
+    \[
+      \respects{\Delta_2}{\ctrlset{}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      s_1 \quad \dots \quad s_n \quad s
+    \]
+    \justifies
+    \zfneuseq{\Gamma_1, \Gamma_2, A \rightarrow_{\ctrlset{}}^{\emptyset} B
+    }{\Delta_1, \Delta_2,
+      }{\ctrlset{}\cup\ctrlset{}'}{C}
+    \using{\copyrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    s \qquad
+    \relj{\factrel{\zsyseq{\cdot}{A}{\ctrlset{}}{B}}}{s}{
+      \zfneuseqempty{\Gamma}{\Delta}}
+    \justifies
+    \zfneuseq{\Gamma}{\Delta}{\emptyset}{A
+      \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+    \using{\rightarrow R}
+  \end{prooftree}
+\]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus}
+  \label{fig:fwdderrulecalculus}
+\end{figure}
+
+\begin{definition}
+  The sequent $\zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$ is sound if
+  $\ztriseq{\Gamma}{\Delta}{\cdot}{\ctrlset{}}{Q}$.
+\end{definition}
+
+\begin{lemma}\label{fsoundnesslemma}
+  If all sequents in $\Sigma$ are sound, then
+
+  \begin{enumerate}
+  \item If $\relj{\frfrel{A}}{\Sigma}{\zfneuseqempty{\Gamma}{\Delta}}$,
+    then, $\zfocseq{\Gamma}{\Delta}{A}$;
+  \item If
+    $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\cdot}{\cdot}}}{\Sigma}
+    {\zfneuseq{\Gamma}{\Delta'}{\ctrlset{}}{C}}$, then
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\ctrlset{}}{C}$;
+  \item If
+    $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\ctrlset{}}{C}}}{\Sigma}
+    {\zfneuseqempty{\Gamma}{\Delta'}}$, then
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\ctrlset{}}{C}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved by simultaneous induction on the height of the
+  derivation. We distinguish cases on the last rule used in the derivation:
+
+  \begin{itemize}
+  \item Case $\init$. Immediate.
+
+  \item Case $\faplus{}$.
+
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{R}}{
+          \zfneuseqempty{\Gamma}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By hypothesis $\zfneuseq{\Gamma}{\Delta}{\emptyset}{R}$ is sound, therefore
+    $\ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{R}$. Then,
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{R}
+        \justifies
+        \zfocseq{\Gamma}{\Delta}{R}
+        \using{blur}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis, weakening and $\otimes R$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma_1}{\Delta_1}{A}
+          \justifies
+          \zfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{A}
+        \]
+        \qquad
+        \[
+          \zfocseq{\Gamma_2}{\Delta_2}{B}
+          \justifies
+          \zfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{B}
+        \]
+        \justifies
+        \zfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes A$ and act: we thesis follows immediately by inductive
+    hypothesis and an application of the corresponding rule of the focused calculus.
+
+  \item Case $\matchrule$ and $\matchprimerule$: the thesis follows immediately
+    from the hypothesis that $\Sigma$ are sound.
+  \end{itemize}
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$, then it is sound.
+\end{theorem}
+\begin{proof}
+  By induction on the height of the derivation of
+  $\zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$.
+
+  \begin{enumerate}
+  \item Case $focus$.
+    If $Q$ is an implication, the rule is just an identity. Otherwise, by
+    Lemma~\ref{fsoundnesslemma}, $\zfocseq{\Gamma}{\Delta}{Q}$. The thesis
+    follows by an application of the $focus$ rule.
+
+  \item Case $\rightarrow L$.
+    The thesis follows by Lemma~\ref{fsoundnesslemma}, weakening, and
+    $\rightarrow L$ of the focused calculus.
+
+  \item Case $\copyrule$ is the same as $\rightarrow L$, with the addition of a
+    concluding $\copyrule$ rule of the focused calculus.
+
+  \item Case $\rightarrow R$.
+    The thesis follows easily by Lemma~\ref{fsoundnesslemma}, and an application
+    of $\rightarrow R$ of the focused calculus.
+
+  \end{enumerate}
+\end{proof}
+
+Completeness is established with respect to the backward calculus of derived
+rules. All proofs go through smoothly as expected, since the forward calculus is
+structurally identical to the backward one.
+
+\begin{definition}[Stronger forms]
+  A forward sequent $\zfneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$ is said to be
+  stronger than a backward sequent
+  $\zbneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$, written as a relation
+  $\preceq$, if $\Gamma \subseteq \Gamma'$, where $\zeta = \cdot$ or
+  $\ctrlset{}$ for some $\ctrlset{}$, and $\gamma = \cdot$ or $C$ for some $C$.
+\end{definition}
+
+The above relation is assumed to be extended point-wise to ordered sequences of
+sequents.
+
+\begin{lemma}\label{fdercompllemma}
+  \begin{enumerate}
+  \item If $\brfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence of
+    sequents $\Sigma' \preceq \Sigma$, then $\frfrelj{A}{\Sigma'}{s'}$ for some
+    $s' \preceq s$;
+  \item If $\bactrelj{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}}{s}{\Sigma}$ and
+    there exists a derivable sequence $\Sigma' \preceq \Sigma$, then
+    $\factrelj{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}}{\Sigma'}{s'}$ for some
+    $s' \preceq s$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved simultaneously by an easy induction on the height of the
+  backward relation derivation. We sketch a few cases below.
+
+  \begin{enumerate}
+  \item Case $\faplus$. Then
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\brfrel{R}}{\bkwseq{\Gamma}{\Delta}{\cdot}}{\zsyseq{\Gamma}{\Delta}{\emptyset}{R}}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+
+    Suppose there are $\Sigma' \preceq \Sigma$.
+    Then, it must be that $\Sigma' \equiv
+    \zfneuseq{\Gamma'}{\Delta}{\emptyset}{R}$, with $\Gamma' \subseteq \Gamma$.
+    But then
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma'}{\Delta}{\emptyset}{R}}{
+          \zfneuseqempty{\Gamma'}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    with $s' \equiv \zfneuseqempty{\Gamma'}{\Delta}$, which clearly satisfies
+    the thesis as wanted.
+
+  \item Case $\otimes A$.
+    Suppose $\Sigma' \preceq \Sigma$. Then, the thesis follows by inductive
+    hypothesis and an application of $\otimes A$ in the forward derived rule
+    calculus.
+
+  \item The other cases are treated similarly.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$, then
+  $\zfneuseq{\Gamma'}{\Delta}{\ctrlset{}}{Q}$ for some
+  $\Gamma' \subseteq \Gamma$.
+\end{theorem}
+\begin{proof}
+  Easy induction on the derivation of $\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$ and
+  application of Lemma~\ref{fdercompllemma} on the premises.
+\end{proof}
+
+
 
 %%% Local Variables:
 %%% mode: latex
