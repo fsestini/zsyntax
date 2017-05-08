@@ -1,3 +1,4 @@
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -7,6 +8,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Prover.Transformer (proverSearch) where
 
@@ -23,6 +26,7 @@ import Formula
 import Rule
 import Control.Monad.Trans.State.Lazy hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
+import Data.Foldable
 
 import ForwardSequent
 import TypeClasses
@@ -34,23 +38,12 @@ import Prover.Search
 --------------------------------------------------------------------------------
 
 proverSearch'
-  :: ( MonadFail mf
-     , Monad m
-     , Alternative mf
-     , Ord seqty
-     , ForwardSequent seqty
-     , ForwardSequent goalty
-     , Coercible seqty goalty
-     )
-  => S.Set (SearchSequent Initial seqty)
-  -> [Rule seqty]
-  -> ProverT seqty goalty m (mf seqty)
-proverSearch' = doSearch
+  :: _
+  => f seqty -> [Rule seqty] -> ProverT seqty goalty m (mf seqty)
+proverSearch' seqs rules =
+  doSearch (S.fromList . fmap initialize . toList $ seqs) rules
 
-proverSearch neutral = runProverT (proverSearch' initS initR) labelled
-  where
-    (initS, initR) = initialSequentsAndRules neutral
-    labelled = toLabelledSequent neutral
+proverSearch seqs rules = runProverT (proverSearch' seqs rules)
 
 --------------------------------------------------------------------------------
 -- ProverT monad transformer
@@ -113,8 +106,11 @@ instance (Monad m, Ord seqty, ForwardSequent seqty) =>
     put (PS r as newIs gi)
     return bschecked
 
-instance (Monad m, ForwardSequent goalty, Coercible seqty goalty) =>
+instance (Monad m, ForwardSequent goalty, SearchPair seqty goalty) =>
          HasProverEnvironment seqty (ProverT seqty goalty m) where
+  isSubsequent concl = do
+    gs <- goalSequent <$> ask
+    return $ isSubsequentOp concl gs
   subsumesGoal s = do
     gs <- goalSequent <$> ask
     return $ s `Prover.Structures.subsumesGoalOp` gs

@@ -80,7 +80,8 @@ otterLoop = do
     Nothing -> return $ fail "search space saturated"
     Just sequent -> do
       res <- processNewActive sequent
-      unsubSeqs <- filterUnsubsumed (S.toList . resSequents $ res)
+      subRes <- filterSubsequents (S.toList $ resSequents res)
+      unsubSeqs <- filterUnsubsumed subRes
       unsubSeqs' <- removeSubsumedByAll unsubSeqs
       addInactives unsubSeqs'
       addRules (resRules res)

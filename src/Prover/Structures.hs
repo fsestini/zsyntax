@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE GADTs #-}
@@ -17,6 +18,7 @@ module Prover.Structures
   , GlobalIndex
   , Rule
   , RuleRes
+  , SearchPair
   , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
@@ -29,24 +31,27 @@ module Prover.Structures
   , addToInactives
   , addToIndex
   , foldActives
-  , Prover.Structures.initialSequentsAndRules
-  , isGoal
+  --, isGoal
   , makeGoal
   , emptyActives
   , emptyInactives
   , emptyGlobalIndex
+  , isSubsequentOp
   ) where
 
-import Data.Profunctor
-import Control.Arrow
+import Prelude hiding (fail)
 import Control.Monad.Fail
 import qualified Data.Set as S
 import Rel
-import Relation (DLSequent)
-import Prover.Frontier (initialSequentsAndRules)
-import Formula
 import ForwardSequent
 import TypeClasses (Coercible(..))
+
+--------------------------------------------------------------------------------
+
+class (ForwardSequent seqty, ForwardSequent goalty) =>
+      SearchPair seqty goalty where
+  isSubsequent :: seqty -> goalty -> Bool
+  subsumesGoal :: seqty -> goalty -> Bool
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -58,6 +63,7 @@ data Stage
   | Concl      -- | Conclusion sequent
   | FSChecked  -- | Forward subsumption-checked
   | BSChecked  -- | Backward subsumption-checked
+  | SSChecked  -- | Subsequent of goal-checked
   | GlIndex    -- | Global index sequent
   | Goal       -- | Goal sequent
 
@@ -68,6 +74,7 @@ data SearchSequent :: Stage -> * -> * where
   ConclSS :: seq -> SearchSequent Concl seq
   FSCheckedSS :: seq -> SearchSequent FSChecked seq
   BSCheckedSS :: seq -> SearchSequent BSChecked seq
+  SSCheckedSS :: seq -> SearchSequent SSChecked seq
   GlIndexSS :: seq -> SearchSequent GlIndex seq
   GoalSS :: seq -> SearchSequent Goal seq
 
@@ -78,6 +85,7 @@ extractSequent (InactiveSS s) = s
 extractSequent (ConclSS s) = s
 extractSequent (BSCheckedSS s) = s
 extractSequent (FSCheckedSS s) = s
+extractSequent (SSCheckedSS s) = s
 extractSequent (GlIndexSS s) = s
 extractSequent (GoalSS s) = s
 
@@ -151,13 +159,13 @@ foldActives
   -> b
 foldActives folder (AS actives) = folder actives
 
-isGoal
-  :: ForwardSequent seqty
-  => SearchSequent Goal seqty -> SearchSequent FSChecked seqty -> Maybe seqty
-isGoal (GoalSS goal) (FSCheckedSS fss) =
-  if fss `subsumes` goal
-    then Just fss
-    else Nothing
+-- isGoal
+--   :: ForwardSequent seqty
+--   => SearchSequent Goal seqty -> SearchSequent FSChecked seqty -> Maybe seqty
+-- isGoal (GoalSS goal) (FSCheckedSS fss) =
+--   if fss `subsumes` goal
+--     then Just fss
+--     else Nothing
 
 activate
   :: Ord seqty
@@ -187,12 +195,22 @@ addToInactives
   -> InactiveSequents seqty
 addToInactives (IS ins) (BSCheckedSS s) = IS (S.insert (InactiveSS s) ins)
 
+isSubsequentOp
+  :: (SearchPair seqty goalty, MonadFail mf)
+  => SearchSequent Concl seqty
+  -> SearchSequent Goal goalty
+  -> mf (SearchSequent SSChecked seqty)
+isSubsequentOp (ConclSS s) (GoalSS goal) =
+  if isSubsequent s goal
+    then return $ SSCheckedSS s
+    else fail "not a subsequent of the goal"
+
 fwdSubsumes
-  :: (ForwardSequent seqty, Show seqty)
+  :: (ForwardSequent seqty)
   => GlobalIndex seqty
-  -> SearchSequent Concl seqty
+  -> SearchSequent SSChecked seqty
   -> Maybe (SearchSequent FSChecked seqty)
-fwdSubsumes (GI globalIndex) (ConclSS s) =
+fwdSubsumes (GI globalIndex) (SSCheckedSS s) =
   if or . S.map (\gi -> extractSequent gi `subsumes` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
@@ -207,17 +225,17 @@ removeSubsumedByOp (FSCheckedSS s) (IS is) =
   , BSCheckedSS s)
 
 subsumesGoalOp
-  :: (ForwardSequent goalty, MonadFail mf, Coercible seqty goalty)
+  :: (ForwardSequent goalty, MonadFail mf, SearchPair seqty goalty)
   => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf seqty
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  if (coerce s1) `subsumes` s2
+  if s1 `subsumesGoal` s2
     then return s1
     else Control.Monad.Fail.fail "sequent does not subsumes goal"
 
-initialSequentsAndRules
-  :: (Eq a, Eq l, Ord l, Ord a)
-  => NeutralSequent l a
-  -> (S.Set (SearchSequent Initial (DLSequent l a)), [Rule (DLSequent l a)])
-initialSequentsAndRules =
-  (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .
-  Prover.Frontier.initialSequentsAndRules
+-- initialSequentsAndRules
+--   :: (Eq a, Eq l, Ord l, Ord a)
+--   => NeutralSequent l a
+--   -> (S.Set (SearchSequent Initial (DLSequent l a)), [Rule (DLSequent l a)])
+-- initialSequentsAndRules =
+--   (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .
+--   Prover.Frontier.initialSequentsAndRules

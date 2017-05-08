@@ -22,12 +22,15 @@ class HasProverState seqty m where
   addInactive :: SearchSequent BSChecked seqty -> m ()
   popInactive :: m (Maybe (ActiveSequent seqty))
   getActives :: m (ActiveSequents seqty)
-  isNotFwdSubsumed :: ConclSequent seqty
+  isNotFwdSubsumed :: SearchSequent SSChecked seqty
                    -> m (Maybe (SearchSequent FSChecked seqty))
   removeSubsumedBy :: SearchSequent FSChecked seqty
                    -> m (SearchSequent BSChecked seqty)
 
 class HasProverEnvironment seqty m where
+  isSubsequent
+    :: MonadFail mf
+    => ConclSequent seqty -> m (mf (SearchSequent SSChecked seqty))
   subsumesGoal
     :: MonadFail mf
     => SearchSequent FSChecked seqty -> m (mf seqty)
@@ -59,5 +62,14 @@ removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
   :: (HasProverState seqty m, Monad m, Traversable t, CanPartitionEithers t)
-  => t (ConclSequent seqty) -> m (t (SearchSequent FSChecked seqty))
+  => t (SearchSequent SSChecked seqty) -> m (t (SearchSequent FSChecked seqty))
 filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed
+
+filterSubsequents
+  :: ( HasProverEnvironment seqty m
+     , Monad m
+     , Traversable t
+     , CanPartitionEithers t
+     )
+  => t (ConclSequent seqty) -> m (t (SearchSequent SSChecked seqty))
+filterSubsequents = fmap filterOut . mapM isSubsequent
