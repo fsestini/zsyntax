@@ -28,8 +28,8 @@ import qualified Data.Set as S
 import Relation
 import Rel
 import Control.Arrow
-import DerivationTerm
-import SFormula (fromLFormula)
+-- import DerivationTerm
+-- import SFormula (fromLFormula)
 import Context
 
 --------------------------------------------------------------------------------
@@ -52,21 +52,21 @@ data FShape = NonAtomic | LBNAtom | RBNAtom | LBPAtom | RBPAtom
 
 -- | Decorated formulas
 data DecFormula :: (* -> *) -> (* -> *) -> * -> * -> * where
-  Unrestr :: Axiom eb cs l a -> DecFormula eb cs l a
-  --LinearNegativeAtom :: Atom b a -> DecFormula (NegFShape b) l a
-  LinearNegative :: ImplFormula eb cs IRegular l a -> DecFormula eb cs l a
-  --LinearPositiveAtom :: Atom b a -> DecFormula (PosFShape b) l a
-  LinearPositive :: ORelFormula eb cs l a -> DecFormula eb cs l a
+  Unrestr :: Axiom eb cs a l -> DecFormula eb cs a l
+  --LinearNegativeAtom :: Atom b a -> DecFormula (NegFShape b) a l
+  LinearNegative :: ImplFormula eb cs IRegular a l -> DecFormula eb cs a l
+  --LinearPositiveAtom :: Atom b a -> DecFormula (PosFShape b) a l
+  LinearPositive :: OLFormula eb cs a l -> DecFormula eb cs a l
   deriving (Eq, Ord)
 
--- instance (Ord a, Ord l) => Eq (ODecFormula l a) where
+-- instance (Ord a, Ord l) => Eq (ODecFormula a l) where
 --   (ODF f1) == (ODF f2) = compareODec f1 f2 == EQ
 
--- instance (Ord a, Ord l) => Ord (ODecFormula l a) where
+-- instance (Ord a, Ord l) => Ord (ODecFormula a l) where
 --   compare (ODF f1) (ODF f2) = compareODec f1 f2
 
 -- -- unrnegatom < unrneg < linnegatom < linneg < linposatom < linpos-}
--- compareODec :: (Ord a, Ord l) => DecFormula s1 l a -> DecFormula s2 l a -> Ordering
+-- compareODec :: (Ord a, Ord l) => DecFormula s1 a l -> DecFormula s2 a l -> Ordering
 -- compareODec (UnrestrNegativeAtom a1) (UnrestrNegativeAtom a2) = compareAtom a1 a2
 -- compareODec (UnrestrNegative f1) (UnrestrNegative f2) = compareLF f1 f2
 -- compareODec (LinearNegativeAtom a1) (LinearNegativeAtom a2) = compareAtom a1 a2
@@ -90,18 +90,18 @@ data DecFormula :: (* -> *) -> (* -> *) -> * -> * -> * where
 -- compareODec (LinearPositiveAtom _) _ = LT
 -- compareODec (LinearPositive _) _ = GT
 
--- toUnrestrNeg :: OLFormula l a -> ODecFormula l a
+-- toUnrestrNeg :: OLFormula a l -> ODecFormula a l
 -- toUnrestrNeg (OLF (FAtom a)) = ODF . UnrestrNegativeAtom $ a
 -- toUnrestrNeg (OLF f@(FConj _ _ _)) = ODF . UnrestrNegative $ f
 -- toUnrestrNeg (OLF f@(FImpl _ _ _)) = ODF . UnrestrNegative $ f
 
--- toLinearNeg :: OLSLFormula l a -> ODecFormula l a
+-- toLinearNeg :: OLSLFormula a l -> ODecFormula a l
 -- toLinearNeg (OLSLF f) =
 --   case decideLS f of
 --     Left (OA atom) -> ODF . LinearNegativeAtom $ atom
 --     Right formula -> ODF . LinearNegative $ formula
 
--- toLinearPositive :: (IsRightSynchronous p) => LFormula p l a -> ODecFormula l a
+-- toLinearPositive :: (IsRightSynchronous p) => LFormula p a l -> ODecFormula a l
 -- toLinearPositive f =
 --   case decideRS f of
 --     Left (OA atom) -> ODF . LinearPositiveAtom $ atom
@@ -110,19 +110,19 @@ data DecFormula :: (* -> *) -> (* -> *) -> * -> * -> * where
 --------------------------------------------------------------------------------
 -- Frontier computation
 
-filterImpl :: [NeutralFormula eb cs l a] -> [ImplFormula eb cs IRegular l a]
+filterImpl :: [NeutralFormula eb cs a l] -> [ImplFormula eb cs IRegular a l]
 filterImpl = filterOut . map aux
   where
-    aux :: NeutralFormula eb cs l a -> Maybe (ImplFormula eb cs IRegular l a)
+    aux :: NeutralFormula eb cs a l -> Maybe (ImplFormula eb cs IRegular a l)
     aux (NF (Impl' f)) = Just f
     aux _ = Nothing
 
 -- | Computes the frontier of a labelled sequent.
 frontier
   :: forall a l eb cs . (Ord a, Ord l, ElemBase eb a)
-  => NeutralSequent eb cs l a -> S.Set (DecFormula eb cs l a)
-frontier (NS uc lc _ (ORF goal)) =
-  toplevelUC <> toplevelLC <> S.singleton (LinearPositive (ORF goal)) <>
+  => NeutralSequent eb cs a l -> S.Set (DecFormula eb cs a l)
+frontier (NS uc lc _ (OLF goal)) =
+  toplevelUC <> toplevelLC <> S.singleton (LinearPositive (OLF goal)) <>
   ucFrontier <>
   linFrontier <>
   goalFrontier
@@ -135,22 +135,22 @@ frontier (NS uc lc _ (ORF goal)) =
     linFrontier = fold . map frNeg . asFoldable toList $ lc
     goalFrontier = frPos goal
 
-frNeg :: NeutralFormula eb cs l a -> S.Set (DecFormula eb cs l a)
+frNeg :: Ord l => NeutralFormula eb cs a l -> S.Set (DecFormula eb cs a l)
 frNeg f@(NF (Atom _)) = mempty
 frNeg f@(NF (Impl a _ _ b _)) = foc a <> act b
 
-frPos :: RelFormula eb cs k l a -> S.Set (DecFormula eb cs l a)
+frPos :: Ord l => LFormula eb cs k a l -> S.Set (DecFormula eb cs a l)
 frPos (Atom _) = mempty
 frPos f@(Conj _ _ _) = foc f
 frPos (Impl a _ _ b _) =
-  act a <> frPos b <> S.singleton (LinearPositive (ORF b))
+  act a <> frPos b <> S.singleton (LinearPositive (OLF b))
 
-foc :: RelFormula eb cs k l a -> S.Set (DecFormula eb cs l a)
+foc :: Ord l => LFormula eb cs k a l -> S.Set (DecFormula eb cs a l)
 foc (Atom _) = mempty
 foc (Conj f1 f2 _) = foc f1 <> foc f2
-foc f@(Impl _ _ _ _ _) = S.singleton (LinearPositive (ORF f)) <> frPos f
+foc f@(Impl _ _ _ _ _) = S.singleton (LinearPositive (OLF f)) <> frPos f
 
-act :: RelFormula eb cs k l a -> S.Set (DecFormula eb cs l a)
+act :: Ord l => LFormula eb cs k a l -> S.Set (DecFormula eb cs a l)
 act a@(Atom _) = mempty
 act (Conj a b _) = act a <> act b
 act f@(Impl' impl) = S.singleton (LinearNegative impl) <> frNeg (NF f)
@@ -168,9 +168,9 @@ act f@(Impl' impl) = S.singleton (LinearNegative impl) <> frNeg (NF f)
 -- instance Valid RBNAtom where
 -- instance Valid LBPAtom where
 
--- data ValidDecFormula l a = forall s . (Valid s) => VDF (DecFormula s l a)
+-- data ValidDecFormula a l = forall s . (Valid s) => VDF (DecFormula s a l)
 
--- decideValid :: ODecFormula l a -> Maybe (ValidDecFormula l a)
+-- decideValid :: ODecFormula a l -> Maybe (ValidDecFormula a l)
 -- decideValid (ODF decf) =
 --   case decf of
 --     UnrestrNegativeAtom (RBAtom _) -> Just . VDF $ decf
@@ -185,13 +185,13 @@ act f@(Impl' impl) = S.singleton (LinearNegative impl) <> frNeg (NF f)
 
 generateRule
   :: (BaseCtrl eb cs a, Ord l, Ord a)
-  => DecFormula eb cs l a
-  -> Rel (NeutralSequent eb cs l a) (NeutralSequent eb cs l a)
+  => DecFormula eb cs a l
+  -> Rel (NeutralSequent eb cs a l) (NeutralSequent eb cs a l)
 generateRule f =
   case f of
     Unrestr axiom -> copyRule axiom
     LinearNegative impl -> implLeft impl
-    LinearPositive (ORF orf) ->
+    LinearPositive (OLF orf) ->
       case orf of
         Atom _ -> focus orf
         Conj _ _ _ -> focus orf
@@ -200,12 +200,12 @@ generateRule f =
 -- --------------------------------------------------------------------------------
 -- -- Main function
 
-type UnaryRule eb cs l a = NeutralSequent eb cs l a -> Rule eb cs l a
+type UnaryRule eb cs a l = NeutralSequent eb cs a l -> Rule eb cs a l
 
 initialSequentsAndRules
   :: (Eq a, Eq l, Ord l, Ord a, BaseCtrl eb cs a, Ord (cs a))
-  => NeutralSequent eb cs l a
-  -> (S.Set (NeutralSequent eb cs l a), [UnaryRule eb cs l a])
+  => NeutralSequent eb cs a l
+  -> (S.Set (NeutralSequent eb cs a l), [UnaryRule eb cs a l])
 initialSequentsAndRules =
   frontier >>>
   S.toList >>>
@@ -217,9 +217,9 @@ initialSequentsAndRules =
 
 -- initialSequentsAndRules
 --   :: (Eq a, Eq l, Ord l, Ord a)
---   => NeutralSequent l a
---   -> (S.Set (DLSequent l a),
---        [(DLSequent l a -> Rel (DLSequent l a) (DLSequent l a))])
+--   => NeutralSequent a l
+--   -> (S.Set (DLSequent a l),
+--        [(DLSequent a l -> Rel (DLSequent a l) (DLSequent a l))])
 -- initialSequentsAndRules =
 --   frontier >>>
 --   S.toList >>>
