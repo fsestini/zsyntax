@@ -11,6 +11,90 @@
 
 ... blah we don't use the plain forward calculus directly, blah..
 
+
+
+The particular forward search strategy we use is the Inverse Method. The Inverse
+Method is a very general technique that can be applied to any sequent calculus
+enjoying the subformula property. The method works as follows: first, a goal
+sequent of which validity is to be decided is fixed. Then, the axioms and
+inference rules of the logic are specialized to the subformulas of the goal
+sequent, such that the principal formula in all inference rules is a subformula
+of the goal sequent. The search then proceeds by starting from the axioms and
+applying these rules to construct new sequents by matching the premises against
+previously derived sequents. New sequents that are not simply instances of
+sequents derived earlier are themselves then used in the inference rules to
+derive newer sequents. Eventually, assuming the search strategy is complete,
+either the goal sequent is derived, or the search space is saturated and the
+goal sequent is found to be unprovable.
+
+The inverse method provides a straightforward decision procedure for plain
+multiplicative linear logic, which is decidable. In particular, as the search
+space for any given goal sequent is finite, the search procedure is guaranteed
+to terminate either with a derivation of with failure.
+
+In our case, the possibility of introducing axioms in the proof \emph{ad
+  libitum} ruins this good property of multiplicative linear logic, so that, for
+a given goal sequent, it is not true in general that a naive application of the
+inverse method would terminate.
+The reason is to be found in the fact that the unrestricted context in our
+sequents basically correspond to a form of ! (``of course'')
+exponentiation. The decidability of MELL (multiplicative exponential linear
+logic) was an open problem until recently, where is was shown to be decidable
+using ideas that go back to Curry and Kleene. Of course, the adaptation of those
+ideas to a forward focused calculus is outside the scope of this work.
+
+Nevertheless, even in the presence of our unrestricted contexts, the search
+space is in most cases finite, exception made for some particularly badly
+behaved sequents. Consider, as an example, the following goal sequent
+
+\[
+  \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+\]
+
+It is of course not provable, but a an attempt to find a backward proof (the
+problem is identical in the forward direction) may lead to a loop
+
+\[
+  \begin{prooftree}
+    \[
+      \[
+        \justifies
+        \bkwseq{A \rightarrow B, B \rightarrow A}{A}{A}
+      \]
+      \quad
+      \[
+        \[
+          \[
+            \justifies
+            \bkwseq{A \rightarrow B, B \rightarrow A}{B}{B}
+          \]
+          \quad
+          \[
+            \justifies
+            \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+          \]
+          \justifies
+          \bkwseq{A \rightarrow B, B \rightarrow A}{B \rightarrow A, B}{C}
+        \]
+        \justifies
+        \bkwseq{A \rightarrow B, B \rightarrow A}{B}{C}
+      \]
+      \justifies
+      \bkwseq{A \rightarrow B, B \rightarrow A}{A \rightarrow B, A}{C}
+    \]
+    \justifies
+    \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+  \end{prooftree}
+\]
+
+We conjecture that these bad cases are the exception rather than the norm, so
+that it may not be necessary, at least in its early stages, to complicate the
+development of a theorem prover to avoid as many such cases as possible. For our
+implementation, we just decided to fix an upper bound to the number of allowed
+uses for the axioms. If the derivation fails due to a violation of this upper
+bound, the error can be reported to the user who may then decide to retry with a
+bigger upper bound.
+
 % \subsection{Forward sequent calculus}
 
 % Since weakening and contraction are admissible for the unrestricted
