@@ -23,13 +23,14 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import LabelledSequent
 import Formula
-import Rule
+import Rel (Rel)
 import Control.Monad.Trans.State.Lazy hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
 import Data.Foldable
 
 import ForwardSequent
-import TypeClasses
+import TypeClasses hiding (map)
+import Data.Profunctor
 
 import Prover.Class
 import Prover.Structures
@@ -38,10 +39,18 @@ import Prover.Search
 --------------------------------------------------------------------------------
 
 proverSearch'
-  :: _
-  => f seqty -> [Rule seqty] -> ProverT seqty goalty m (mf seqty)
+  :: ( MonadFail mf
+     , Monad m
+     , Alternative mf
+     , Ord seqty
+     , SearchPair seqty goalty
+     , Foldable f
+     )
+  => f seqty -> [seqty -> Rel seqty seqty] -> ProverT seqty goalty m (mf seqty)
 proverSearch' seqs rules =
-  doSearch (S.fromList . fmap initialize . toList $ seqs) rules
+  doSearch
+    (S.fromList . fmap initialize . toList $ seqs)
+    (map toProverRules rules)
 
 proverSearch seqs rules = runProverT (proverSearch' seqs rules)
 
@@ -106,7 +115,7 @@ instance (Monad m, Ord seqty, ForwardSequent seqty) =>
     put (PS r as newIs gi)
     return bschecked
 
-instance (Monad m, ForwardSequent goalty, SearchPair seqty goalty) =>
+instance (Monad m, SearchPair seqty goalty) =>
          HasProverEnvironment seqty (ProverT seqty goalty m) where
   isSubsequent concl = do
     gs <- goalSequent <$> ask

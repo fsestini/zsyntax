@@ -1,16 +1,26 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module SFormula
-  ( SFormula
+  ( SFormula(..)
+  , SAxiom(..)
   , Sequent(..)
   , sAtom
   , sConj
   , sImpl
   , neutralize
+  , sAxiomIsSFormula
 --  , fromLFormula
   , BioFormula(..)
+  , LFormula(..)
+  , pattern Impl
+  , OLFormula(..)
+  , ElemBase(..)
+  , ControlSet(..)
+  , ImplFormula(..)
+  , sAx
   ) where
 
 import RelFormula
@@ -25,11 +35,17 @@ import Data.Foldable
 --------------------------------------------------------------------------------
 
 -- Simple formulas
-newtype SFormula eb cs a = SF (OLFormula eb cs a ()) deriving Show
+newtype SFormula eb cs a = SF (OLFormula eb cs a ())
 newtype NSFormula eb cs a = NSF
   { unNSF :: (NeutralFormula eb cs a ())
   } deriving (Show)
 newtype SAxiom eb cs a = SA {unSA :: (Axiom eb cs a ())} deriving Show
+
+sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom eb cs a
+sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
+
+instance Show a => Show (SFormula eb cs a) where
+  show (SF (OLF f)) = deepShowFormula f
 
 instance (Ord a, Ord (eb a), Ord (cs a)) =>
          Eq (SFormula eb cs a) where
@@ -64,6 +80,11 @@ fromLFormula = SF . fmap (const ())
 
 fromLAxiom :: Axiom eb cs a l -> SAxiom eb cs a
 fromLAxiom = SA . fmap (const ())
+
+sAxiomIsSFormula
+  :: ElemBase eb a
+  => SAxiom eb cs a -> SFormula eb cs a
+sAxiomIsSFormula (SA a) = SF . OLF $ (axiomIsFormula a)
 
 --------------------------------------------------------------------------------
 -- Sequents.

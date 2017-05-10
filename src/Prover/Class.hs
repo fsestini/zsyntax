@@ -13,6 +13,8 @@ import Control.Monad.Fail
 import Control.Applicative
 
 import Prover.Structures
+       (SearchSequent, Stage(..), ActiveSequent, ActiveSequents,
+        ConclSequent, Rule)
 
 -- The prover state must include a global index of all sequents that have been
 -- added to the inactive set.

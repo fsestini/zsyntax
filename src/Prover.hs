@@ -3,6 +3,8 @@
 
 module Prover
   ( proverSearch
+  , SearchPair(..)
   ) where
 
 import Prover.Transformer
+import Prover.Structures

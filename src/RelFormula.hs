@@ -18,9 +18,7 @@ import LinearContext
 import UnrestrContext
 import ForwardSequent
 import Data.Foldable
-import Data.Bifunctor
-import Data.Bifoldable
-import Data.Bitraversable
+import Prover
 
 --------------------------------------------------------------------------------
 -- Implicational formulas
@@ -55,6 +53,11 @@ instance Eq l => Eq (ImplFormula eb cs ik a l) where
 
 instance Ord l => Ord (ImplFormula eb cs ik a l) where
   compare (ImplF _ _ _ _ lbl1) (ImplF _ _ _ _ lbl2) = compare lbl1 lbl2
+
+axiomIsRegular
+  :: ElemBase eb a
+  => Axiom eb cs a l -> ImplFormula eb cs IRegular a l
+axiomIsRegular (ImplF a _ cs b l) = ImplF a (FullSpot mempty) cs b l
 
 axiomIsFormula
   :: ElemBase eb a
@@ -91,9 +94,9 @@ pattern Impl a eb cs b l = Impl' (ImplF a (FullSpot eb) cs b l)
 deriving instance Functor (LFormula eb cs k a)
 deriving instance Foldable (LFormula eb cs k a)
 deriving instance Traversable (LFormula eb cs k a)
-deriving instance
-         (Show (eb a), Show (cs a), Show a, Show l) =>
-         Show (LFormula eb cs k a l)
+
+instance (Show a, Show l) => Show (LFormula eb cs k a l) where
+  show f = show (label f)
 
 --------------------------------------------------------------------------------
 
@@ -104,8 +107,12 @@ deriving instance Functor (OLFormula eb cs a)
 deriving instance Foldable (OLFormula eb cs a)
 deriving instance Traversable (OLFormula eb cs a)
 
-instance Eq (OLFormula eb cs a l) where
-instance Ord (OLFormula eb cs a l) where
+instance (Eq a, Eq l) => Eq (OLFormula eb cs a l) where
+  (OLF f1) == (OLF f2) = (label f1) == (label f2)
+
+instance (Ord a, Ord l) => Ord (OLFormula eb cs a l) where
+  compare (OLF f1) (OLF f2) = compare (label f1) (label f2)
+
 deriving instance
          (Show l, Show a, Show (eb a), Show (cs a)) =>
          Show (OLFormula eb cs a l)
@@ -113,7 +120,7 @@ deriving instance
 --------------------------------------------------------------------------------
 -- Eq, Ord instances for formulas
 
-data Label a l = L l | A (BioFormula a) deriving (Eq, Ord)
+data Label a l = L l | A (BioFormula a) deriving (Eq, Ord, Show)
 
 label :: LFormula eb cs k a l -> Label a l
 label (Atom a) = A a
@@ -196,19 +203,30 @@ data NeutralSequent eb cs a l =
      (LCtxt eb cs a l)
      (cs a)
      (OLFormula eb cs a l)
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 data GoalNeutralSequent eb cs a l =
   GNS (UCtxt eb cs a l)
       (LCtxt eb cs a l)
       (Maybe (cs a))
       (OLFormula eb cs a l)
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 instance (Ord l, Ord a, Eq (cs a)) =>
          ForwardSequent (NeutralSequent eb cs a l) where
   (NS un1 lin1 cs1 concl1) `subsumes` (NS un2 lin2 cs2 concl2) =
     un1 <= un2 && lin1 == lin2 && cs1 == cs2 && concl1 == concl2
+
+instance (Ord l, Ord a, Eq (cs a)) =>
+         SearchPair (NeutralSequent eb cs a l) (GoalNeutralSequent eb cs a l) where
+  isSubsequent _ _ = True
+  subsumesGoal ns@(NS _ _ cs1 _) (GNS un2 lin2 hole concl2) = ns `subsumes` gseq
+    where
+      gseq = NS un2 lin2 gcs concl2
+      gcs =
+        case hole of
+          Nothing -> cs1
+          Just cs -> cs
 
 --------------------------------------------------------------------------------
 
@@ -260,3 +278,18 @@ deepImplCompare (ImplF a1 spot1 cs1 b1 l1) (ImplF a2 spot2 cs2 b2 l2) =
     ceb = deepSpotCompare spot1 spot2
     ccs = compare cs1 cs2
     cl = compare l1 l2
+
+--------------------------------------------------------------------------------
+-- Show instances
+
+deepShowAtom :: Show a => BioFormula a -> String
+deepShowAtom (BioAtom a) = show a
+deepShowAtom (BioInter a1 a2) = deepShowAtom a1 ++ "<>" ++ deepShowAtom a2
+
+deepShowFormula :: Show a => LFormula eb cs k a l -> String
+deepShowFormula (Atom a) = deepShowAtom a
+deepShowFormula (Conj f1 f2 _) = deepShowFormula f1 ++ " * " ++ deepShowFormula f2
+deepShowFormula (Impl' i) = deepShowImpl i
+
+deepShowImpl (ImplF f1 _ _ f2 _) =
+  deepShowFormula f1 ++ " -> " ++ deepShowFormula f2

@@ -26,6 +26,15 @@ instance DerTerm (SimpleDerTerm eb cs a l) eb cs a l where
   implR = ImplR
   implL = ImplL
 
+getTransitions :: SimpleDerTerm eb cs a l -> [ImplFormula eb cs IRegular a l]
+getTransitions (Init _) = []
+getTransitions (Copy d _) = getTransitions d
+getTransitions (ConjR d1 d2 _) = getTransitions d1 ++ getTransitions d2
+getTransitions (ConjL d _) = getTransitions d
+getTransitions (ImplR d _) = getTransitions d
+getTransitions (ImplL d1 d2 impl) =
+  getTransitions d1 ++ [impl] ++ getTransitions d2
+
 {-| Derivation term of the labelled forward sequent calculus. -}
 data SimpleDerTerm eb cs a l :: *
   {- init(p) :: . ; p # p ---> p -}
@@ -75,6 +84,8 @@ data SimpleDerTerm eb cs a l :: *
     -> SimpleDerTerm eb cs a l -- D'
     -> ImplFormula eb cs IRegular a l
     -> SimpleDerTerm eb cs a l
+  deriving (Eq, Ord, Show)
+
 
 -- {-| Derivation term of the labelled forward sequent calculus. -}
 -- data DerTerm l a :: * where

@@ -18,7 +18,7 @@ module Prover.Structures
   , GlobalIndex
   , Rule
   , RuleRes
-  , SearchPair
+  , SearchPair(..)
   , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
@@ -37,19 +37,19 @@ module Prover.Structures
   , emptyInactives
   , emptyGlobalIndex
   , isSubsequentOp
+  , toProverRules
   ) where
 
+import Data.Profunctor
 import Prelude hiding (fail)
 import Control.Monad.Fail
 import qualified Data.Set as S
 import Rel
 import ForwardSequent
-import TypeClasses (Coercible(..))
 
 --------------------------------------------------------------------------------
 
-class (ForwardSequent seqty, ForwardSequent goalty) =>
-      SearchPair seqty goalty where
+class ForwardSequent seqty => SearchPair seqty goalty where
   isSubsequent :: seqty -> goalty -> Bool
   subsumesGoal :: seqty -> goalty -> Bool
 
@@ -225,12 +225,15 @@ removeSubsumedByOp (FSCheckedSS s) (IS is) =
   , BSCheckedSS s)
 
 subsumesGoalOp
-  :: (ForwardSequent goalty, MonadFail mf, SearchPair seqty goalty)
+  :: (MonadFail mf, SearchPair seqty goalty)
   => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf seqty
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
   if s1 `subsumesGoal` s2
     then return s1
     else Control.Monad.Fail.fail "sequent does not subsumes goal"
+
+toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
+toProverRules = dimap extractSequent (dimap extractSequent ConclSS)
 
 -- initialSequentsAndRules
 --   :: (Eq a, Eq l, Ord l, Ord a)
