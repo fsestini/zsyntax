@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -77,6 +78,17 @@ data SearchSequent :: Stage -> * -> * where
   SSCheckedSS :: seq -> SearchSequent SSChecked seq
   GlIndexSS :: seq -> SearchSequent GlIndex seq
   GoalSS :: seq -> SearchSequent Goal seq
+
+instance Show b => Show (SearchSequent a b) where
+  show (InitSS s) = show s
+  show (ActiveSS s) = show s
+  show (InactiveSS s) = show s
+  show (ConclSS s) = show s
+  show (BSCheckedSS s) = show s
+  show (FSCheckedSS s) = show s
+  show (SSCheckedSS s) = show s
+  show (GlIndexSS s) = show s
+  show (GoalSS s) = show s
 
 extractSequent :: SearchSequent s seq -> seq
 extractSequent (InitSS s) = s

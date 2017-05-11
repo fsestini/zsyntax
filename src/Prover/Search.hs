@@ -25,6 +25,8 @@ import Prover.Structures
         RuleRes, ActiveSequents, initialIsBSChecked, initialIsFSChecked,
         foldActives, applyRule)
 
+import Debug.Trace
+
 {-
 
   1. Compute frontier
@@ -54,6 +56,7 @@ doSearch
      , HasProverEnvironment seqty m
      , Ord seqty
      , Eq seqty
+     , Show seqty
      )
   => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (mf seqty)
 doSearch initialSequents initialRules = do
@@ -72,20 +75,26 @@ otterLoop
      , HasProverEnvironment seqty m
      , Ord seqty
      , Eq seqty
+     , Show seqty
      )
   => m (mf seqty)
 otterLoop = do
   inactive <- popInactive
   case inactive of
     Nothing -> return $ fail "search space saturated"
-    Just sequent -> do
-      res <- processNewActive sequent
-      subRes <- filterSubsequents (S.toList $ resSequents res)
-      unsubSeqs <- filterUnsubsumed subRes
-      unsubSeqs' <- removeSubsumedByAll unsubSeqs
-      addInactives unsubSeqs'
-      addRules (resRules res)
-      (<|>) <$> (haveGoal unsubSeqs) <*> otterLoop
+    Just sequent ->
+      -- trace ("Processing inactive: " ++ (show sequent)) $
+      do
+        res <- processNewActive sequent
+        subRes <- filterSubsequents (S.toList $ resSequents res)
+        unsubSeqs <- filterUnsubsumed subRes
+        unsubSeqs' <- removeSubsumedByAll unsubSeqs
+        addInactives unsubSeqs'
+        addRules (resRules res)
+        -- trace ("Conclusions: " ++ (show (resSequents res))) $
+        --   trace ("Subsequents: " ++ (show subRes)) $
+        --     trace ("Filtered: " ++ (show unsubSeqs') ++ "\n") $
+        (<|>) <$> (haveGoal unsubSeqs) <*> otterLoop
 
 processNewActive
   :: (Monad m, HasProverState seqty m, Ord seqty)

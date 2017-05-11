@@ -45,6 +45,7 @@ proverSearch'
      , Ord seqty
      , SearchPair seqty goalty
      , Foldable f
+     , Show seqty
      )
   => f seqty -> [seqty -> Rel seqty seqty] -> ProverT seqty goalty m (mf seqty)
 proverSearch' seqs rules =

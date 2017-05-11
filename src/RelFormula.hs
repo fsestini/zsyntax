@@ -41,6 +41,17 @@ data ImplFormula :: (* -> *) -> (* -> *) -> ImplKind -> * -> * -> * where
     -> l
     -> ImplFormula eb cs ik a l
 
+mapEbBS :: (eb1 a -> eb2 a) -> BaseSpot eb1 k a -> BaseSpot eb2 k a
+mapEbBS f EmptySpot = EmptySpot
+mapEbBS f (FullSpot eb) = FullSpot (f eb)
+
+mapEbCsI :: (eb1 a -> eb2 a)
+         -> (cs1 a -> cs2 a)
+         -> ImplFormula eb1 cs1 k a l
+         -> ImplFormula eb2 cs2 k a l
+mapEbCsI f g (ImplF a bs cs b l) =
+  ImplF (mapEbCsF f g a) (mapEbBS f bs) (g cs) (mapEbCsF f g b) l
+
 deriving instance Functor (ImplFormula eb cs k a)
 deriving instance Foldable (ImplFormula eb cs k a)
 deriving instance Traversable (ImplFormula eb cs k a)
@@ -76,7 +87,11 @@ data FKind = KAtom | KConj | KImpl
     It is parameterized over the type of biological atoms. -}
 data BioFormula a  =  BioAtom a
                    |  BioInter (BioFormula a) (BioFormula a)
-                   deriving (Eq, Ord, Show, Functor, Foldable)
+                   deriving (Eq, Ord, Functor, Foldable)
+
+instance Show a => Show (BioFormula a) where
+  show (BioAtom x) = show x
+  show (BioInter x y) = show x ++ "<>" ++ show y
 
 data LFormula :: (* -> *) -> (* -> *) -> FKind -> * -> * -> * where
   Atom :: BioFormula a -> LFormula eb cs KAtom a l
@@ -98,6 +113,15 @@ deriving instance Traversable (LFormula eb cs k a)
 instance (Show a, Show l) => Show (LFormula eb cs k a l) where
   show f = show (label f)
 
+mapEbCsF
+  :: (eb1 a -> eb2 a)
+  -> (cs1 a -> cs2 a)
+  -> LFormula eb1 cs1 k a l
+  -> LFormula eb2 cs2 k a l
+mapEbCsF f g (Atom a) = Atom a
+mapEbCsF f g (Conj f1 f2 l) = Conj (mapEbCsF f g f1) (mapEbCsF f g f2) l
+mapEbCsF f g (Impl' i) = Impl' (mapEbCsI f g i)
+
 --------------------------------------------------------------------------------
 
 -- | Opaque formulas
@@ -113,9 +137,8 @@ instance (Eq a, Eq l) => Eq (OLFormula eb cs a l) where
 instance (Ord a, Ord l) => Ord (OLFormula eb cs a l) where
   compare (OLF f1) (OLF f2) = compare (label f1) (label f2)
 
-deriving instance
-         (Show l, Show a, Show (eb a), Show (cs a)) =>
-         Show (OLFormula eb cs a l)
+instance (Show l, Show a) => Show (OLFormula eb cs a l) where
+  show (OLF f) = show f
 
 --------------------------------------------------------------------------------
 -- Eq, Ord instances for formulas
@@ -187,9 +210,9 @@ instance (Ord a, Ord l) => Ord (NeutralFormula eb cs a l) where
 deriving instance Functor (NeutralFormula eb cs a)
 deriving instance Foldable (NeutralFormula eb cs a)
 deriving instance Traversable (NeutralFormula eb cs a)
-deriving instance
-         (Show l, Show a, Show (eb a), Show (cs a)) =>
-         Show (NeutralFormula eb cs a l)
+
+instance (Show a, Show l) => Show (NeutralFormula eb cs a l) where
+  show (NF f) = show f
 
 -- deriving instance Functor (NeutralFormula eb cs a)
 -- deriving instance Foldable (NeutralFormula eb cs a)
@@ -203,7 +226,12 @@ data NeutralSequent eb cs a l =
      (LCtxt eb cs a l)
      (cs a)
      (OLFormula eb cs a l)
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance (Show (eb a), Show (cs a), Show a, Show l) =>
+         Show (NeutralSequent eb cs a l) where
+  show (NS uc lc cs concl) =
+    show uc ++ " ; " ++ show lc ++ " ==> " ++ show concl
 
 data GoalNeutralSequent eb cs a l =
   GNS (UCtxt eb cs a l)

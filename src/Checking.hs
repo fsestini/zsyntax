@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Checking (SimpleCtrlSet, SimpleElemBase) where
+module Checking (SimpleCtrlSet, SimpleElemBase, ctrlFromFoldable) where
   -- ( World
   -- , check
   -- , checkAll
@@ -15,6 +15,7 @@ module Checking (SimpleCtrlSet, SimpleElemBase) where
 
 import RelFormula (ControlSet(..), ElemBase(..), BaseCtrl(..), BioFormula)
 import qualified Data.Set as S
+import Data.Foldable (toList)
 
 newtype SimpleCtrlSet a =
   CS (S.Set (BioFormula a))
@@ -30,3 +31,9 @@ instance Ord a => ControlSet SimpleCtrlSet a where
 
 instance Ord a => BaseCtrl SimpleElemBase SimpleCtrlSet a where
   respects (EB eb) (CS cs) = S.null $ S.intersection eb cs
+
+-- TODO: mega hack
+ctrlFromFoldable
+  :: (Foldable f, Ord a)
+  => f (BioFormula a) -> SimpleCtrlSet a
+ctrlFromFoldable f = CS (S.fromList . toList $ f)

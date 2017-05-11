@@ -44,25 +44,29 @@ import DerivationTerm
 import ForwardSequent
 import LinearContext
 import Prover (SearchPair(..))
+import qualified Data.Map as M
 
 --------------------------------------------------------------------------------
 
 -- | Type of labelled sequents decorated with derivation terms
-data DT term a =
-  DT term
-     a
-  deriving (Eq, Ord, Show)
+data DT term a l = DT term (M.Map l Int) a
+  deriving (Eq, Ord)
 
-type DTSequent term eb cs a l = DT term (NeutralSequent eb cs a l)
+instance (Show term, Show a) =>
+         Show (DT term a l) where
+  show (DT t m x) = show . sum . M.elems $ m
+    -- show t ++ ("(" ++ (show . sum . M.elems $ m) ++ ")") ++ " :: " ++ show x
+
+type DTSequent term eb cs a l = DT term (NeutralSequent eb cs a l) l
 
 instance (Ord l, Ord a, Eq (cs a)) =>
          ForwardSequent (DTSequent term eb cs a l) where
-  subsumes (DT _ s1) (DT _ s2) = subsumes s1 s2
+  subsumes (DT _ _ s1) (DT _ _ s2) = subsumes s1 s2
 
-instance (SearchPair seqty goalty, ForwardSequent (DT term seqty)) =>
-         SearchPair (DT term seqty) goalty where
-  isSubsequent (DT _ s1) s2 = isSubsequent s1 s2
-  subsumesGoal (DT _ s) g = s `subsumesGoal` g
+instance (SearchPair seqty goalty, ForwardSequent (DT term seqty l)) =>
+         SearchPair (DT term seqty l) goalty where
+  isSubsequent (DT _ _ s1) s2 = isSubsequent s1 s2
+  subsumesGoal (DT _ _ s) g = s `subsumesGoal` g
 
 --------------------------------------------------------------------------------
 
@@ -128,7 +132,7 @@ data MatchResult :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
     -> OLFormula eb cs a l
     -> MatchResult eb cs EmptyXiFullResult a l
 
-type DTMatchResult term eb cs actcase a l = DT term (MatchResult eb cs actcase a l)
+type DTMatchResult term eb cs actcase a l = DT term (MatchResult eb cs actcase a l) l
 
 {-| Matches a labelled sequent against an act sequent schema.
     Returns the result in a MonadFail instance, which signals the error in case
@@ -138,15 +142,15 @@ match
   => SequentSchema eb cs ac a l
   -> DTSequent term eb cs a l
   -> m (DTMatchResult term eb cs ac a l)
-match (SSEmptyGoal delta) (DT term (NS gamma delta' cs goal)) = do
+match (SSEmptyGoal delta) (DT term m (NS gamma delta' cs goal)) = do
   delta'' <- matchLinearCtxt delta delta'
-  return $ DT term (MRFullGoal gamma delta'' cs goal)
-match (SSFullGoal delta cs goal) (DT term (NS gamma delta' cs' goal')) =
+  return $ DT term m (MRFullGoal gamma delta'' cs goal)
+match (SSFullGoal delta cs goal) (DT term m (NS gamma delta' cs' goal')) =
   guard (goal == goal') >> guard (cs == cs') >>
-  DT term <$> (MREmptyGoal gamma <$> matchLinearCtxt delta delta')
+  DT term m <$> (MREmptyGoal gamma <$> matchLinearCtxt delta delta')
 
 type FocMatchRes eb cs a l = MatchResult eb cs FullXiEmptyResult a l
-type DTFocMatchResult term eb cs a l = DT term (FocMatchRes eb cs a l)
+type DTFocMatchResult term eb cs a l = DT term (FocMatchRes eb cs a l) l
 
 {-| Positive focal relation.
     The fact that it returns a result sequent with empty goal is statically
@@ -165,16 +169,17 @@ positiveFocalDispatch
 positiveFocalDispatch formula =
   case formula of
     Atom a ->
-      return (DT (init @_ @eb @cs @_ @l a) (MREmptyGoal mempty (singletonCtxt (NF formula))))
+      return
+        (DT (init @_ @eb @cs @_ @l a) mempty
+           (MREmptyGoal mempty (singletonCtxt (NF formula))))
     Impl _ _ _ _ _ -> liftFun $ \inputSeq -> match schema inputSeq
       where schema = SSFullGoal mempty mempty (OLF formula)
     Conj f1 f2 _ -> do
-      DT d1 (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch f1
-      DT d2 (MREmptyGoal gamma2 delta2) <- positiveFocalDispatch f2
+      DT d1 m1 (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch f1
+      DT d2 m2 (MREmptyGoal gamma2 delta2) <- positiveFocalDispatch f2
       return $
-        DT
-          (conjR d1 d2 formula)
-          (MREmptyGoal (gamma1 <> gamma2) (delta1 <> delta2))
+        DT (conjR d1 d2 formula) (M.unionWith (+) m1 m2)
+           (MREmptyGoal (gamma1 <> gamma2) (delta1 <> delta2))
 
 data ZetaXi :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
   FullZetaXi
@@ -200,8 +205,8 @@ leftActive delta omega zetaxi =
   case omega of
     [] -> matchRel delta zetaxi
     (OLF f@(Conj f1 f2 _):rest) -> do
-      (DT d res) <- leftActive delta (OLF f2 : OLF f1 : rest) zetaxi
-      return (DT (conjL d f) res)
+      (DT d m res) <- leftActive delta (OLF f2 : OLF f1 : rest) zetaxi
+      return (DT (conjL d f) m res)
     (OLF fr@(Impl _ _ _ _ _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
     (OLF fr@(Atom _):rest) -> leftActive (add (NF fr) delta) rest zetaxi
 
@@ -231,47 +236,53 @@ focus
   => LFormula eb cs k a l
   -> Rule term eb cs a l
 focus formula = do
-  DT d (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
-  return $ DT d (NS gamma delta mempty (OLF formula))
+  DT d m (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
+  return $ DT d m (NS gamma delta mempty (OLF formula))
 
 implLeft
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
   => ImplFormula eb cs IRegular a l
   -> Rule term eb cs a l
 implLeft fr@(ImplF a _ cs b _) = do
-  DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
-  DT d' (MRFullGoal gamma2 delta2 cs' concl) <-
+  DT d m1 (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
+  DT d' m2 (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(OLF b)] EmptyZetaXi
   guard (respects (elemBaseAll delta2) cs)
   return $
-    DT
-      (implL d d' fr)
-      (NS
-         (gamma1 <> gamma2)
-         (add (NF (Impl' fr)) (delta1 <> delta2))
-         (cs <> cs')
-         concl)
+    DT (implL d d' fr) (M.unionWith (+) m1 m2)
+       (NS (gamma1 <> gamma2)
+           (add (NF (Impl' fr)) (delta1 <> delta2))
+           (cs <> cs')
+           concl)
 
 copyRule
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
   => Axiom eb cs a l
   -> Rule term eb cs a l
-copyRule fr@(ImplF a EmptySpot cs b _) = do
-  DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
-  DT d' (MRFullGoal gamma2 delta2 cs' concl) <-
+copyRule fr@(ImplF a EmptySpot cs b l) = do
+  DT d m1 (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
+  DT d' m2 (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(OLF b)] EmptyZetaXi
+  let m = M.unionWith (+) m1 m2
   guard (respects (elemBaseAll delta2) cs)
+  guard (not . atThreshold . M.lookup l $ m)
+  --guard (not . (> 20) . sum . M.elems $ m)
   return $
-    DT
-      (copy (implL d d' (axiomIsRegular fr)) fr)
-      (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
+    DT (copy (implL d d' (axiomIsRegular fr)) fr)
+       (M.alter updater l $ m)
+       (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
+  where
+    updater Nothing = Just 1
+    updater (Just n) = Just (n + 1)
+    atThreshold Nothing = False
+    atThreshold (Just x) = x > 13
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
   => ImplFormula eb cs IRegular a l
   -> Rule term eb cs a l
 implRight fr@(ImplF a (FullSpot eb) cs b _) = do
-  DT d (MREmptyGoal gamma delta) <-
+  DT d m (MREmptyGoal gamma delta) <-
     leftActive mempty [(OLF a)] (FullZetaXi cs (OLF b))
   guard ((elemBaseAll delta) == eb)
-  return $ DT (implR d fr) (NS gamma delta mempty (OLF (Impl' fr)))
+  return $ DT (implR d fr) m (NS gamma delta mempty (OLF (Impl' fr)))

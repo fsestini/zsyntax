@@ -2,9 +2,10 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Parser (parseSFormula, parseBioFormula, parseSAxiom) where
+module Parser (parseBioAggregate, parseBioAggregate1) where
 
 import System.IO
+import qualified Data.List.NonEmpty as NE
 import Control.Monad
 import Text.Parsec
 import Text.ParserCombinators.Parsec
@@ -102,3 +103,14 @@ parseSAxiom m cs str = do
     (SF (OLF (Impl a _ _ b _))) ->
       return $ sAx (toSFormula m (SF (OLF a))) (toSFormula m (SF (OLF b))) cs
     _ -> fail "axioms must be implication formulas"
+
+
+parseBioAggregate :: String -> Either String [BioFormula String]
+parseBioAggregate = bimap show id . parse (white >> sepBy bioExpr comma) ""
+
+parseBioAggregate1 :: String -> Either String (NE.NonEmpty (BioFormula String))
+parseBioAggregate1 str =
+  case parse (white >> sepBy1 bioExpr comma) "" str of
+    Left err -> Left (show err)
+    Right [] -> Left "invalid empty aggregate"
+    Right (x:xs) -> Right (x NE.:| xs)
