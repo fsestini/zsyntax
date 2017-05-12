@@ -24,6 +24,7 @@ library
                      , Command.Execution
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
+                     , dequeue
                      --, unordered-containers
   default-language:    Haskell2010
 

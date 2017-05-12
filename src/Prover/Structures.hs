@@ -51,6 +51,8 @@ import Rel
 import ForwardSequent
 import Control.Applicative (Alternative(..))
 import Control.Monad (MonadPlus(..), ap)
+import qualified Data.Dequeue as D
+import Data.Foldable
 --import qualified Data.HashSet as HS
 
 import Debug.Trace
@@ -119,7 +121,9 @@ data NoInactivesReason = Saturated | ThresholdBreak
 type ActiveSequent seq = SearchSequent Active seq
 newtype ActiveSequents seq = AS [SearchSequent Active seq]
 type InactiveSequent seq = SearchSequent Inactive seq
-data InactiveSequents seq = IS NoInactivesReason [InactiveSequent seq]
+data InactiveSequents seq =
+  IS NoInactivesReason
+     (D.BankersDequeue (InactiveSequent seq))
 type ConclSequent seq = SearchSequent Concl seq
 data GlobalIndex seq = GI Int [seq]
 
@@ -143,7 +147,7 @@ emptyActives :: Ord seq => ActiveSequents seq
 emptyActives = AS mempty
 
 emptyInactives :: Ord seq => InactiveSequents seq
-emptyInactives = IS Saturated mempty
+emptyInactives = IS Saturated D.empty
 
 emptyGlobalIndex :: Ord seq => GlobalIndex seq
 emptyGlobalIndex = GI 0 mempty
@@ -191,9 +195,9 @@ popInactiveOp
   => InactiveSequents seqty
   -> InactivesResult (InactiveSequents seqty, InactiveSequent seqty)
 popInactiveOp (IS r is) =
-  case is of
-    [] -> Left r
-    (x:xs) -> Right (IS r xs, x)
+  case D.popFront is of
+    Just (x, xs) -> Right (IS r xs, x)
+    Nothing -> Left r
 
 -- addToIndex
 --   :: (Ord seqty)
@@ -213,7 +217,7 @@ addToInactives
   -> (InactiveSequents seqty, GlobalIndex seqty)
 addToInactives (IS r ins) (GI n gi) (BSCheckedSS s) =
   if n + 1 <= 2000
-     then (IS r (InactiveSS s : ins), (GI (n + 1) (s : gi)))
+     then (IS r (D.pushBack ins (InactiveSS s)), (GI (n + 1) (s : gi)))
      else (IS ThresholdBreak ins, GI n gi)
 
 isSubsequentOp
@@ -242,8 +246,9 @@ removeSubsumedByOp
   -> InactiveSequents seqty
   -> (InactiveSequents seqty, SearchSequent BSChecked seqty)
 removeSubsumedByOp (FSCheckedSS s) (IS r is) =
-  ( IS r (filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
-  , BSCheckedSS s)
+  ( IS r (D.fromList . filter filterer . toList $ is), BSCheckedSS s)
+  where
+    filterer = \iseq -> not (s `subsumes` (extractSequent iseq))
 
 subsumesGoalOp
   :: (MonadPlus mf, SearchPair seqty goalty)
