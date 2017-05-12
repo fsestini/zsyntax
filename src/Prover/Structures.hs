@@ -121,7 +121,7 @@ newtype ActiveSequents seq = AS [SearchSequent Active seq]
 type InactiveSequent seq = SearchSequent Inactive seq
 data InactiveSequents seq = IS NoInactivesReason [InactiveSequent seq]
 type ConclSequent seq = SearchSequent Concl seq
-data GlobalIndex seq = GI Int (S.Set seq)
+data GlobalIndex seq = GI Int [seq]
 
 --------------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ addToInactives
   -> (InactiveSequents seqty, GlobalIndex seqty)
 addToInactives (IS r ins) (GI n gi) (BSCheckedSS s) =
   if n + 1 <= 2000
-     then (IS r (InactiveSS s : ins), (GI (n + 1) (S.insert s gi)))
+     then (IS r (InactiveSS s : ins), (GI (n + 1) (s : gi)))
      else (IS ThresholdBreak ins, GI n gi)
 
 isSubsequentOp
@@ -232,7 +232,7 @@ fwdSubsumes
   -> SearchSequent SSChecked seqty
   -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI _ globalIndex) (SSCheckedSS s) =
-  if (S.member s globalIndex) || (or . S.map (\gi -> gi `subsumes` s) $ globalIndex)
+  if or . map (\gi -> gi `subsumes` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
