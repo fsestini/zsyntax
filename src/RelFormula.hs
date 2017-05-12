@@ -19,6 +19,7 @@ import UnrestrContext
 import ForwardSequent
 import Data.Foldable
 import Prover
+import qualified TypeClasses as T
 
 --------------------------------------------------------------------------------
 -- Implicational formulas
@@ -32,6 +33,12 @@ deriving instance Eq (eb a) => Eq (BaseSpot eb k a)
 deriving instance Ord (eb a) => Ord (BaseSpot eb k a)
 deriving instance (Show (eb a), Show a) => Show (BaseSpot eb k a)
 
+bsMapAtoms
+  :: (T.CanMap eb, T.Constr eb a1, T.Constr eb a2)
+  => (a1 -> a2) -> BaseSpot eb k a1 -> BaseSpot eb k a2
+bsMapAtoms f EmptySpot = EmptySpot
+bsMapAtoms f (FullSpot eb) = FullSpot (T.map f eb)
+
 data ImplFormula :: (* -> *) -> (* -> *) -> ImplKind -> * -> * -> * where
   ImplF
     :: LFormula eb cs k1 a l
@@ -40,17 +47,6 @@ data ImplFormula :: (* -> *) -> (* -> *) -> ImplKind -> * -> * -> * where
     -> LFormula eb cs k2 a l
     -> l
     -> ImplFormula eb cs ik a l
-
-mapEbBS :: (eb1 a -> eb2 a) -> BaseSpot eb1 k a -> BaseSpot eb2 k a
-mapEbBS f EmptySpot = EmptySpot
-mapEbBS f (FullSpot eb) = FullSpot (f eb)
-
-mapEbCsI :: (eb1 a -> eb2 a)
-         -> (cs1 a -> cs2 a)
-         -> ImplFormula eb1 cs1 k a l
-         -> ImplFormula eb2 cs2 k a l
-mapEbCsI f g (ImplF a bs cs b l) =
-  ImplF (mapEbCsF f g a) (mapEbBS f bs) (g cs) (mapEbCsF f g b) l
 
 deriving instance Functor (ImplFormula eb cs k a)
 deriving instance Foldable (ImplFormula eb cs k a)
@@ -65,6 +61,34 @@ instance Eq l => Eq (ImplFormula eb cs ik a l) where
 instance Ord l => Ord (ImplFormula eb cs ik a l) where
   compare (ImplF _ _ _ _ lbl1) (ImplF _ _ _ _ lbl2) = compare lbl1 lbl2
 
+implMapAtoms
+  :: ( T.CanMap eb
+     , T.Constr eb a1
+     , T.Constr eb a2
+     , T.CanMap cs
+     , T.Constr cs a1
+     , T.Constr cs a2
+     )
+  => (a1 -> a2) -> ImplFormula eb cs k a1 l -> ImplFormula eb cs k a2 l
+implMapAtoms f (ImplF f1 spot cs f2 l) =
+  ImplF
+    (frmlMapAtoms f f1)
+    (bsMapAtoms f spot)
+    (T.map f cs)
+    (frmlMapAtoms f f2)
+    l
+
+mapEbBS :: (eb1 a -> eb2 a) -> BaseSpot eb1 k a -> BaseSpot eb2 k a
+mapEbBS f EmptySpot = EmptySpot
+mapEbBS f (FullSpot eb) = FullSpot (f eb)
+
+mapEbCsI :: (eb1 a -> eb2 a)
+         -> (cs1 a -> cs2 a)
+         -> ImplFormula eb1 cs1 k a l
+         -> ImplFormula eb2 cs2 k a l
+mapEbCsI f g (ImplF a bs cs b l) =
+  ImplF (mapEbCsF f g a) (mapEbBS f bs) (g cs) (mapEbCsF f g b) l
+
 axiomIsRegular
   :: ElemBase eb a
   => Axiom eb cs a l -> ImplFormula eb cs IRegular a l
@@ -74,6 +98,8 @@ axiomIsFormula
   :: ElemBase eb a
   => Axiom eb cs a l -> LFormula eb cs KImpl a l
 axiomIsFormula (ImplF a EmptySpot cs b l) = Impl a mempty cs b l
+
+
 
 type Axiom eb cs a l = ImplFormula eb cs IAxiom a l
 
@@ -113,6 +139,19 @@ deriving instance Traversable (LFormula eb cs k a)
 instance (Show a, Show l) => Show (LFormula eb cs k a l) where
   show f = show (label f)
 
+frmlMapAtoms
+  :: ( T.CanMap eb
+     , T.Constr eb a1
+     , T.Constr eb a2
+     , T.CanMap cs
+     , T.Constr cs a1
+     , T.Constr cs a2
+     )
+  => (a1 -> a2) -> LFormula eb cs k a1 l -> LFormula eb cs k a2 l
+frmlMapAtoms f (Atom b) = Atom (fmap f b)
+frmlMapAtoms f (Conj f1 f2 l) = Conj (frmlMapAtoms f f1) (frmlMapAtoms f f2) l
+frmlMapAtoms f (Impl' i) = Impl' (implMapAtoms f i)
+
 mapEbCsF
   :: (eb1 a -> eb2 a)
   -> (cs1 a -> cs2 a)
@@ -139,6 +178,17 @@ instance (Ord a, Ord l) => Ord (OLFormula eb cs a l) where
 
 instance (Show l, Show a) => Show (OLFormula eb cs a l) where
   show (OLF f) = show f
+
+olfMapAtoms
+  :: ( T.CanMap eb
+     , T.Constr eb a1
+     , T.Constr eb a2
+     , T.CanMap cs
+     , T.Constr cs a1
+     , T.Constr cs a2
+     )
+  => (a1 -> a2) -> OLFormula eb cs a1 l -> OLFormula eb cs a2 l
+olfMapAtoms f (OLF frml) = OLF (frmlMapAtoms f frml)
 
 --------------------------------------------------------------------------------
 -- Eq, Ord instances for formulas
@@ -201,6 +251,17 @@ data NeutralFormula eb cs a l =
   forall (k :: FKind) . IsNeutral k =>
             NF (LFormula eb cs k a l)
 
+nfMapAtoms
+  :: ( T.CanMap eb
+     , T.Constr eb a1
+     , T.Constr eb a2
+     , T.CanMap cs
+     , T.Constr cs a1
+     , T.Constr cs a2
+     )
+  => (a1 -> a2) -> NeutralFormula eb cs a1 l -> NeutralFormula eb cs a2 l
+nfMapAtoms f (NF frml) = NF (frmlMapAtoms f frml)
+
 instance (Eq a, Eq l) => Eq (NeutralFormula eb cs a l) where
   (NF f1) == (NF f2) = (label f1) == (label f2)
 
@@ -213,10 +274,6 @@ deriving instance Traversable (NeutralFormula eb cs a)
 
 instance (Show a, Show l) => Show (NeutralFormula eb cs a l) where
   show (NF f) = show f
-
--- deriving instance Functor (NeutralFormula eb cs a)
--- deriving instance Foldable (NeutralFormula eb cs a)
--- deriving instance Traversable (NeutralFormula eb cs a)
 
 type UCtxt eb cs a l = UnrestrCtxt (Axiom eb cs a l)
 type LCtxt eb cs a l = LinearCtxt (NeutralFormula eb cs a l)
@@ -255,6 +312,25 @@ instance (Ord l, Ord a, Eq (cs a)) =>
         case hole of
           Nothing -> cs1
           Just cs -> cs
+
+gnsMapAtoms
+  :: ( T.CanMap eb
+     , T.Constr eb a1
+     , T.Constr eb a2
+     , T.CanMap cs
+     , T.Constr cs a1
+     , T.Constr cs a2
+     , Ord l
+     , Ord a1
+     , Ord a2
+     )
+  => (a1 -> a2) -> GoalNeutralSequent eb cs a1 l -> GoalNeutralSequent eb cs a2 l
+gnsMapAtoms f (GNS uc lc cs concl) =
+  GNS
+    (T.map (implMapAtoms f) uc)
+    (T.map (nfMapAtoms f) lc)
+    (fmap (T.map f) cs)
+    (olfMapAtoms f concl)
 
 --------------------------------------------------------------------------------
 

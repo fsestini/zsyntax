@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
@@ -30,7 +31,7 @@ module Prover.Structures
   , activate
   , popInactiveOp
   , addToInactives
-  , addToIndex
+  -- , addToIndex
   , foldActives
   --, isGoal
   , makeGoal
@@ -39,14 +40,20 @@ module Prover.Structures
   , emptyGlobalIndex
   , isSubsequentOp
   , toProverRules
+  , InactivesResult
+  , NoInactivesReason(..)
   ) where
 
 import Data.Profunctor
 import Prelude hiding (fail)
-import Control.Monad.Fail
 import qualified Data.Set as S
 import Rel
 import ForwardSequent
+import Control.Applicative (Alternative(..))
+import Control.Monad (MonadPlus(..), ap)
+--import qualified Data.HashSet as HS
+
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 
@@ -76,7 +83,6 @@ data SearchSequent :: Stage -> * -> * where
   FSCheckedSS :: seq -> SearchSequent FSChecked seq
   BSCheckedSS :: seq -> SearchSequent BSChecked seq
   SSCheckedSS :: seq -> SearchSequent SSChecked seq
-  GlIndexSS :: seq -> SearchSequent GlIndex seq
   GoalSS :: seq -> SearchSequent Goal seq
 
 instance Show b => Show (SearchSequent a b) where
@@ -87,7 +93,6 @@ instance Show b => Show (SearchSequent a b) where
   show (BSCheckedSS s) = show s
   show (FSCheckedSS s) = show s
   show (SSCheckedSS s) = show s
-  show (GlIndexSS s) = show s
   show (GoalSS s) = show s
 
 extractSequent :: SearchSequent s seq -> seq
@@ -98,7 +103,6 @@ extractSequent (ConclSS s) = s
 extractSequent (BSCheckedSS s) = s
 extractSequent (FSCheckedSS s) = s
 extractSequent (SSCheckedSS s) = s
-extractSequent (GlIndexSS s) = s
 extractSequent (GoalSS s) = s
 
 instance Eq seq => Eq (SearchSequent s seq) where
@@ -110,12 +114,14 @@ instance Ord seq => Ord (SearchSequent s seq) where
 instance ForwardSequent seq => ForwardSequent (SearchSequent s seq) where
   subsumes s1 s2 = subsumes (extractSequent s1) (extractSequent s2)
 
+data NoInactivesReason = Saturated | ThresholdBreak
+
 type ActiveSequent seq = SearchSequent Active seq
-newtype ActiveSequents seq = AS (S.Set (SearchSequent Active seq))
+newtype ActiveSequents seq = AS [SearchSequent Active seq]
 type InactiveSequent seq = SearchSequent Inactive seq
-newtype InactiveSequents seq = IS (S.Set (InactiveSequent seq))
+data InactiveSequents seq = IS NoInactivesReason [InactiveSequent seq]
 type ConclSequent seq = SearchSequent Concl seq
-newtype GlobalIndex seq = GI (S.Set (SearchSequent GlIndex seq))
+data GlobalIndex seq = GI Int (S.Set seq)
 
 --------------------------------------------------------------------------------
 
@@ -137,10 +143,10 @@ emptyActives :: Ord seq => ActiveSequents seq
 emptyActives = AS mempty
 
 emptyInactives :: Ord seq => InactiveSequents seq
-emptyInactives = IS mempty
+emptyInactives = IS Saturated mempty
 
 emptyGlobalIndex :: Ord seq => GlobalIndex seq
-emptyGlobalIndex = GI mempty
+emptyGlobalIndex = GI 0 mempty
 
 --------------------------------------------------------------------------------
 
@@ -157,6 +163,8 @@ type RuleRes seqty = Rel (ActiveSequent seqty) (ConclSequent seqty)
     to a rule application result. -}
 type Rule seqty = (ActiveSequent seqty) -> RuleRes seqty
 
+type InactivesResult a = Either NoInactivesReason a
+
 --------------------------------------------------------------------------------
 -- Operations
 
@@ -171,59 +179,60 @@ foldActives
   -> b
 foldActives folder (AS actives) = folder actives
 
--- isGoal
---   :: ForwardSequent seqty
---   => SearchSequent Goal seqty -> SearchSequent FSChecked seqty -> Maybe seqty
--- isGoal (GoalSS goal) (FSCheckedSS fss) =
---   if fss `subsumes` goal
---     then Just fss
---     else Nothing
-
 activate
   :: Ord seqty
   => ActiveSequents seqty
   -> InactiveSequent seqty
   -> (ActiveSequents seqty, ActiveSequent seqty)
-activate (AS as) (InactiveSS s) = (AS (S.insert (ActiveSS s) as), ActiveSS s)
+activate (AS as) (InactiveSS s) = (AS (ActiveSS s : as), ActiveSS s)
 
 popInactiveOp
   :: Ord seqty
   => InactiveSequents seqty
-  -> Maybe (InactiveSequents seqty, InactiveSequent seqty)
-popInactiveOp (IS is) =
-  case S.toList is of
-    [] -> Nothing
-    (x:xs) -> Just (IS . S.fromList $ xs, x)
+  -> InactivesResult (InactiveSequents seqty, InactiveSequent seqty)
+popInactiveOp (IS r is) =
+  case is of
+    [] -> Left r
+    (x:xs) -> Right (IS r xs, x)
 
-addToIndex
-  :: Ord seqty
-  => GlobalIndex seqty -> SearchSequent BSChecked seqty -> GlobalIndex seqty
-addToIndex (GI gi) (BSCheckedSS s) = GI (S.insert (GlIndexSS s) gi)
+-- addToIndex
+--   :: (Ord seqty)
+--   => GlobalIndex seqty
+--   -> SearchSequent BSChecked seqty
+--   -> SearchResult (GlobalIndex seqty)
+-- addToIndex (GI n gi) (BSCheckedSS s) =
+--   if n + 1 <= 2000
+--     then Ok (GI (n + 1) (S.insert s gi))
+--     else OutOfSequents
 
 addToInactives
   :: Ord seqty
   => InactiveSequents seqty
+  -> GlobalIndex seqty
   -> SearchSequent BSChecked seqty
-  -> InactiveSequents seqty
-addToInactives (IS ins) (BSCheckedSS s) = IS (S.insert (InactiveSS s) ins)
+  -> (InactiveSequents seqty, GlobalIndex seqty)
+addToInactives (IS r ins) (GI n gi) (BSCheckedSS s) =
+  if n + 1 <= 2000
+     then (IS r (InactiveSS s : ins), (GI (n + 1) (S.insert s gi)))
+     else (IS ThresholdBreak ins, GI n gi)
 
 isSubsequentOp
-  :: (SearchPair seqty goalty, MonadFail mf)
+  :: (SearchPair seqty goalty, MonadPlus mf)
   => SearchSequent Concl seqty
   -> SearchSequent Goal goalty
   -> mf (SearchSequent SSChecked seqty)
 isSubsequentOp (ConclSS s) (GoalSS goal) =
   if isSubsequent s goal
     then return $ SSCheckedSS s
-    else fail "not a subsequent of the goal"
+    else mzero
 
 fwdSubsumes
-  :: (ForwardSequent seqty)
+  :: (ForwardSequent seqty, Show seqty, Ord seqty)
   => GlobalIndex seqty
   -> SearchSequent SSChecked seqty
   -> Maybe (SearchSequent FSChecked seqty)
-fwdSubsumes (GI globalIndex) (SSCheckedSS s) =
-  if or . S.map (\gi -> extractSequent gi `subsumes` s) $ globalIndex
+fwdSubsumes (GI _ globalIndex) (SSCheckedSS s) =
+  if (S.member s globalIndex) || (or . S.map (\gi -> gi `subsumes` s) $ globalIndex)
     then Nothing
     else Just (FSCheckedSS s)
 
@@ -232,25 +241,17 @@ removeSubsumedByOp
   => SearchSequent FSChecked seqty
   -> InactiveSequents seqty
   -> (InactiveSequents seqty, SearchSequent BSChecked seqty)
-removeSubsumedByOp (FSCheckedSS s) (IS is) =
-  ( IS (S.filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
+removeSubsumedByOp (FSCheckedSS s) (IS r is) =
+  ( IS r (filter (\iseq -> not (s `subsumes` (extractSequent iseq))) is)
   , BSCheckedSS s)
 
 subsumesGoalOp
-  :: (MonadFail mf, SearchPair seqty goalty)
+  :: (MonadPlus mf, SearchPair seqty goalty)
   => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf seqty
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
   if s1 `subsumesGoal` s2
     then return s1
-    else Control.Monad.Fail.fail "sequent does not subsumes goal"
+    else mzero
 
 toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
 toProverRules = dimap extractSequent (dimap extractSequent ConclSS)
-
--- initialSequentsAndRules
---   :: (Eq a, Eq l, Ord l, Ord a)
---   => NeutralSequent l a
---   -> (S.Set (SearchSequent Initial (DLSequent l a)), [Rule (DLSequent l a)])
--- initialSequentsAndRules =
---   (S.map InitSS *** (map (dimap extractSequent (dimap extractSequent ConclSS)))) .
---   Prover.Frontier.initialSequentsAndRules

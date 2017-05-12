@@ -32,6 +32,7 @@ import UnrestrContext
 import LinearContext
 import Context
 import Data.Foldable
+import qualified TypeClasses as T
 
 --------------------------------------------------------------------------------
 

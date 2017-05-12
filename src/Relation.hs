@@ -46,6 +46,8 @@ import LinearContext
 import Prover (SearchPair(..))
 import qualified Data.Map as M
 
+import Debug.Trace
+
 --------------------------------------------------------------------------------
 
 -- | Type of labelled sequents decorated with derivation terms
@@ -265,17 +267,22 @@ copyRule fr@(ImplF a EmptySpot cs b l) = do
     leftActive mempty [(OLF b)] EmptyZetaXi
   let m = M.unionWith (+) m1 m2
   guard (respects (elemBaseAll delta2) cs)
-  guard (not . atThreshold . M.lookup l $ m)
+  --let asd = not . atThreshold . M.lookup l $ m
+  -- if asd
+  --    then return ()
+  --    else trace ("Cutoff at: " ++ (show . sum . M.elems $ m)) $ return ()
+  --guard (asd)
   --guard (not . (> 20) . sum . M.elems $ m)
   return $
-    DT (copy (implL d d' (axiomIsRegular fr)) fr)
-       (M.alter updater l $ m)
-       (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
+    DT
+      (copy (implL d d' (axiomIsRegular fr)) fr)
+      (M.alter updater l $ m)
+      (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
   where
     updater Nothing = Just 1
     updater (Just n) = Just (n + 1)
-    atThreshold Nothing = False
-    atThreshold (Just x) = x > 13
+    -- atThreshold Nothing = False
+    -- atThreshold (Just x) = x > 10
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)

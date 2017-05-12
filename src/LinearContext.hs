@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -21,6 +22,7 @@ import qualified Data.List.NonEmpty as NE
 import Control.Monad.Fail
 import Prelude hiding (fail)
 import Context
+import qualified TypeClasses as T (CanMap(..))
 
 --------------------------------------------------------------------------------
 -- Helper numeric datatype
@@ -77,3 +79,7 @@ instance (Ord a) => Context (LinearCtxt a) a where
 
 instance Show a => Show (LinearCtxt a) where
   show (LC m) = concat . intersperse "," . map show . M.keys $ m
+
+instance T.CanMap LinearCtxt where
+  type Constr LinearCtxt x = Ord x
+  map f (LC m) = LC (M.mapKeys f m)
