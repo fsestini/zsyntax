@@ -15,9 +15,12 @@ module Command
   , QueriedSeq(..)
   -- , foldFree
   , execCommand
+  , execCommand'
   , parseCommand
   , feEmpty
   , feAsList
+  , trim
+  , SA
   ) where
 
 import Command.Structures
