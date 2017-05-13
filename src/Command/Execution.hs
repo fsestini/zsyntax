@@ -11,15 +11,12 @@ import Data.List.Split (splitOn)
 import Data.List
 import Data.Char
 
-import qualified Data.Map as M
 import Context
 import TypeClasses (PickMonad(..))
 import qualified Data.Set as S
 import Relation
 import SFormula
 import Parser
-import Control.Monad.IO.Class
-import Control.Arrow ((>>>))
 import RelFormula
 import Checking
 import Data.Bifunctor
@@ -131,7 +128,7 @@ query env thrms nm q =
     return newThrms
   where
     res = do
-      (DT dt _ (NS _ lc cs concl)) <-
+      (DT dt (NS _ lc cs concl)) <-
         liftParse (queryToSequent env thrms q) >>= liftSR . runSearch
       let impls = transitions dt
           formula =
@@ -148,7 +145,7 @@ processTheorems axioms = processThrms doer
       adjoinMsgEUI ("theorem " ++ name ++ " failed: ") (doer' axioms thrms q)
     doer' env thrms q = do
       actualSequent <- liftParse (queryToSequent env thrms q)
-      (DT _ _ (NS _ lc cs concl)) <- liftSR (runSearch actualSequent)
+      (DT _ (NS _ lc cs concl)) <- liftSR (runSearch actualSequent)
       let formula =
             case toList lc of
               [] -> error "linear context should be non-empty"
