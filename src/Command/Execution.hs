@@ -191,6 +191,9 @@ loadFile path = do
 --------------------------------------------------------------------------------
 -- Generic command execution
 
+execCommand' :: Command -> AxEnv -> ThrmEnv -> UI (AxEnv, ThrmEnv)
+execCommand' c axEnv thrms = fmap snd $ runStateT (execCommand c) (axEnv, thrms)
+
 execCommand
   :: Command -> StateT (AxEnv, ThrmEnv) (Free UIF) ()
 execCommand (AddAxiom name ctrlset strFrom strTo) = do
