@@ -34,7 +34,8 @@ instance Show ThrmName where
 
 data Command = AddAxiom ThrmName CSString String String
              | ChangeAxiom ThrmName CSString String String
-             | Query ThrmName QueriedSeq
+             | AddTheorem ThrmName QueriedSeq
+             | Query QueriedSeq
              | LoadFile FilePath
              | SaveToFile FilePath
              deriving (Eq, Show)
