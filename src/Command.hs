@@ -5,7 +5,7 @@
 
 module Command
   ( Command(..)
-  , Env
+  , AxEnv
   , ThrmEnv
   , UIF(..)
   , UI
@@ -16,6 +16,8 @@ module Command
   -- , foldFree
   , execCommand
   , parseCommand
+  , feEmpty
+  , feAsList
   ) where
 
 import Command.Structures
