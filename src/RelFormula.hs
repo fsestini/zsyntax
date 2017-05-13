@@ -216,9 +216,8 @@ class (Monoid (cs a), Eq (cs a)) =>
       ControlSet cs a
 
 -- | Typeclass of elementary bases
-class (Monoid (eb a), Eq (eb a)) =>
-      ElemBase eb a where
-  singleton :: BioFormula a -> eb a
+class (Monoid (eb a), Eq (eb a)) => ElemBase eb a where
+  formulaBase :: LFormula eb cs k a l -> eb a
 
 elemBase
   :: ElemBase eb a
