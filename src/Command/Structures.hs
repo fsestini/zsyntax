@@ -10,7 +10,7 @@ import qualified Data.Map as M
 import SFormula
 import Checking
 import qualified Data.Dequeue as D
-import Data.Maybe (isNothing, isJust)
+import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
 
 --------------------------------------------------------------------------------
