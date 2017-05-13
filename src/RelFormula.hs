@@ -209,8 +209,7 @@ instance (Ord a, Ord l) => Ord (LFormula eb cs k a l) where
 --------------------------------------------------------------------------------
 -- Elementary bases and control sets
 
-class (ControlSet cs a, ElemBase eb a) =>
-      BaseCtrl eb cs a where
+class (ControlSet cs a, ElemBase eb a) => BaseCtrl eb cs a where
   respects :: eb a -> cs a -> Bool
 
 class (Monoid (cs a), Eq (cs a)) =>
