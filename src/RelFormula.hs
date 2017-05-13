@@ -219,17 +219,13 @@ class (Monoid (cs a), Eq (cs a)) =>
 class (Monoid (eb a), Eq (eb a)) => ElemBase eb a where
   formulaBase :: LFormula eb cs k a l -> eb a
 
-elemBase
-  :: ElemBase eb a
-  => NeutralFormula eb cs a l -> eb a
-elemBase (NF (Atom a)) = singleton a
--- elemBase (NF (Conj f1 f2 _)) = elemBase (NF f1) `mappend` elemBase (NF f2)
-elemBase (NF (Impl _ eb _ _ _)) = eb
+olFormulaBase :: ElemBase eb a => OLFormula eb cs a l -> eb a
+olFormulaBase (OLF f) = formulaBase f
 
 elemBaseAll
   :: (ElemBase eb a, Foldable f)
-  => f (NeutralFormula eb cs a l) -> eb a
-elemBaseAll = fold . map elemBase . toList
+  => f (OLFormula eb cs a l) -> eb a
+elemBaseAll = fold . map olFormulaBase . toList
 
 --------------------------------------------------------------------------------
 -- Neutral formulas and sequents
