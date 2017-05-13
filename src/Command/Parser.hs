@@ -54,19 +54,23 @@ parseEditAxiom = token (string "change") >> token (string "axiom") >> do
   return $ ChangeAxiom name (CSS ctrlset) from to
 
 -- query name (aggr...) (aggr...) with axioms (...)
-parseQuery :: Parser Command
-parseQuery =
+parseQueryTheorem :: Parser Command
+parseQueryTheorem =
   token (string "query") >> do
-    name <- token thrmName
+    maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
     from <- parens (aggregate1)
     spaces
     to <- parens (aggregate1)
-    token (string "with axioms")
+    _ <- token (string "with axioms")
     axioms <- parens (aggregate)
-    return $ Query name (QS (AS axioms) from to)
+    let q = QS (AS axioms) from to
+    case maybeName of
+      Just name -> return $ AddTheorem name q
+      Nothing -> return $ Query q
 
 parseLoadFile :: Parser Command
-parseLoadFile = token (string "load file") >> LoadFile <$> token (many1 (noneOf [' ']))
+parseLoadFile =
+  token (string "load file") >> LoadFile <$> token (many1 (noneOf [' ']))
 
 parseSaveToFile :: Parser Command
 parseSaveToFile =
@@ -74,7 +78,7 @@ parseSaveToFile =
 
 command :: Parser Command
 command =
-  parseAddAxiom <|> parseEditAxiom <|> parseQuery <|> parseLoadFile <|>
+  parseAddAxiom <|> parseEditAxiom <|> parseQueryTheorem <|> parseLoadFile <|>
   parseSaveToFile
 
 comma :: Parser Char
