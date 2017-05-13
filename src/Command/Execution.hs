@@ -120,8 +120,8 @@ addAxiom env name@(TN nm) ctrlset strFrom strTo =
         Nothing ->
           logUI ("Axiom named '" ++ nm ++ "' already present") >> return env
 
-query :: AxEnv -> ThrmEnv -> ThrmName -> QueriedSeq -> Free UIF (ThrmEnv)
-query env thrms nm q =
+addTheorem :: AxEnv -> ThrmEnv -> ThrmName -> QueriedSeq -> Free UIF (ThrmEnv)
+addTheorem env thrms nm q =
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
     logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
     forM_ impls (logUI . show)
@@ -137,6 +137,14 @@ query env thrms nm q =
               (x:xs) -> fromNS (x NE.:| xs) cs concl
       newThrms <- tryInsertTheorem nm (q, formula) thrms
       return (impls, newThrms)
+
+query :: AxEnv -> ThrmEnv -> QueriedSeq -> UI ()
+query env thrms q = flip (toUI' logUI) implsM $ \impls -> do
+  logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
+  forM_ impls (logUI . show)
+  where
+    implsM = fmap (transitions . term) $
+      liftParse (queryToSequent env thrms q) >>= liftSR . runSearch
 
 processTheorems :: AxEnv -> ThrmEnv -> UI ThrmEnv
 processTheorems axioms = processThrms doer
@@ -189,10 +197,13 @@ execCommand (ChangeAxiom name ctrlset strFrom strTo) = do
   (env, thrms) <- get
   (newEnv, newThrms) <- lift $ changeAxiom env name ctrlset strFrom strTo thrms
   put (newEnv, newThrms)
-execCommand (Query name q) = do
+execCommand (AddTheorem name q) = do
   (env, thrms) <- get
-  newThrms <- lift $ query env thrms name q
+  newThrms <- lift $ addTheorem env thrms name q
   put (env, newThrms)
+execCommand (Query q) = do
+  (env, thrms) <- get
+  lift (query env thrms q)
 execCommand (LoadFile path) = loadFile path
 execCommand (SaveToFile _) = lift $ logUI "saving to files not yet supported"
 
