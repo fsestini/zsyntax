@@ -8,6 +8,7 @@ module SFormula
   , SAxiom(..)
   , Sequent(..)
   , sAtom
+  , fromNS
   , sConj
   , sImpl
   , neutralize
@@ -33,6 +34,7 @@ import LinearContext
 import Context
 import Data.Foldable
 import qualified TypeClasses as T
+import qualified Data.List.NonEmpty as NE
 
 --------------------------------------------------------------------------------
 
@@ -90,6 +92,16 @@ sAxiomIsSFormula
   :: ElemBase eb a
   => SAxiom eb cs a -> SFormula eb cs a
 sAxiomIsSFormula (SA a) = SF . OLF $ (axiomIsFormula a)
+
+fromNS
+  :: NE.NonEmpty (NeutralFormula eb cs a l)
+  -> cs a
+  -> OLFormula eb cs a l
+  -> SAxiom eb cs a
+fromNS lc cs concl = sAx fromF (SF (fmap (const ()) concl)) cs
+  where
+    fromF = foldr1 sConj (fmap nfIsSf lc)
+    nfIsSf (NF f) = SF (OLF (fmap (const ()) f))
 
 --------------------------------------------------------------------------------
 -- Sequents.
