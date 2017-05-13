@@ -9,20 +9,23 @@ module Checking
   , ctrlFromFoldable
   ) where
 
-import RelFormula (ControlSet(..), ElemBase(..), BaseCtrl(..), BioFormula)
+import RelFormula
+       (ControlSet(..), ElemBase(..), BaseCtrl(..), BioFormula,
+        LFormula(..), ImplFormula(..), BaseSpot(..), OLFormula(..))
 import qualified Data.Set as S
-import Data.Foldable (toList)
+import Data.Monoid ((<>))
+import Data.Foldable (toList, fold)
 import qualified TypeClasses as T (CanMap(..))
 
-newtype SimpleCtrlSet a =
-  CS (S.Set (BioFormula a))
+newtype SimpleCtrlSet a = CS (S.Set (BioFormula a))
   deriving (Eq, Ord, Monoid, Show)
-newtype SimpleElemBase a =
-  EB (S.Set (BioFormula a))
+newtype SimpleElemBase a = EB (S.Set (BioFormula a))
   deriving (Eq, Ord, Monoid, Show)
 
 instance (Eq a, Ord a) => ElemBase SimpleElemBase a where
-  singleton = EB . S.singleton
+  formulaBase (Atom x) = EB . S.singleton $ x
+  formulaBase (Conj f1 f2 _) = formulaBase f1 <> formulaBase f2
+  formulaBase (Impl' (ImplF f1 (FullSpot eb) cs f2 _)) = eb
 
 instance Ord a => ControlSet SimpleCtrlSet a where
 
