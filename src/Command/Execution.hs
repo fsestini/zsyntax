@@ -278,4 +278,6 @@ parseAxiomStr env thrms str =
 
 splitTrim :: String -> [String]
 splitTrim str = filter (not . null) $ map trim $ splitOn "," (trim str)
-  where trim = dropWhileEnd isSpace . dropWhile isSpace
+
+trim :: String -> String
+trim = dropWhileEnd isSpace . dropWhile isSpace
