@@ -50,8 +50,10 @@ import Debug.Trace
 --------------------------------------------------------------------------------
 
 -- | Type of labelled sequents decorated with derivation terms
-data DT term a l = DT term a
-  deriving (Eq, Ord)
+data DT term a l = DT
+  { term :: term
+  , payload :: a
+  } deriving (Eq, Ord)
 
 instance (Show term, Show a) =>
          Show (DT term a l) where
