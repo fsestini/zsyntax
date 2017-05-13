@@ -34,6 +34,7 @@ instance Show ThrmName where
 
 data Command = AddAxiom ThrmName CSString String String
              | ChangeAxiom ThrmName CSString String String
+             | RemoveAxiom ThrmName
              | AddTheorem ThrmName QueriedSeq
              | Query QueriedSeq
              | LoadFile FilePath
@@ -48,6 +49,7 @@ class FEnv env where
   type Elems env :: *
   feEmpty :: env
   feInsert :: ThrmName -> Elems env -> env -> Maybe env
+  feRemove :: ThrmName -> env -> env
   feLookup :: ThrmName -> env -> Maybe (Elems env)
   feAsList :: env -> [(ThrmName, Elems env)]
 
@@ -58,6 +60,8 @@ instance FEnv ThrmEnv where
     if isJust (lookup nm (toList thrms))
       then Nothing
       else Just (TE (D.pushBack thrms (nm, (q, sa))))
+  feRemove name (TE thrms) =
+    (TE (D.fromList . filter ((== name) . fst) . toList $ thrms))
   feLookup nm (TE thrms) = lookup nm (toList thrms)
   feAsList (TE thrms) = toList thrms
 
@@ -68,6 +72,7 @@ instance FEnv AxEnv where
     if isJust (M.lookup n env)
        then Nothing
        else Just (AE (M.insert n x env))
+  feRemove name (AE env) = AE (M.delete name env)
   feLookup x (AE env) = M.lookup x env
   feAsList (AE m) = M.toList m
 

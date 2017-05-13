@@ -180,6 +180,12 @@ changeAxiom axEnv axName axCS axFrom axTo thrms = toUI (axEnv, thrms) $ do
   newThrms <- toEUI (processTheorems newAxEnv thrms)
   return (newAxEnv, newThrms)
 
+removeAxiom :: AxEnv -> ThrmName -> ThrmEnv -> UI (AxEnv, ThrmEnv)
+removeAxiom axEnv axName thrms = do
+  let newAxioms = feRemove axName axEnv
+  newThrms <- processTheorems newAxioms thrms
+  return (newAxioms, newThrms)
+
 loadFile :: FilePath -> StateT (AxEnv, ThrmEnv) (Free UIF) ()
 loadFile path = do
   contents <- lift $ uiLoadFile path
@@ -203,6 +209,10 @@ execCommand (AddAxiom name ctrlset strFrom strTo) = do
 execCommand (ChangeAxiom name ctrlset strFrom strTo) = do
   (env, thrms) <- get
   (newEnv, newThrms) <- lift $ changeAxiom env name ctrlset strFrom strTo thrms
+  put (newEnv, newThrms)
+execCommand (RemoveAxiom name) = do
+  (env, thrms) <- get
+  (newEnv, newThrms) <- lift $ removeAxiom env name thrms
   put (newEnv, newThrms)
 execCommand (AddTheorem name q) = do
   (env, thrms) <- get
