@@ -23,29 +23,29 @@ import qualified Data.Map as M
 
 import Command
 
-type App a = StateT (Env, ThrmEnv) IO a
+type App a = StateT (AxEnv, ThrmEnv) IO a
 
 toIO :: UIF a -> IO a
 toIO (UILog str x) = (putStrLn $ "log: " ++ str) >> return x
 toIO (UILoadFile path x) = readFile path >>= return . x
 
-hoistApp :: StateT (Env, ThrmEnv) (Free UIF) a -> App a
+hoistApp :: StateT (AxEnv, ThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
 
-printAxiom :: (String, SAxiom SimpleElemBase SimpleCtrlSet String) -> String
-printAxiom (name, ax) = name ++ " : " ++ (show ax)
+printAxiom :: (ThrmName, SAxiom SimpleElemBase SimpleCtrlSet String) -> String
+printAxiom (TN name, ax) = name ++ " : " ++ (show ax)
 
 printAxioms :: App ()
 printAxioms = do
   (env, _) <- get
-  let list = M.toList env
+  let list = feAsList env
   mapM_ (liftIO . putStrLn) . map printAxiom $ list
   liftIO . putStrLn $ (show . length $ list) ++ " axioms in total."
 
 printTheorems :: App ()
 printTheorems = do
   (_, thrms) <- get
-  let list = M.toList thrms
+  let list = feAsList thrms
   mapM_ (liftIO . putStrLn) .
     map ((\(x, y) -> x ++ " : " ++ y) . bimap show show) $
     list
@@ -66,4 +66,4 @@ loop = do
   loop
 
 loopIO :: IO ()
-loopIO = fst <$> runStateT loop mempty
+loopIO = fst <$> runStateT loop (feEmpty, feEmpty)
