@@ -162,9 +162,13 @@ processTheorems axioms = processThrms doer
 
 queryToSequent :: AxEnv -> ThrmEnv -> QueriedSeq -> Either String QSeq
 queryToSequent env thrms (QS (AS axiomsString) q1 q2) = do
-  lctxt <- fmap (fmap sAtom) $ parseBioAggregate1 q1
-  concl <- fmap (foldr1 sConj . fmap sAtom) (parseBioAggregate1 q2)
-  axioms <- mapM (parseAxiomStr env thrms) (splitTrim axiomsString)
+  lctxt <-
+    fmap (fmap sAtom) $ adjoinMsgE "linear context: " (parseBioAggregate1 q1)
+  concl <-
+    fmap (foldr1 sConj . fmap sAtom) $
+    adjoinMsgE "conclusion: " (parseBioAggregate1 q2)
+  axioms <- adjoinMsgE "axioms: "
+      (mapM (parseAxiomStr env thrms) (splitTrim axiomsString))
   return $
     SQ (fromFoldable axioms) (fromFoldable (lctxt :: NE.NonEmpty QSF)) concl
 
