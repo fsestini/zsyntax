@@ -249,7 +249,7 @@ implLeft fr@(ImplF a _ cs b _) = do
   DT d m1 (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
   DT d' m2 (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(OLF b)] EmptyZetaXi
-  guard (respects (elemBaseAll delta2) cs)
+  guard (respects (lcBase delta2) cs)
   return $
     DT (implL d d' fr) (M.unionWith (+) m1 m2)
        (NS (gamma1 <> gamma2)
@@ -266,13 +266,7 @@ copyRule fr@(ImplF a EmptySpot cs b l) = do
   DT d' m2 (MRFullGoal gamma2 delta2 cs' concl) <-
     leftActive mempty [(OLF b)] EmptyZetaXi
   let m = M.unionWith (+) m1 m2
-  guard (respects (elemBaseAll delta2) cs)
-  --let asd = not . atThreshold . M.lookup l $ m
-  -- if asd
-  --    then return ()
-  --    else trace ("Cutoff at: " ++ (show . sum . M.elems $ m)) $ return ()
-  --guard (asd)
-  --guard (not . (> 20) . sum . M.elems $ m)
+  guard (respects (lcBase delta2) cs)
   return $
     DT
       (copy (implL d d' (axiomIsRegular fr)) fr)
@@ -281,8 +275,6 @@ copyRule fr@(ImplF a EmptySpot cs b l) = do
   where
     updater Nothing = Just 1
     updater (Just n) = Just (n + 1)
-    -- atThreshold Nothing = False
-    -- atThreshold (Just x) = x > 10
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
@@ -291,5 +283,13 @@ implRight
 implRight fr@(ImplF a (FullSpot eb) cs b _) = do
   DT d m (MREmptyGoal gamma delta) <-
     leftActive mempty [(OLF a)] (FullZetaXi cs (OLF b))
-  guard ((elemBaseAll delta) == eb)
+  guard ((lcBase delta) == eb)
   return $ DT (implR d fr) m (NS gamma delta mempty (OLF (Impl' fr)))
+
+--------------------------------------------------------------------------------
+
+lcBase :: forall eb cs a l . (Ord a, Ord l, ElemBase eb a) => LCtxt eb cs a l -> eb a
+lcBase ctxt = asFoldable (elemBaseAll . fmap nIsOl . toList) ctxt
+  where
+    nIsOl :: NeutralFormula eb cs a l -> OLFormula eb cs a l
+    nIsOl (NF f) = OLF f
