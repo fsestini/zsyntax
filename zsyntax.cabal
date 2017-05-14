@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     AppMonad
+  exposed-modules:     AppMonad, GUI
   other-modules:       Prover.Class, Prover.Structures, Prover.Transformer, Rel
                      , Relation, TypeClasses, RelFormula, SFormula, Prover
                      , Prover.Search, Checking, Context, LinearContext
