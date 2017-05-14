@@ -7,6 +7,7 @@ module Checking
   ( SimpleCtrlSet
   , SimpleElemBase
   , ctrlFromFoldable
+  , ctrlToList
   ) where
 
 import RelFormula
@@ -37,6 +38,9 @@ ctrlFromFoldable
   :: (Foldable f, Ord a)
   => f (BioFormula a) -> SimpleCtrlSet a
 ctrlFromFoldable f = CS (S.fromList . toList $ f)
+
+ctrlToList :: SimpleCtrlSet a -> [BioFormula a]
+ctrlToList (CS set) = S.toList set
 
 instance T.CanMap SimpleCtrlSet where
   type Constr SimpleCtrlSet x = Ord x
