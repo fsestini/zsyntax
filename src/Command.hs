@@ -21,6 +21,7 @@ module Command
   , feAsList
   , trim
   , SA
+  , SF
   ) where
 
 import Command.Structures
