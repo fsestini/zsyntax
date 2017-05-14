@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -55,7 +57,7 @@ type QDTSeq = MyDTSeq BioAtoms
 type QUnaryRule = MyUnaryRule BioAtoms
 type QGSeq = MyGSeq BioAtoms
 type QSF = MySF BioAtoms
-type QAxiom = SAxiom SimpleElemBase SimpleCtrlSet BioAtoms
+type QAxiom = SAxiom SimpleCtrlSet BioAtoms
 
 --------------------------------------------------------------------------------
 -- Single command execution
@@ -86,7 +88,7 @@ adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
 adjoinMsgE :: String -> Either String a -> Either String a
 adjoinMsgE str = first (str ++)
 
-tryInsertTheorem :: ThrmName -> (QueriedSeq, SA) -> ThrmEnv -> EUI ThrmEnv
+tryInsertTheorem :: ThrmName -> (QueriedSeq, Either SA SF) -> ThrmEnv -> EUI ThrmEnv
 tryInsertTheorem nm@(TN name) (q, frml) thrms =
   maybe (throwE msg >> return thrms) return newThrms
   where
@@ -100,14 +102,14 @@ tryInsertAxiom name@(TN nm) axiom env =
     msg = "axiom named '" ++ nm ++ "' already present"
 
 parseAxiom :: String -> String -> CSString
-           -> Either String (SAxiom eb SimpleCtrlSet String)
+           -> Either String (SAxiom SimpleCtrlSet String)
 parseAxiom strFrom strTo (CSS ctrlset) = do
   ctrl <- bimap show id $ parseCtrlSet ctrlset
   fromAggr <- parseBioAggregate1 strFrom
   toAggr <- parseBioAggregate1 strTo
   return $
-    sAx (foldr1 sConj . fmap sAtom $ fromAggr)
-        (foldr1 sConj . fmap sAtom $ toAggr)
+    sAx (foldr1 bsConj . fmap bsAtom $ fromAggr)
+        (foldr1 bsConj . fmap bsAtom $ toAggr)
         ctrl
 
 addAxiom :: AxEnv -> ThrmName -> CSString -> String -> String -> UI AxEnv
@@ -120,6 +122,18 @@ addAxiom env name@(TN nm) ctrlset strFrom strTo =
         Nothing ->
           logUI ("Axiom named '" ++ nm ++ "' already present") >> return env
 
+-- TODO: Ensure that lc is non-empty
+fromNS :: NeutralSequent SimpleElemBase SimpleCtrlSet BioAtoms l -> Either SA SF
+fromNS (NS _ lc cs concl@(OLF conclF)) =
+  maybe (Right (sImpl lcf mempty cs (fromLFormula conclF))) Left $ do
+    from <- decideSF lcf
+    to <- decideOLF concl
+    return $ sAx from (fmap (const ()) to) cs
+  where
+    lcf = foldr1 sConj (fmap fromNF (toList lc))
+    decideSF :: SFormula eb cs a -> Maybe (BSFormula cs a)
+    decideSF (SF olf) = decideOLF olf
+
 addTheorem :: AxEnv -> ThrmEnv -> ThrmName -> QueriedSeq -> Free UIF (ThrmEnv)
 addTheorem env thrms nm q =
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
@@ -128,15 +142,10 @@ addTheorem env thrms nm q =
     return newThrms
   where
     res = do
-      (DT dt (NS _ lc cs concl)) <-
+      (DT dt ns) <-
         liftParse (queryToSequent env thrms q) >>= liftSR . runSearch
-      let impls = transitions dt
-          formula =
-            case toList lc of
-              [] -> error "invalid non-empty linear context"
-              (x:xs) -> fromNS (x NE.:| xs) cs concl
-      newThrms <- tryInsertTheorem nm (q, formula) thrms
-      return (impls, newThrms)
+      newThrms <- tryInsertTheorem nm (q, fromNS ns) thrms
+      return (transitions dt, newThrms)
 
 query :: AxEnv -> ThrmEnv -> QueriedSeq -> UI ()
 query env thrms q = flip (toUI' logUI) implsM $ \impls -> do
@@ -153,12 +162,8 @@ processTheorems axioms = processThrms doer
       adjoinMsgEUI ("theorem " ++ name ++ " failed: ") (doer' axioms thrms q)
     doer' env thrms q = do
       actualSequent <- liftParse (queryToSequent env thrms q)
-      (DT _ (NS _ lc cs concl)) <- liftSR (runSearch actualSequent)
-      let formula =
-            case toList lc of
-              [] -> error "linear context should be non-empty"
-              (x:xs) -> fromNS (x NE.:| xs) cs concl
-      return formula
+      (DT _ ns) <- liftSR (runSearch actualSequent)
+      return (fromNS ns)
 
 queryToSequent :: AxEnv -> ThrmEnv -> QueriedSeq -> Either String QSeq
 queryToSequent env thrms (QS (AS axiomsString) q1 q2) = do
