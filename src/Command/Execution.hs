@@ -176,7 +176,7 @@ changeAxiom :: AxEnv -> ThrmName -> CSString -> String -> String -> ThrmEnv
             -> UI (AxEnv, ThrmEnv)
 changeAxiom axEnv axName axCS axFrom axTo thrms = toUI (axEnv, thrms) $ do
   axiom <- liftParse (parseAxiom axFrom axTo axCS)
-  newAxEnv <- tryInsertAxiom axName axiom axEnv
+  let newAxEnv = feReplace axName axiom axEnv
   newThrms <- toEUI (processTheorems newAxEnv thrms)
   return (newAxEnv, newThrms)
 
