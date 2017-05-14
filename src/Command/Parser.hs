@@ -76,10 +76,14 @@ parseSaveToFile :: Parser Command
 parseSaveToFile =
   token (string "save to file") >> SaveToFile <$> many1 (noneOf [' '])
 
+parseRemoveAxiom :: Parser Command
+parseRemoveAxiom =
+  RemoveAxiom <$> (token (string "remove axiom") >> (token thrmName))
+
 command :: Parser Command
 command =
   parseAddAxiom <|> parseEditAxiom <|> parseQueryTheorem <|> parseLoadFile <|>
-  parseSaveToFile
+  parseSaveToFile <|> parseRemoveAxiom
 
 comma :: Parser Char
 comma = token (char ',')
