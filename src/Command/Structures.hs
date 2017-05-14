@@ -50,6 +50,7 @@ class FEnv env where
   feEmpty :: env
   feInsert :: ThrmName -> Elems env -> env -> Maybe env
   feRemove :: ThrmName -> env -> env
+  feReplace :: ThrmName -> Elems env -> env -> env
   feLookup :: ThrmName -> env -> Maybe (Elems env)
   feAsList :: env -> [(ThrmName, Elems env)]
 
@@ -62,6 +63,8 @@ instance FEnv ThrmEnv where
       else Just (TE (D.pushBack thrms (nm, (q, sa))))
   feRemove name (TE thrms) =
     (TE (D.fromList . filter ((== name) . fst) . toList $ thrms))
+  feReplace name x (TE thrms) =
+    TE . D.fromList $ (replaceAssocL (name, x) (toList thrms))
   feLookup nm (TE thrms) = lookup nm (toList thrms)
   feAsList (TE thrms) = toList thrms
 
@@ -73,8 +76,17 @@ instance FEnv AxEnv where
        then Nothing
        else Just (AE (M.insert n x env))
   feRemove name (AE env) = AE (M.delete name env)
+  feReplace n x (AE env) = AE (M.insert n x env)
   feLookup x (AE env) = M.lookup x env
   feAsList (AE m) = M.toList m
+
+replaceAssocL
+  :: Eq a
+  => (a, b) -> [(a, b)] -> [(a, b)]
+replaceAssocL _ [] = []
+replaceAssocL (nm, x) ((nm', y):rest)
+  | nm == nm' = (nm, x) : rest
+  | otherwise = (nm', y) : (replaceAssocL (nm, x) rest)
 
 processThrms
   :: (Monad m)
