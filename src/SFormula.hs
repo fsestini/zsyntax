@@ -110,6 +110,9 @@ fromLFormula
   :: LFormula eb cs k c a l -> SFormula eb cs a
 fromLFormula = SF . OLF . fmap (const ())
 
+fromNF :: NeutralFormula eb cs a l -> SFormula eb cs a
+fromNF (NF f) = fromLFormula f
+
 fromLAxiom :: LAxiom cs a l -> SAxiom cs a
 fromLAxiom = SA . fmap (const ())
 
