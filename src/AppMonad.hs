@@ -32,7 +32,7 @@ toIO (UILoadFile path x) = readFile path >>= return . x
 hoistApp :: StateT (AxEnv, ThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
 
-printAxiom :: (ThrmName, SAxiom SimpleElemBase SimpleCtrlSet String) -> String
+printAxiom :: (ThrmName, SAxiom SimpleCtrlSet String) -> String
 printAxiom (TN name, ax) = name ++ " : " ++ (show ax)
 
 printAxioms :: App ()
