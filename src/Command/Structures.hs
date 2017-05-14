@@ -81,7 +81,7 @@ processThrms
   => (ThrmName -> (QueriedSeq, Maybe SA) -> ThrmEnv -> m (QueriedSeq, Maybe SA))
   -> ThrmEnv
   -> m ThrmEnv
-processThrms f (TE env) = foldlM f' (TE env) (toList env)
+processThrms f (TE env) = foldlM f' feEmpty (toList env)
   where
     f' oldenv@ (TE queue) (nm,x) = do
       y <- f nm x oldenv
