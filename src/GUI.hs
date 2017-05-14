@@ -35,7 +35,8 @@ gui = do
   set w [ containerChild := vbox ]
 
   -- Theorem area
-  (teName, teAxioms, teFrom, teTo, teBtn) <- theoremArea vbox
+  (teName, teAxioms, teFrom, teTo, teBtn, openBtn, exportBtn)
+    <- theoremArea vbox
 
   -- Separator
   sep1 <- hSeparatorNew
@@ -56,7 +57,7 @@ gui = do
   -- Axioms list
   axLabel <- labelNew (Just "Axioms:")
   miscSetAlignment axLabel 0 0
-  boxPackStart vbox axLabel PackNatural 0
+  boxPackStart vbox axLabel PackNatural 3
 
   list <- listStoreNew []
   tree <- treeViewNewWithModel list
@@ -90,7 +91,7 @@ gui = do
 
   thLabel <- labelNew (Just "Theorems:")
   miscSetAlignment thLabel 0 0
-  boxPackStart vbox thLabel PackNatural 0
+  boxPackStart vbox thLabel PackNatural 3
 
   thList <- listStoreNew []
   thTree <- treeViewNewWithModel thList
@@ -119,6 +120,10 @@ gui = do
     sel <- treeSelectionGetSelectedRows treeSel
     (name, _) <- listStoreGetValue list (head (head sel))
     execCommandInGUI gui state (RemoveAxiom name)
+
+  onClicked openBtn $
+    loadFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
+  onClicked exportBtn $ appendLog b "save file as"
 
   widgetShowAll w
   on w deleteEvent $ liftIO mainQuit >> return False
@@ -203,18 +208,31 @@ thrmAreaToCommand nmE axE fromE toE = do
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
+interpret _ (UILoadFile path x) = fmap x (readFile path)
 interpret _ _ = error "not implemented yet"
 
 toIO :: GUI -> UI a -> IO a
 toIO gui = foldFree (interpret gui)
 
+loadFileCommand :: IO (Maybe Command)
+loadFileCommand = do
+  fileD <- fileChooserDialogNew (Just "Load file...") Nothing
+    FileChooserActionOpen [("Cancel", ResponseCancel), ("Load", ResponseAccept)]
+  widgetShow fileD
+  response <- dialogRun fileD
+  c <- case response of
+         ResponseAccept -> do
+           fileName <- fileChooserGetFilename fileD
+           return (fmap LoadFile fileName)
+         _ -> return Nothing
+  widgetDestroy fileD
+  return c
+
 --------------------------------------------------------------------------------
 
-theoremArea :: VBox -> IO (Entry, Entry, Entry, Entry, Button)
+theoremArea :: VBox -> IO (Entry, Entry, Entry, Entry, Button, Button, Button)
 theoremArea vbox = do
-  proverLabel <- labelNew (Just "Prove theorem:")
-  miscSetAlignment proverLabel 0 0
-  boxPackStart vbox proverLabel PackNatural 0
+  packLabel vbox "Prove theorem:"
   teName <- entryNew
   set teName [entryEditable := True]
   teAxioms <- entryNew
@@ -224,11 +242,24 @@ theoremArea vbox = do
   teTo <- entryNew
   set teTo [entryEditable := True]
   teBtn <- buttonNewWithLabel "Go"
+  openBtn <- buttonNewWithLabel "Open file..."
+  exportBtn <- buttonNewWithLabel "Export..."
   hb <- hBoxNew False 0
   boxPackStart vbox hb PackNatural 0
+  packLabel hb "Name:"
   boxPackStart hb teName PackNatural 0
+  packLabel hb "Axioms:"
   boxPackStart hb teAxioms PackGrow 5
+  packLabel hb "Start aggr.:"
   boxPackStart hb teFrom PackGrow 5
+  packLabel hb "End aggr.:"
   boxPackStart hb teTo PackGrow 5
-  boxPackStart hb teBtn PackNatural 0
-  return (teName, teAxioms, teFrom, teTo, teBtn)
+  boxPackStart hb teBtn PackNatural 3
+  boxPackStart hb openBtn PackNatural 3
+  boxPackStart hb exportBtn PackNatural 3
+  return (teName, teAxioms, teFrom, teTo, teBtn, openBtn, exportBtn)
+
+packLabel box str = do
+  l <- labelNew (Just str)
+  miscSetAlignment l 0 0
+  boxPackStart box l PackNatural 3
