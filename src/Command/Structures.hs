@@ -41,9 +41,11 @@ data Command = AddAxiom ThrmName CSString String String
              | SaveToFile FilePath
              deriving (Eq, Show)
 
-type SA = SAxiom SimpleElemBase SimpleCtrlSet String
+type SA = SAxiom SimpleCtrlSet String
+type SF = SFormula SimpleElemBase SimpleCtrlSet String
 newtype AxEnv = AE (M.Map ThrmName SA)
-newtype ThrmEnv = TE (D.BankersDequeue (ThrmName, (QueriedSeq, Maybe SA)))
+newtype ThrmEnv =
+  TE (D.BankersDequeue (ThrmName, (QueriedSeq, Maybe (Either SA SF))))
 
 class FEnv env where
   type Elems env :: *
@@ -55,7 +57,7 @@ class FEnv env where
   feAsList :: env -> [(ThrmName, Elems env)]
 
 instance FEnv ThrmEnv where
-  type Elems ThrmEnv = (QueriedSeq, Maybe SA)
+  type Elems ThrmEnv = (QueriedSeq, Maybe (Either SA SF))
   feEmpty = TE D.empty
   feInsert nm (q, sa) (TE thrms) =
     if isJust (lookup nm (toList thrms))
@@ -90,7 +92,8 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName -> (QueriedSeq, Maybe SA) -> ThrmEnv -> m (QueriedSeq, Maybe SA))
+  => (ThrmName -> (QueriedSeq, Maybe (Either SA SF))
+      -> ThrmEnv -> m (QueriedSeq, Maybe (Either SA SF)))
   -> ThrmEnv
   -> m ThrmEnv
 processThrms f (TE env) = foldlM f' feEmpty (toList env)
