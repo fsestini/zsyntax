@@ -12,7 +12,7 @@ import Debug.Trace
 
 type AppState = (AxEnv, ThrmEnv)
 type AxItem = (ThrmName, SA)
-type ThrmItem = (ThrmName, (QueriedSeq, Maybe SA))
+type ThrmItem = (ThrmName, (QueriedSeq, Maybe (Either SA SF)))
 
 data GUI = GUI
   { thrmsStore :: ListStore ThrmItem
