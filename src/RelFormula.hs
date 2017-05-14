@@ -213,6 +213,10 @@ decideOLF (OLF f) = isBasic f >>= return . BF
       return (Conj f1' f2' l)
     isBasic (Impl f1 eb cs f2 l) = Nothing
 
+bfToAtoms :: LFormula eb cs k CBasic a l -> [BioFormula a]
+bfToAtoms (Atom x) = [x]
+bfToAtoms (Conj f1 f2 _) = bfToAtoms f1 ++ bfToAtoms f2
+
 --------------------------------------------------------------------------------
 -- Eq, Ord instances for formulas
 
