@@ -197,6 +197,7 @@ olfMapAtoms f (OLF frml) = OLF (frmlMapAtoms f frml)
 -- Basic formulas
 
 data BFormula cs a l = forall k . BF (LFormula U cs k CBasic a l)
+deriving instance Functor (BFormula cs a)
 
 fromBasicLFormula :: LFormula eb cs k CBasic a l -> BFormula cs a l
 fromBasicLFormula f = BF (mapEbCsF (const U) id f)
