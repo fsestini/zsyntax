@@ -103,11 +103,11 @@ toSFormula m (SF (OLF (Impl f1 _ _ f2 _))) =
 --     _ -> fail "axioms must be implication formulas"
 
 parseBioAggregate :: String -> Either String [BioFormula String]
-parseBioAggregate = bimap show id . parse (white >> sepBy bioExpr comma) ""
+parseBioAggregate = bimap show id . parse (white *> sepBy bioExpr comma <* eof) ""
 
 parseBioAggregate1 :: String -> Either String (NE.NonEmpty (BioFormula String))
 parseBioAggregate1 str =
-  case parse (white >> sepBy1 bioExpr comma) "" str of
+  case parse (white *> sepBy1 bioExpr comma <* eof) "" str of
     Left err -> Left (show err)
     Right [] -> Left "invalid empty aggregate"
     Right (x:xs) -> Right (x NE.:| xs)
