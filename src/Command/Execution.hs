@@ -37,6 +37,7 @@ import Data.Foldable (toList)
 
 import Command.Structures
 import Command.Parser
+import Command.Export
 
 type MySeq a = Sequent SimpleElemBase SimpleCtrlSet a
 type MyNSeq a = NeutralSequent SimpleElemBase SimpleCtrlSet a Labels
@@ -199,6 +200,14 @@ loadFile path = do
     Left err -> lift . logUI $ "error parsing the file: " ++ (show err)
     Right commands -> mapM_ execCommand commands
 
+saveToFile :: AxEnv -> ThrmEnv -> FilePath -> UI ()
+saveToFile axEnv thrms path =
+  uiSaveFile path . concat $ aux axStrs ++ aux thrmStrs
+  where
+    axStrs = ppAxEnv axEnv
+    thrmStrs = ppThrmEnv thrms
+    aux = (++ ["\n"]) . intersperse "\n"
+
 --------------------------------------------------------------------------------
 -- Generic command execution
 
@@ -227,7 +236,9 @@ execCommand (Query q) = do
   (env, thrms) <- get
   lift (query env thrms q)
 execCommand (LoadFile path) = loadFile path
-execCommand (SaveToFile _) = lift $ logUI "saving to files not yet supported"
+execCommand (SaveToFile path) = do
+  (env, thrms) <- get
+  lift $ saveToFile env thrms path
 
 --------------------------------------------------------------------------------
 -- Search
@@ -287,7 +298,9 @@ parseCtrlSet str = fmap ctrlFromFoldable . parseBioAggregate $ str
 
 parseAxiomStr :: AxEnv -> ThrmEnv -> String -> Either String QAxiom
 parseAxiomStr env thrms str =
-  case feLookup (TN str) env <|> (join . fmap snd $ feLookup (TN str) thrms) of
+  case feLookup (TN str) env <|>
+       (join . fmap (join . fmap (either Just (const Nothing)) . snd) $
+        feLookup (TN str) thrms) of
     Nothing -> Left $ "axiom '" ++ str ++ "' not in scope"
     Just ax -> Right ax
 
