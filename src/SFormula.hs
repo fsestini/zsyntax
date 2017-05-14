@@ -7,8 +7,10 @@
 
 module SFormula
   ( SFormula(..)
+  , BSFormula(..)
   , SAxiom(..)
   , Sequent(..)
+  , fromNF
   , sAtom
   , fromBasicNS
   , sConj
@@ -26,6 +28,7 @@ module SFormula
   , bsConj
   , sAx
   , U(..)
+  , ImplFormula(..)
   , pattern Impl
   ) where
 
