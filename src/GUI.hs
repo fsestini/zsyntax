@@ -123,7 +123,8 @@ gui = do
 
   onClicked openBtn $
     loadFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
-  onClicked exportBtn $ appendLog b "save file as"
+  onClicked exportBtn $
+    saveFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
 
   widgetShowAll w
   on w deleteEvent $ liftIO mainQuit >> return False
@@ -209,7 +210,7 @@ thrmAreaToCommand nmE axE fromE toE = do
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
 interpret _ (UILoadFile path x) = fmap x (readFile path)
-interpret _ _ = error "not implemented yet"
+interpret _ (UISaveFile path content x) = writeFile path content >> return x
 
 toIO :: GUI -> UI a -> IO a
 toIO gui = foldFree (interpret gui)
@@ -224,6 +225,20 @@ loadFileCommand = do
          ResponseAccept -> do
            fileName <- fileChooserGetFilename fileD
            return (fmap LoadFile fileName)
+         _ -> return Nothing
+  widgetDestroy fileD
+  return c
+
+saveFileCommand :: IO (Maybe Command)
+saveFileCommand = do
+  fileD <- fileChooserDialogNew (Just "Save file as...") Nothing
+    FileChooserActionSave [("Cancel", ResponseCancel), ("Save", ResponseAccept)]
+  widgetShow fileD
+  response <- dialogRun fileD
+  c <- case response of
+         ResponseAccept -> do
+           fileName <- fileChooserGetFilename fileD
+           return (fmap SaveToFile fileName)
          _ -> return Nothing
   widgetDestroy fileD
   return c
