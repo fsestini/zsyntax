@@ -61,7 +61,7 @@ instance (Show term, Show a) =>
 
 type DTSequent term eb cs a l = DT term (NeutralSequent eb cs a l) l
 
-instance (Ord l, Ord a, Eq (cs a)) =>
+instance (Ord l, Ord a, Eq (cs a), ElemBase eb a) =>
          ForwardSequent (DTSequent term eb cs a l) where
   subsumes (DT _ s1) (DT _ s2) = subsumes s1 s2
 
@@ -124,11 +124,11 @@ data SequentSchema :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
 
 data MatchResult :: (* -> *) -> (* -> *) -> ActCase -> * -> * -> * where
   MREmptyGoal
-    :: UCtxt eb cs a l
+    :: UCtxt cs a l
     -> LCtxt eb cs a l
     -> MatchResult eb cs FullXiEmptyResult a l
   MRFullGoal
-    :: UCtxt eb cs a l
+    :: UCtxt cs a l
     -> LCtxt eb cs a l
     -> cs a
     -> OLFormula eb cs a l
@@ -158,7 +158,7 @@ type DTFocMatchResult term eb cs a l = DT term (FocMatchRes eb cs a l) l
     The fact that it returns a result sequent with empty goal is statically
     enforced by the type of the function. -}
 positiveFocalDispatch
-  :: forall term eb cs a l k . ( Monoid (cs a)
+  :: forall term eb cs a l k c . ( Monoid (cs a)
      , Eq a
      , Eq (cs a)
      , Eq l
@@ -166,7 +166,7 @@ positiveFocalDispatch
      , Ord a
      , DerTerm term eb cs a l
      )
-  => LFormula eb cs k a l
+  => LFormula eb cs k c a l
   -> Relation term eb cs a l (DTFocMatchResult term eb cs a l)
 positiveFocalDispatch formula =
   case formula of
@@ -235,7 +235,7 @@ type Rule term eb cs a l = Relation term eb cs a l (DTSequent term eb cs a l)
 
 focus
   :: (IsFocusable k, ControlSet cs a, Ord l, Ord a, DerTerm term eb cs a l)
-  => LFormula eb cs k a l
+  => LFormula eb cs k c a l
   -> Rule term eb cs a l
 focus formula = do
   DT d (MREmptyGoal gamma delta) <- positiveFocalDispatch formula
@@ -243,7 +243,7 @@ focus formula = do
 
 implLeft
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
-  => ImplFormula eb cs IRegular a l
+  => ImplFormula eb cs c a l
   -> Rule term eb cs a l
 implLeft fr@(ImplF a _ cs b _) = do
   DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
@@ -258,23 +258,25 @@ implLeft fr@(ImplF a _ cs b _) = do
            concl)
 
 copyRule
-  :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
-  => Axiom eb cs a l
+  :: forall eb cs a l term . (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
+  => LAxiom cs a l
   -> Rule term eb cs a l
-copyRule fr@(ImplF a EmptySpot cs b _) = do
-  DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch a
+copyRule fr@(ImplF a U cs b _) = do
+  DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch (fromU a)
   DT d' (MRFullGoal gamma2 delta2 cs' concl) <-
-    leftActive mempty [(OLF b)] EmptyZetaXi
+    leftActive mempty [(OLF (fromU b))] EmptyZetaXi
   guard (respects (lcBase delta2) cs)
   return $
-    DT (copy (implL d d' (axiomIsRegular fr)) fr)
-       (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
+    DT
+      (copy @_ @eb @_ @_ @_
+         (implL d d' (fromUI fr :: ImplFormula eb cs CBasic a l)) fr)
+      (NS (add fr (gamma1 <> gamma2)) (delta1 <> delta2) (cs <> cs') concl)
 
 implRight
   :: (BaseCtrl eb cs a, Ord l, Ord a, DerTerm term eb cs a l)
-  => ImplFormula eb cs IRegular a l
+  => ImplFormula eb cs c a l
   -> Rule term eb cs a l
-implRight fr@(ImplF a (FullSpot eb) cs b _) = do
+implRight fr@(ImplF a eb cs b _) = do
   DT d (MREmptyGoal gamma delta) <-
     leftActive mempty [(OLF a)] (FullZetaXi cs (OLF b))
   guard ((lcBase delta) == eb)

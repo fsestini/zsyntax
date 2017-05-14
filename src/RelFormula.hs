@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -24,29 +25,17 @@ import qualified TypeClasses as T
 --------------------------------------------------------------------------------
 -- Implicational formulas
 
-data ImplKind = IAxiom | IRegular
-data BaseSpot :: (* -> *) -> ImplKind -> * -> * where
-  EmptySpot :: BaseSpot eb IAxiom a
-  FullSpot :: eb a -> BaseSpot eb IRegular a
+-- Formula complexity
+data FComp = CBasic | CComplex
 
-deriving instance Eq (eb a) => Eq (BaseSpot eb k a)
-deriving instance Ord (eb a) => Ord (BaseSpot eb k a)
-deriving instance (Show (eb a), Show a) => Show (BaseSpot eb k a)
-
-bsMapAtoms
-  :: (T.CanMap eb, T.Constr eb a1, T.Constr eb a2)
-  => (a1 -> a2) -> BaseSpot eb k a1 -> BaseSpot eb k a2
-bsMapAtoms f EmptySpot = EmptySpot
-bsMapAtoms f (FullSpot eb) = FullSpot (T.map f eb)
-
-data ImplFormula :: (* -> *) -> (* -> *) -> ImplKind -> * -> * -> * where
+data ImplFormula :: (* -> *) -> (* -> *) -> FComp -> * -> * -> * where
   ImplF
-    :: LFormula eb cs k1 a l
-    -> BaseSpot eb ik a
+    :: LFormula eb cs k1 c a l
+    -> eb a
     -> cs a
-    -> LFormula eb cs k2 a l
+    -> LFormula eb cs k2 c a l
     -> l
-    -> ImplFormula eb cs ik a l
+    -> ImplFormula eb cs c a l
 
 deriving instance Functor (ImplFormula eb cs k a)
 deriving instance Foldable (ImplFormula eb cs k a)
@@ -69,39 +58,44 @@ implMapAtoms
      , T.Constr cs a1
      , T.Constr cs a2
      )
-  => (a1 -> a2) -> ImplFormula eb cs k a1 l -> ImplFormula eb cs k a2 l
-implMapAtoms f (ImplF f1 spot cs f2 l) =
+  => (a1 -> a2) -> ImplFormula eb cs c a1 l -> ImplFormula eb cs c a2 l
+implMapAtoms f (ImplF f1 eb cs f2 l) =
   ImplF
     (frmlMapAtoms f f1)
-    (bsMapAtoms f spot)
+    (T.map f eb)
     (T.map f cs)
     (frmlMapAtoms f f2)
     l
 
-mapEbBS :: (eb1 a -> eb2 a) -> BaseSpot eb1 k a -> BaseSpot eb2 k a
-mapEbBS f EmptySpot = EmptySpot
-mapEbBS f (FullSpot eb) = FullSpot (f eb)
-
 mapEbCsI :: (eb1 a -> eb2 a)
          -> (cs1 a -> cs2 a)
-         -> ImplFormula eb1 cs1 k a l
-         -> ImplFormula eb2 cs2 k a l
+         -> ImplFormula eb1 cs1 c a l
+         -> ImplFormula eb2 cs2 c a l
 mapEbCsI f g (ImplF a bs cs b l) =
-  ImplF (mapEbCsF f g a) (mapEbBS f bs) (g cs) (mapEbCsF f g b) l
+  ImplF (mapEbCsF f g a) (f bs) (g cs) (mapEbCsF f g b) l
 
-axiomIsRegular
-  :: ElemBase eb a
-  => Axiom eb cs a l -> ImplFormula eb cs IRegular a l
-axiomIsRegular (ImplF a _ cs b l) = ImplF a (FullSpot mempty) cs b l
+-- axiomIsRegular
+--   :: ElemBase eb a
+--   => Axiom eb cs a l -> ImplFormula eb cs IRegular a l
+-- axiomIsRegular (ImplF a _ cs b l) = ImplF a (FullSpot mempty) cs b l
 
 axiomIsFormula
   :: ElemBase eb a
-  => Axiom eb cs a l -> LFormula eb cs KImpl a l
-axiomIsFormula (ImplF a EmptySpot cs b l) = Impl a mempty cs b l
+  => LAxiom cs a l -> LFormula eb cs KImpl CComplex a l
+axiomIsFormula = Impl' . mapEbCsI (const mempty) id
 
+data U a = U deriving (Eq, Ord, Show)
+instance T.CanMap U where
+  type Constr U x = ()
+  map _ U = U
+type LAxiom cs a l = ImplFormula U cs CBasic a l
 
+fromU :: (ElemBase eb a) => LFormula U cs k c a l -> LFormula eb cs k c a l
+fromU = mapEbCsF (const mempty) id
 
-type Axiom eb cs a l = ImplFormula eb cs IAxiom a l
+fromUI :: (ElemBase eb a) => ImplFormula U cs c a l -> ImplFormula eb cs c a l
+fromUI = mapEbCsI (const mempty) id
+
 
 --------------------------------------------------------------------------------
 -- Generic labelled formulas
@@ -119,25 +113,34 @@ instance Show a => Show (BioFormula a) where
   show (BioAtom x) = show x
   show (BioInter x y) = show x ++ "<>" ++ show y
 
-data LFormula :: (* -> *) -> (* -> *) -> FKind -> * -> * -> * where
-  Atom :: BioFormula a -> LFormula eb cs KAtom a l
+data LFormula :: (* -> *) -> (* -> *) -> FKind -> FComp -> * -> * -> * where
+  Atom :: BioFormula a -> LFormula eb cs KAtom c a l
   Conj
-    :: LFormula eb cs k1 a l
-    -> LFormula eb cs k2 a l
+    :: LFormula eb cs k1 c a l
+    -> LFormula eb cs k2 c a l
     -> l
-    -> LFormula eb cs KConj a l
+    -> LFormula eb cs KConj c a l
   Impl'
-    :: ImplFormula eb cs IRegular a l
-    -> LFormula eb cs KImpl a l
+    :: ImplFormula eb cs c a l
+    -> LFormula eb cs KImpl CComplex a l
 
-pattern Impl a eb cs b l = Impl' (ImplF a (FullSpot eb) cs b l)
+pattern Impl a eb cs b l = Impl' (ImplF a eb cs b l)
 
-deriving instance Functor (LFormula eb cs k a)
-deriving instance Foldable (LFormula eb cs k a)
-deriving instance Traversable (LFormula eb cs k a)
+deriving instance Functor (LFormula eb cs k c a)
+deriving instance Foldable (LFormula eb cs k c a)
+deriving instance Traversable (LFormula eb cs k c a)
 
-instance (Show a, Show l) => Show (LFormula eb cs k a l) where
+instance (Show a, Show l) => Show (LFormula eb cs k c a l) where
   show f = show (label f)
+
+liftComplexity :: LFormula eb cs k c a l -> LFormula eb cs k CComplex a l
+liftComplexity (Atom x) = Atom x
+liftComplexity (Conj f1 f2 l) = Conj (liftComplexity f1) (liftComplexity f2) l
+liftComplexity (Impl' i) = Impl' (liftComplexityI i)
+
+liftComplexityI :: ImplFormula eb cs c a l -> ImplFormula eb cs CComplex a l
+liftComplexityI (ImplF f1 eb cs f2 l) =
+  ImplF (liftComplexity f1) eb cs (liftComplexity f2) l
 
 frmlMapAtoms
   :: ( T.CanMap eb
@@ -147,7 +150,7 @@ frmlMapAtoms
      , T.Constr cs a1
      , T.Constr cs a2
      )
-  => (a1 -> a2) -> LFormula eb cs k a1 l -> LFormula eb cs k a2 l
+  => (a1 -> a2) -> LFormula eb cs k c a1 l -> LFormula eb cs k c a2 l
 frmlMapAtoms f (Atom b) = Atom (fmap f b)
 frmlMapAtoms f (Conj f1 f2 l) = Conj (frmlMapAtoms f f1) (frmlMapAtoms f f2) l
 frmlMapAtoms f (Impl' i) = Impl' (implMapAtoms f i)
@@ -155,8 +158,8 @@ frmlMapAtoms f (Impl' i) = Impl' (implMapAtoms f i)
 mapEbCsF
   :: (eb1 a -> eb2 a)
   -> (cs1 a -> cs2 a)
-  -> LFormula eb1 cs1 k a l
-  -> LFormula eb2 cs2 k a l
+  -> LFormula eb1 cs1 k c a l
+  -> LFormula eb2 cs2 k c a l
 mapEbCsF f g (Atom a) = Atom a
 mapEbCsF f g (Conj f1 f2 l) = Conj (mapEbCsF f g f1) (mapEbCsF f g f2) l
 mapEbCsF f g (Impl' i) = Impl' (mapEbCsI f g i)
@@ -164,7 +167,7 @@ mapEbCsF f g (Impl' i) = Impl' (mapEbCsI f g i)
 --------------------------------------------------------------------------------
 
 -- | Opaque formulas
-data OLFormula eb cs a l = forall k . OLF (LFormula eb cs k a l)
+data OLFormula eb cs a l = forall k c . OLF (LFormula eb cs k c a l)
 
 deriving instance Functor (OLFormula eb cs a)
 deriving instance Foldable (OLFormula eb cs a)
@@ -191,19 +194,38 @@ olfMapAtoms
 olfMapAtoms f (OLF frml) = OLF (frmlMapAtoms f frml)
 
 --------------------------------------------------------------------------------
+-- Basic formulas
+
+data BFormula cs a l = forall k . BF (LFormula U cs k CBasic a l)
+
+fromBasicLFormula :: LFormula eb cs k CBasic a l -> BFormula cs a l
+fromBasicLFormula f = BF (mapEbCsF (const U) id f)
+
+decideOLF :: OLFormula eb cs a l -> Maybe (BFormula cs a l)
+decideOLF (OLF f) = isBasic f >>= return . BF
+  where
+    isBasic :: LFormula eb cs k c a l -> Maybe (LFormula U cs k CBasic a l)
+    isBasic (Atom x) = Just (Atom x)
+    isBasic (Conj f1 f2 l) = do
+      f1' <- isBasic f1
+      f2' <- isBasic f2
+      return (Conj f1' f2' l)
+    isBasic (Impl f1 eb cs f2 l) = Nothing
+
+--------------------------------------------------------------------------------
 -- Eq, Ord instances for formulas
 
 data Label a l = L l | A (BioFormula a) deriving (Eq, Ord, Show)
 
-label :: LFormula eb cs k a l -> Label a l
+label :: LFormula eb cs k c a l -> Label a l
 label (Atom a) = A a
 label (Conj _ _ lbl) = L lbl
 label (Impl _ _ _ _ lbl) = L lbl
 
-instance (Eq a, Eq l) => Eq (LFormula eb cs k a l) where
+instance (Eq a, Eq l) => Eq (LFormula eb cs k c a l) where
   f1 == f2 = (label f1) == (label f2)
 
-instance (Ord a, Ord l) => Ord (LFormula eb cs k a l) where
+instance (Ord a, Ord l) => Ord (LFormula eb cs k c a l) where
   compare f1 f2 = compare (label f1) (label f2)
 
 --------------------------------------------------------------------------------
@@ -212,12 +234,11 @@ instance (Ord a, Ord l) => Ord (LFormula eb cs k a l) where
 class (ControlSet cs a, ElemBase eb a) => BaseCtrl eb cs a where
   respects :: eb a -> cs a -> Bool
 
-class (Monoid (cs a), Eq (cs a)) =>
-      ControlSet cs a
+class (Monoid (cs a), Eq (cs a)) => ControlSet cs a
 
 -- | Typeclass of elementary bases
 class (Monoid (eb a), Eq (eb a)) => ElemBase eb a where
-  formulaBase :: LFormula eb cs k a l -> eb a
+  formulaBase :: LFormula eb cs k c a l -> eb a
 
 olFormulaBase :: ElemBase eb a => OLFormula eb cs a l -> eb a
 olFormulaBase (OLF f) = formulaBase f
@@ -232,8 +253,8 @@ elemBaseAll = fold . map olFormulaBase . toList
 
 class IsNeutral (k :: FKind) where
   decideNeutral
-    :: LFormula eb cs k a l
-    -> Either (LFormula eb cs KAtom a l) (LFormula eb cs KImpl a l)
+    :: LFormula eb cs k c a l
+    -> Either (LFormula eb cs KAtom c a l) (LFormula eb cs KImpl c a l)
 
 instance IsNeutral KAtom where
   decideNeutral = Left
@@ -242,8 +263,8 @@ instance IsNeutral KImpl where
   decideNeutral = Right
 
 data NeutralFormula eb cs a l =
-  forall (k :: FKind) . IsNeutral k =>
-            NF (LFormula eb cs k a l)
+  forall (k :: FKind) c . IsNeutral k =>
+            NF (LFormula eb cs k c a l)
 
 nfMapAtoms
   :: ( T.CanMap eb
@@ -269,11 +290,11 @@ deriving instance Traversable (NeutralFormula eb cs a)
 instance (Show a, Show l) => Show (NeutralFormula eb cs a l) where
   show (NF f) = show f
 
-type UCtxt eb cs a l = UnrestrCtxt (Axiom eb cs a l)
+type UCtxt cs a l = UnrestrCtxt (LAxiom cs a l)
 type LCtxt eb cs a l = LinearCtxt (NeutralFormula eb cs a l)
 
 data NeutralSequent eb cs a l =
-  NS (UCtxt eb cs a l)
+  NS (UCtxt cs a l)
      (LCtxt eb cs a l)
      (cs a)
      (OLFormula eb cs a l)
@@ -285,7 +306,7 @@ instance (Show (eb a), Show (cs a), Show a, Show l) =>
     show uc ++ " ; " ++ show lc ++ " ==> " ++ show concl
 
 data GoalNeutralSequent eb cs a l =
-  GNS (UCtxt eb cs a l)
+  GNS (UCtxt cs a l)
       (LCtxt eb cs a l)
       (Maybe (cs a))
       (OLFormula eb cs a l)
@@ -331,7 +352,7 @@ gnsMapAtoms f (GNS uc lc cs concl) =
 -- Deep heterogeneous comparison functions
 deepHetCompare
   :: (Ord a, Ord l, Ord (eb a), Ord (cs a))
-  => LFormula eb cs k1 a l -> LFormula eb cs k2 a l -> Ordering
+  => LFormula eb cs k1 c1 a l -> LFormula eb cs k2 c2 a l -> Ordering
 deepHetCompare (Atom x1) (Atom x2) = compare x1 x2
 deepHetCompare (Atom _) _ = LT
 deepHetCompare (Conj a1 b1 lbl1) (Conj a2 b2 lbl2) =
@@ -349,18 +370,10 @@ deepHetCompare (Conj _ _ _) (Impl' _) = LT
 deepHetCompare (Impl' i1) (Impl' i2) = deepImplCompare i1 i2
 deepHetCompare (Impl' _) _ = GT
 
-deepSpotCompare
-  :: Ord (eb a)
-  => BaseSpot eb k1 a -> BaseSpot eb k2 a -> Ordering
-deepSpotCompare EmptySpot EmptySpot = EQ
-deepSpotCompare EmptySpot _ = LT
-deepSpotCompare (FullSpot eb1) (FullSpot eb2) = compare eb1 eb2
-deepSpotCompare (FullSpot _) EmptySpot = GT
-
 deepImplCompare
   :: (Ord a, Ord l, Ord (eb a), Ord (cs a))
-  => ImplFormula eb cs k1 a l -> ImplFormula eb cs k2 a l -> Ordering
-deepImplCompare (ImplF a1 spot1 cs1 b1 l1) (ImplF a2 spot2 cs2 b2 l2) =
+  => ImplFormula eb cs c1 a l -> ImplFormula eb cs c2 a l -> Ordering
+deepImplCompare (ImplF a1 eb1 cs1 b1 l1) (ImplF a2 eb2 cs2 b2 l2) =
   if ca == EQ
     then if cb == EQ
            then if ceb == EQ
@@ -373,7 +386,7 @@ deepImplCompare (ImplF a1 spot1 cs1 b1 l1) (ImplF a2 spot2 cs2 b2 l2) =
   where
     ca = deepHetCompare a1 a2
     cb = deepHetCompare b1 b2
-    ceb = deepSpotCompare spot1 spot2
+    ceb = compare eb1 eb2
     ccs = compare cs1 cs2
     cl = compare l1 l2
 
@@ -384,10 +397,11 @@ deepShowAtom :: Show a => BioFormula a -> String
 deepShowAtom (BioAtom a) = show a
 deepShowAtom (BioInter a1 a2) = deepShowAtom a1 ++ "<>" ++ deepShowAtom a2
 
-deepShowFormula :: Show a => LFormula eb cs k a l -> String
+deepShowFormula :: Show a => LFormula eb cs k c a l -> String
 deepShowFormula (Atom a) = deepShowAtom a
 deepShowFormula (Conj f1 f2 _) = deepShowFormula f1 ++ " * " ++ deepShowFormula f2
 deepShowFormula (Impl' i) = deepShowImpl i
 
+deepShowImpl :: Show a => ImplFormula eb cs c a l -> String
 deepShowImpl (ImplF f1 _ _ f2 _) =
   deepShowFormula f1 ++ " -> " ++ deepShowFormula f2

@@ -20,10 +20,8 @@ import Control.Monad.Reader
 import Control.Monad.Identity
 import Data.Bifunctor
 
-data UnitF a = U
-
 type ParseAtom = BioFormula String
-type ParseFormula = SFormula UnitF UnitF String
+type ParseFormula = SFormula U U String
 
 languageDef =
   emptyDef { Token.identStart      = letter
@@ -84,26 +82,25 @@ toSFormula m (SF (OLF (Conj f1 f2 _))) =
 toSFormula m (SF (OLF (Impl f1 _ _ f2 _))) =
   (sImpl (toSFormula m (SF (OLF f1))) mempty mempty (toSFormula m (SF (OLF f2))))
 
-parseSFormula
-  :: (ElemBase eb String, ControlSet cs String)
-  => M.Map String (SFormula eb cs String)
-  -> String
-  -> Either ParseError (SFormula eb cs String)
-parseSFormula m = (return . toSFormula m) <=< parseString
+-- parseSFormula
+--   :: (ElemBase eb String, ControlSet cs String)
+--   => M.Map String (SFormula eb cs String)
+--   -> String
+--   -> Either ParseError (SFormula eb cs String)
+-- parseSFormula m = (return . toSFormula m) <=< parseString
 
-parseSAxiom
-  :: (ElemBase eb String, ControlSet cs String)
-  => M.Map String (SFormula eb cs String)
-  -> cs String
-  -> String
-  -> Either String (SAxiom eb cs String)
-parseSAxiom m cs str = do
-  res <- bimap show id (parseString str)
-  case res of
-    (SF (OLF (Impl a _ _ b _))) ->
-      return $ sAx (toSFormula m (SF (OLF a))) (toSFormula m (SF (OLF b))) cs
-    _ -> fail "axioms must be implication formulas"
-
+-- parseSAxiom
+--   :: (ElemBase eb String, ControlSet cs String)
+--   => M.Map String (SFormula eb cs String)
+--   -> cs String
+--   -> String
+--   -> Either String (SAxiom eb cs String)
+-- parseSAxiom m cs str = do
+--   res <- bimap show id (parseString str)
+--   case res of
+--     (SF (OLF (Impl a _ _ b _))) ->
+--       return $ sAx (toSFormula m (SF (OLF a))) (toSFormula m (SF (OLF b))) cs
+--     _ -> fail "axioms must be implication formulas"
 
 parseBioAggregate :: String -> Either String [BioFormula String]
 parseBioAggregate = bimap show id . parse (white >> sepBy bioExpr comma) ""

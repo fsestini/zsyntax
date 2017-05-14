@@ -13,33 +13,31 @@ import SFormula
 
 class DerTerm term eb cs a l where
   init :: BioFormula a -> term
-  copy :: term -> Axiom eb cs a l -> term
-  conjR :: term -> term -> LFormula eb cs KConj a l -> term
-  conjL :: term -> LFormula eb cs KConj a l -> term
-  implR :: term -> ImplFormula eb cs IRegular a l -> term
-  implL :: term -> term -> ImplFormula eb cs IRegular a l -> term
+  copy :: term -> LAxiom cs a l -> term
+  conjR :: term -> term -> LFormula eb cs KConj c a l -> term
+  conjL :: term -> LFormula eb cs KConj c a l -> term
+  implR :: term -> ImplFormula eb cs c a l -> term
+  implL :: term -> term -> ImplFormula eb cs c a l -> term
 
 instance DerTerm (SimpleDerTerm a) eb cs a l where
   init = Init
-  copy d ax = Copy d (fromLAxiom (mapEbCsI mapU mapU $ ax))
+  copy d ax = Copy d (fromLAxiom (mapEbCsI id mapU $ ax))
   conjR d d' _ = ConjR d d'
   conjL d (Conj f1 f2 _) = ConjL d (stripDown f1) (stripDown f2)
   implR d (ImplF a _ _ _ _) = ImplR d (stripDown a)
   implL d d' (ImplF _ _ _ b _) =
     ImplL d d' (fromLFormula (mapEbCsF mapU mapU b))
 
-data U a = U deriving (Eq, Ord)
-
 mapU :: f a -> U a
 mapU = const U
 
-stripDown :: LFormula eb cs k a l -> SFormula U U a
+stripDown :: LFormula eb cs k c a l -> SFormula U U a
 stripDown = fromLFormula . mapEbCsF mapU mapU
 
 {-| Derivation term of the labelled forward sequent calculus. -}
 data SimpleDerTerm a :: * where
   Init :: BioFormula a -> SimpleDerTerm a
-  Copy :: SimpleDerTerm a -> SAxiom U U a -> SimpleDerTerm a
+  Copy :: SimpleDerTerm a -> SAxiom U a -> SimpleDerTerm a
   ConjR
     :: SimpleDerTerm a
     -> SimpleDerTerm a

@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -8,7 +10,7 @@ module SFormula
   , SAxiom(..)
   , Sequent(..)
   , sAtom
-  , fromNS
+  , fromBasicNS
   , sConj
   , sImpl
   , neutralize
@@ -17,12 +19,14 @@ module SFormula
   , fromLAxiom
   , BioFormula(..)
   , LFormula(..)
-  , pattern Impl
   , OLFormula(..)
   , ElemBase(..)
   , ControlSet(..)
-  , ImplFormula(..)
+  , bsAtom
+  , bsConj
   , sAx
+  , U(..)
+  , pattern Impl
   ) where
 
 import RelFormula
@@ -37,22 +41,40 @@ import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
 --------------------------------------------------------------------------------
+-- Basic simple formulas
+
+type BSFormula cs a = BFormula cs a ()
+  --forall k . BSF (LFormula U cs k CBasic a ())
+newtype SAxiom cs a = SA {unSA :: (LAxiom cs a ())}
+
+bsAtom :: BioFormula a -> BSFormula cs a
+bsAtom x = BF (Atom x)
+
+bsConj :: BSFormula cs a -> BSFormula cs a -> BSFormula cs a
+bsConj (BF f1) (BF f2) = BF (Conj f1 f2 ())
+
+sAx :: BSFormula cs a -> BSFormula cs a -> cs a -> SAxiom cs a
+sAx (BF f1) (BF f2) cs = SA (ImplF f1 U cs f2 ())
+
+--------------------------------------------------------------------------------
 
 -- Simple formulas
 newtype SFormula eb cs a = SF (OLFormula eb cs a ())
 newtype NSFormula eb cs a = NSF
   { unNSF :: (NeutralFormula eb cs a ())
   } deriving (Show)
-newtype SAxiom eb cs a = SA {unSA :: (Axiom eb cs a ())}
 
-sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom eb cs a
-sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
+
+-- sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom cs a
+-- sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
 
 instance Show a => Show (SFormula eb cs a) where
   show (SF (OLF f)) = deepShowFormula f
 
-instance Show a => Show (SAxiom eb cs a) where
-  show (SA ax) = deepShowImpl ax
+deriving instance (Show a, Show (cs a)) => Show (SAxiom cs a)
+
+-- instance Show a => Show (SAxiom cs a) where
+--   show (SA ax) = deepShowImpl ax
 
 instance (Ord a, Ord (eb a), Ord (cs a)) =>
          Eq (SFormula eb cs a) where
@@ -62,52 +84,55 @@ instance (Ord a, Ord (eb a), Ord (cs a)) =>
          Ord (SFormula eb cs a) where
   compare (SF (OLF f1)) (SF (OLF f2)) = deepHetCompare f1 f2
 
-instance (Ord a, Ord (eb a), Ord (cs a)) => Eq (SAxiom eb cs a) where
+instance (Ord a, Ord (cs a)) => Eq (SAxiom cs a) where
   (SA ax1) == (SA ax2) = compare ax1 ax2 == EQ
 
-instance (Ord a, Ord (eb a), Ord (cs a)) => Ord (SAxiom eb cs a) where
+instance (Ord a, Ord (cs a)) =>
+         Ord (SAxiom cs a) where
   compare (SA ax1) (SA ax2) = deepImplCompare ax1 ax2
 
 sAtom :: BioFormula a -> SFormula eb cs a
 sAtom = SF . OLF . Atom
 
 sConj :: SFormula eb cs a -> SFormula eb cs a -> SFormula eb cs a
-sConj (SF (OLF f1)) (SF (OLF f2)) = SF (OLF (Conj f1 f2 ()))
+sConj (SF (OLF f1)) (SF (OLF f2)) =
+  fromLFormula (Conj (liftComplexity f1) (liftComplexity f2) ())
 
 sImpl :: SFormula eb cs a
       -> eb a
       -> cs a
       -> SFormula eb cs a
       -> SFormula eb cs a
-sImpl (SF (OLF f1)) eb cs (SF (OLF f2)) = SF (OLF (Impl f1 eb cs f2 ()))
+sImpl (SF (OLF f1)) eb cs (SF (OLF f2)) =
+  SF (OLF (Impl (liftComplexity f1) eb cs (liftComplexity f2) ()))
 
 fromLFormula
-  :: LFormula eb cs k a l -> SFormula eb cs a
+  :: LFormula eb cs k c a l -> SFormula eb cs a
 fromLFormula = SF . OLF . fmap (const ())
 
-fromLAxiom :: Axiom eb cs a l -> SAxiom eb cs a
+fromLAxiom :: LAxiom cs a l -> SAxiom cs a
 fromLAxiom = SA . fmap (const ())
 
 sAxiomIsSFormula
   :: ElemBase eb a
-  => SAxiom eb cs a -> SFormula eb cs a
-sAxiomIsSFormula (SA a) = SF . OLF $ (axiomIsFormula a)
+  => SAxiom cs a -> SFormula eb cs a
+sAxiomIsSFormula = fromLFormula . axiomIsFormula . unSA
 
-fromNS
-  :: NE.NonEmpty (NeutralFormula eb cs a l)
+fromBasicNS
+  :: NE.NonEmpty (BioFormula a)
   -> cs a
-  -> OLFormula eb cs a l
-  -> SAxiom eb cs a
-fromNS lc cs concl = sAx fromF (SF (fmap (const ()) concl)) cs
+  -> BFormula cs a l
+  -> SAxiom cs a
+fromBasicNS lc cs concl = case concl of
+    BF f -> sAx fromF (BF (fmap (const ()) f)) cs
   where
-    fromF = foldr1 sConj (fmap nfIsSf lc)
-    nfIsSf (NF f) = SF (OLF (fmap (const ()) f))
+    fromF = foldr1 bsConj (fmap bsAtom lc)
 
 --------------------------------------------------------------------------------
 -- Sequents.
 
 data Sequent eb cs a =
-  SQ (UnrestrCtxt (SAxiom eb cs a))
+  SQ (UnrestrCtxt (SAxiom cs a))
      (LinearCtxt (SFormula eb cs a))
      (SFormula eb cs a)
   deriving Show
@@ -121,7 +146,7 @@ neutralize (SQ unrestr linear (SF (OLF concl))) goalCS =
     nUnrestr =
       fmap fromFoldable $
       mapM
-        ((traverse (const pick) . unSA) :: SAxiom eb cs a -> m (Axiom eb cs a l)) $
+        ((traverse (const pick) . unSA) :: SAxiom cs a -> m (LAxiom cs a l)) $
       (asFoldable toList unrestr)
     nLinear =
       fmap fromFoldable $
@@ -134,4 +159,4 @@ neutralizeFormula :: SFormula eb cs a -> [NSFormula eb cs a]
 neutralizeFormula (SF (OLF (Conj f1 f2 _))) =
   neutralizeFormula (SF (OLF f1)) ++ neutralizeFormula (SF (OLF f2))
 neutralizeFormula (SF (OLF a@(Atom _))) = [NSF (NF a)]
-neutralizeFormula (SF (OLF f@(Impl' _))) = [NSF (NF f)]
+neutralizeFormula (SF (OLF f@(Impl _ _ _ _ _))) = [NSF (NF f)]

@@ -11,7 +11,7 @@ module Checking
 
 import RelFormula
        (ControlSet(..), ElemBase(..), BaseCtrl(..), BioFormula,
-        LFormula(..), ImplFormula(..), BaseSpot(..), OLFormula(..))
+        LFormula(..), ImplFormula(..), OLFormula(..))
 import qualified Data.Set as S
 import Data.Monoid ((<>))
 import Data.Foldable (toList, fold)
@@ -25,7 +25,7 @@ newtype SimpleElemBase a = EB (S.Set (BioFormula a))
 instance (Eq a, Ord a) => ElemBase SimpleElemBase a where
   formulaBase (Atom x) = EB . S.singleton $ x
   formulaBase (Conj f1 f2 _) = formulaBase f1 <> formulaBase f2
-  formulaBase (Impl' (ImplF f1 (FullSpot eb) cs f2 _)) = eb
+  formulaBase (Impl' (ImplF f1 eb cs f2 _)) = eb
 
 instance Ord a => ControlSet SimpleCtrlSet a where
 
