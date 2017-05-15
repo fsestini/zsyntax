@@ -34,6 +34,13 @@
 
 \def\limp {\mathbin{{-}\mkern-3.5mu{\circ}}} %% Linear implication symbol
 
+\newcommand\mdoubleplus{\mathbin{+\mkern-10mu+}}
+\newcommand{\listplus}[2]{#1 \mdoubleplus #2}
+\newcommand{\basepluslist}[2]{#1 \cdot #2}
+\newcommand{\resplist}[2]{#1 \dagger #2}
+\newcommand{\reactlist}[1]{l_{#1}}
+\newcommand{\baseandplus}[3]{\listplus{\basepluslist{#1}{#2}}{#3}}
+
 % Standard backward sequents
 \newcommand{\bkwseq}[3]{#1 ; #2 \Longrightarrow #3}
 \newcommand{\zsyseq}[4]{#1 ; #2 \Longrightarrow_{#3} #4}
@@ -139,7 +146,7 @@
 
 \newcommand{\ctrlset}[1]{\mathfrak{S}_{#1}}
 
-\newcommand{\respects}[2]{\elembases{#1} \notin #2}
+\newcommand{\respects}[2]{#1 \| #2}
 \newcommand{\plainrespects}[2]{#1 \, || \, #2}
 
 \newcommand{\labels}[2]{#1 \, \# \, #2}
