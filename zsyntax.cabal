@@ -21,7 +21,8 @@ library
                      , Prover.Search, Checking, Context, LinearContext
                      , UnrestrContext, DerivationTerm, ForwardSequent, Frontier
                      , Parser, Command, Command.Parser, Command.Structures
-                     , Command.Execution, Command.Export
+                     , Command.Execution, Command.Export, GUI.Elements
+                     , GUI.Control
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
                      , dequeue, gtk
