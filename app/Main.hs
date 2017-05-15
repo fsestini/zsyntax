@@ -1,5 +1,8 @@
 module Main where
 
 import AppMonad
+import GUI
 
-main = loopIO
+--main = loopIO
+
+main = gui
