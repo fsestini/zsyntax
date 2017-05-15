@@ -1,5 +1,34 @@
 \section{Backward sequent calculus}
 
+\subsection{Blah...}
+
+\begin{definition}[Reaction list]
+  \begin{enumerate}
+  \item A \emph{reaction list} is a list of pairs where the first component is
+    an elementary base, and the second component is a control set. Concatenation
+    of reaction lists, written $\listplus{l_1}{l_2}$, is defined in the usual
+    way;
+  \item A context $\Delta$ is said to \emph{respect} a reaction list $l$,
+    written $\resplist{\Delta}{l}$, if
+
+    \[
+      \forall (\nabla, \ctrlset{})\in l, \respects{\nabla, \Delta}{\ctrlset{}}
+    \]
+
+  \item The operation of adjoining an elementary base $\Delta$ to a reaction
+    list $l$, written $\basepluslist{\Delta}{l}$, is recursively defined as
+    follows:
+
+    \begin{align*}
+      \basepluslist{\Delta}{[]} &= [] \\
+      \basepluslist{\Delta}{(\nabla;\ctrlset{}):l} &= (\Delta,\nabla;\ctrlset{}):\basepluslist{\Delta}{l}
+    \end{align*}
+  \end{enumerate}
+
+\end{definition}
+
+\subsection{The rest...}
+
 The objective of this section is to obtain a logic describing the modified
 provability relation of \eznd{}, that is amenable to efficient proof search
 while being sound and complete with \eznd{} itself. This basically means that we
@@ -19,18 +48,18 @@ later stage.
 As premises and conclusions we have annotated sequents of the following form
 
 \[
-  \zsyseq{\Gamma}{\Delta}{\ctrlset{}}{C}
+  \zsyseq{\Gamma}{\Delta}{l}{C}
 \]
 
 where $\Gamma$ is the \emph{unrestricted context}, namely one where contraction
-and weakening are accepted, $\Delta$ is the usual linear context, and
-$\ctrlset{} \in \mathcal{P}(\bioformulas^*)$ is a control set. The intuitive
-explanation is that a valid sequent of this form witnesses the fact that, under
-the set $\Gamma$ of biological axioms available, there exists a sequence of
-Zsyntax transitions that bring the aggregate $\Delta$ to the aggregate $C$,
-provided any additional context that may surround $\Gamma$ does not violate the
-control set $\ctrlset{}$. In other words, the validity of the sequent above
-expresses that we know that $\Delta \models_{\ctrlset{}} C$ holds in \eznd{}.
+and weakening are accepted, $\Delta$ is the usual linear context, and $l$ is a
+reaction list. The intuitive explanation is that a valid sequent of this form
+witnesses the fact that, under the set $\Gamma$ of biological axioms available
+in $\Gamma$, there exists a sequence of Zsyntax transitions that bring the
+aggregate $\Delta$ to the aggregate $C$. In particular, this reaction happens in
+any context that respects the reaction list, that is, in any $\Delta'$ such that
+$\resplist{\Delta'}{l}$. By soundness, the validity of the sequent above
+expresses that we know that $\Delta \models_{l} C$ holds in \eznd{}.
 
 Throughout the rest of the presentation, we assume that the set of axioms is
 ``harmful'', in the sense that $\elembases{\Gamma} = \emptyset$.
@@ -43,12 +72,12 @@ calculus. This is because it will be shown later to be admissible.
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+    \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
     \qquad
-    \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+    \zsyseq{\Gamma}{\Delta_2, A}{\reactlist{2}}{B}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
-    \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\listplus{\reactlist{1}}{\reactlist{2}}}{B}
+    \using{\resplist{\Delta_2}{l_1}}
   \end{prooftree}
 \]
 
@@ -59,7 +88,7 @@ The trivial reaction is the one that does nothing:
 \[
   \begin{prooftree}
     \justifies
-    \zsyseq{\Gamma}{A}{\emptyset}{A}
+    \zsyseq{\Gamma}{A}{[]}{A}
   \end{prooftree}
 \]
 
@@ -75,9 +104,9 @@ context. Formulas in the unrestricted context can of course be used ad libitum:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma, A}{\Delta, A}{\ctrlset{}}{C}
+    \zsyseq{\Gamma, A}{\Delta, A}{\reactlist{}}{C}
     \justifies
-    \zsyseq{\Gamma, A}{\Delta}{\ctrlset{}}{C}
+    \zsyseq{\Gamma, A}{\Delta}{\reactlist{}}{C}
   \end{prooftree}
 \]
 
@@ -88,9 +117,9 @@ form for a left rule.
 
 \[
   \begin{prooftree}
-    \bkwseq{\Gamma}{\Delta, A, B}{C}
+    \zsyseq{\Gamma}{\Delta, A, B}{l}{C}
     \justifies
-    \bkwseq{\Gamma}{\Delta, A \otimes B}{C}
+    \zsyseq{\Gamma}{\Delta, A \otimes B}{l}{C}
   \end{prooftree}
 \]
 
@@ -102,9 +131,9 @@ would be the following:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
+    \zsyseq{\Gamma}{\Delta, A \otimes B}{\reactlist{}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+    \zsyseq{\Gamma}{\Delta, A, B}{\reactlist{}}{C}
   \end{prooftree}
 \]
 
@@ -115,7 +144,7 @@ following axiom are equivalent
 \[
   \begin{prooftree}
     \justifies
-    \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B}
+    \zsyseq{\Gamma}{A,B}{[]}{A \otimes B}
   \end{prooftree}
 \]
 
@@ -124,11 +153,11 @@ cut:
 
 \[
   \begin{prooftree}
-    \[ \justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
+    \[ \justifies \zsyseq{\Gamma}{A,B}{[]}{A \otimes B} \]
     \qquad
-    \zsyseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
+    \zsyseq{\Gamma}{\Delta, A \otimes B}{\reactlist{}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+    \zsyseq{\Gamma}{\Delta, A, B}{\reactlist{}}{C}
   \end{prooftree}
 \]
 
@@ -138,15 +167,15 @@ obtain something that allows us to eliminate the cut rule later.
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B} \qquad
+    \zsyseq{\Gamma}{\Delta_2}{[]}{B} \qquad
     \[
-      \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
-      \[\justifies \zsyseq{\Gamma}{A,B}{\emptyset}{A \otimes B} \]
+      \zsyseq{\Gamma}{\Delta_1}{[]}{A} \qquad
+      \[\justifies \zsyseq{\Gamma}{A,B}{[]}{A \otimes B} \]
       \justifies
-      \zsyseq{\Gamma}{\Delta_1, B}{\emptyset}{A \otimes B}
+      \zsyseq{\Gamma}{\Delta_1, B}{[]}{A \otimes B}
     \]
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{[]}{A \otimes B}
   \end{prooftree}
 \]
 
@@ -154,10 +183,10 @@ thus yielding the following rule
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
-    \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+    \zsyseq{\Gamma}{\Delta_1}{[]}{A} \qquad
+    \zsyseq{\Gamma}{\Delta_2}{[]}{B}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{[]}{A \otimes B}
   \end{prooftree}
 \]
 
@@ -226,18 +255,18 @@ thus yielding the following rule
 %   \end{prooftree}
 % \]
 
-\paragraph{$\limp$ introduction}
+\paragraph{$\rightarrow$ introduction}
 
 A direct translation to our single-succedent sequent calculus would be the
 following:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B} \qquad
-    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
-      B}{\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, A}{\reactlist{1}}{B} \qquad
+    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
+      B}{\reactlist{2}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\reactlist{2}}{C}
   \end{prooftree}
 \]
 
@@ -247,13 +276,13 @@ standard rule can be obtained as a special case of the one above:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+    \zsyseq{\Gamma}{\Delta_1, A}{\reactlist{1}}{B}
     \qquad
-    \zsyseq{\Gamma}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
-      B}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
+      B}{[]}{A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
       B}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
+    \zsyseq{\Gamma}{\Delta_1}{[]}{A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
       B}
   \end{prooftree}
 \]
@@ -262,9 +291,9 @@ thus yielding the following:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}
+    \zsyseq{\Gamma}{\Delta, A}{\reactlist{}}{B}
     \justifies
-    \zsyseq{\Gamma}{\Delta}{\emptyset}{A \rightarrow^{\elembases{\Delta}}_{\ctrlset{}}
+    \zsyseq{\Gamma}{\Delta}{[]}{A \rightarrow^{\elembases{\Delta}}_{\reactlist{}}
       B}
   \end{prooftree}
 \]
@@ -275,30 +304,30 @@ from the second by cut:
 \[
   \begin{prooftree}
     \[
-      \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+      \zsyseq{\Gamma}{\Delta_1, A}{\reactlist{1}}{B}
       \justifies
-      \zsyseq{\Gamma}{\Delta}{\emptyset}{A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
+      \zsyseq{\Gamma}{\Delta}{[]}{A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
         B}
     \]
     \qquad
-    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\ctrlset{1}}
-      B}{\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{\Delta_1}}_{\reactlist{1}}
+      B}{\reactlist{2}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\reactlist{2}}{C}
   \end{prooftree}
 \]
 
-\paragraph{$\limp$ elimination}
+\paragraph{$\rightarrow$ elimination}
 
 The direct translation would be the following:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta, B}{\ctrlset{}'}{C}
+    \zsyseq{\Gamma}{\Delta, B}{\reactlist{}'}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta, A \rightarrow^{\elembases{S}}_{\ctrlset{}}
-      B, A}{\ctrlset{} \cup \ctrlset{}'}{C}
-    \using{\respects{\Delta}{\ctrlset{}}}
+    \zsyseq{\Gamma}{\Delta, A \rightarrow^{\elembases{S}}_{\reactlist{}}
+      B, A}{\listplus{\basepluslist{\Delta}{\reactlist{}}}{\reactlist{}'}}{C}
+    \using{\resplist{\Delta}{\reactlist{}}}
   \end{prooftree}
 \]
 
@@ -308,16 +337,19 @@ formula with cut:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}\qquad
+    \zsyseq{\Gamma}{\Delta_1}{[]}{A}\qquad
     \[
-      \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
+      \zsyseq{\Gamma}{\Delta_2, B}{\reactlist{2}}{C}
       \justifies
-      \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}}
-        B, A}{\ctrlset{2}}{C}
-      \using{\respects{\Delta_2}{\ctrlset{1}}}
+      \zsyseq{\Gamma}{\Delta_2, A \rightarrow^{\elembases{S}}_{\reactlist{1}}
+        B, A}{\listplus{\basepluslist{\Delta_2}{\reactlist{1}}}{\reactlist{2}}}{C}
+      \using{\resplist{\Delta_2}{\reactlist{1}}}
     \]
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A
+      \rightarrow^{\elembases{S}}_{\reactlist{1}} B}{
+      \listplus{\basepluslist{\Delta_2}{\reactlist{1}}}{\reactlist{2}}
+      }{C}
   \end{prooftree}
 \]
 
@@ -325,11 +357,15 @@ thus yielding the following rule:
 
 \[
   \begin{prooftree}
-    \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}\qquad
-    \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
+    \zsyseq{\Gamma}{\Delta_1}{[]}{A}\qquad
+    \zsyseq{\Gamma}{\Delta_2, B}{\reactlist{2}}{C}
     \justifies
-    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{\elembases{S}}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
-    \using{\respects{\Delta_2}{\ctrlset{1}}}
+    \zsyseq{\Gamma}{\Delta_1, \Delta_2, A
+      \rightarrow^{\elembases{S}}_{\reactlist{1}} B}{
+      \listplus{\basepluslist{\Delta_2}{\reactlist{1}}}{\reactlist{2}}
+      }{C}
+    \using{
+      \resplist{\Delta_2}{\reactlist{1}}}
   \end{prooftree}
 \]
 
@@ -341,40 +377,40 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
     \[
       \begin{prooftree}
         \justifies
-        \zsyseq{\Gamma}{A}{\ctrlset{}}{A}
+        \zsyseq{\Gamma}{A}{[]}{A}
         \using{\init}
       \end{prooftree}
       \qquad \qquad
       \begin{prooftree}
-        \zsyseq{\Gamma, A}{\Delta, A}{\ctrlset{}}{C}
+        \zsyseq{\Gamma, A}{\Delta, A}{\reactlist{}}{C}
         \justifies
-        \zsyseq{\Gamma, A}{\Delta}{\ctrlset{}}{C}
+        \zsyseq{\Gamma, A}{\Delta}{\reactlist{}}{C}
         \using{\copyrule}
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A} \qquad
-        \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+        \zsyseq{\Gamma}{\Delta_1}{[]}{A} \qquad
+        \zsyseq{\Gamma}{\Delta_2}{[]}{B}
         \justifies
-        \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+        \zsyseq{\Gamma}{\Delta_1, \Delta_2}{[]}{A \otimes B}
         \using{\otimes R}
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        \zsyseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
+        \zsyseq{\Gamma}{\Delta, A \otimes B}{\reactlist{}}{C}
         \justifies
-        \zsyseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+        \zsyseq{\Gamma}{\Delta, A, B}{\reactlist{}}{C}
         \using{\otimes L}
       \end{prooftree}
       \qquad \qquad
       \begin{prooftree}
-        \zsyseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}
+        \zsyseq{\Gamma}{\Delta, A}{\reactlist{}}{B}
         \justifies
-        \zsyseq{\Gamma}{\Delta}{\emptyset}{A \limp^{\elembases{\Delta}}_{\ctrlset{}}
+        \zsyseq{\Gamma}{\Delta}{[]}{A \limp^{\elembases{\Delta}}_{\reactlist{}}
           B}
         \using{\rightarrow R}
       \end{prooftree}
@@ -382,11 +418,12 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
     \[
       \begin{prooftree}
-        \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}\qquad
-        \zsyseq{\Gamma}{\Delta_2, B}{\ctrlset{2}}{C}
-        \qquad \respects{\Delta_2}{\ctrlset{1}}
+        \zsyseq{\Gamma}{\Delta_1}{[]}{A}\qquad
+        \zsyseq{\Gamma}{\Delta_2, B}{\reactlist{2}}{C}
+        \qquad \resplist{\Delta_2}{\reactlist{1}}
         \justifies
-        \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{S}_{\ctrlset{1}} B}{\ctrlset{1}\cup\ctrlset{2}}{C}
+        \zsyseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow^{S}_{\reactlist{1}} B}{
+          \listplus{\basepluslist{\Delta_2}{\reactlist{1}}}{\reactlist{2}}}{C}
         \using{\rightarrow L}
       \end{prooftree}
     \]
@@ -405,42 +442,43 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
   connectives to consider.
 
   \begin{enumerate}
-  \item Case $\zsyseq{\Gamma}{A \otimes B}{\emptyset}{A \otimes B}$. Then,
+  \item Case $\zsyseq{\Gamma}{A \otimes B}{[]}{A \otimes B}$. Then,
 
     \[
       \begin{prooftree}
         \[
-          \zsyseq{\Gamma}{A}{\emptyset}{A}
+          \zsyseq{\Gamma}{A}{[]}{A}
           \qquad
-          \zsyseq{\Gamma}{B}{\emptyset}{B}
+          \zsyseq{\Gamma}{B}{[]}{B}
           \justifies
-          \zsyseq{\Gamma}{A, B}{\emptyset}{A \otimes B}
+          \zsyseq{\Gamma}{A, B}{[]}{A \otimes B}
           \using{\otimes R}
         \]
         \justifies
-        \zsyseq{\Gamma}{A \otimes B}{\emptyset}{A \otimes B}
+        \zsyseq{\Gamma}{A \otimes B}{[]}{A \otimes B}
         \using{\otimes L}
       \end{prooftree}
     \]
 
-  \item Case $\zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B}{\emptyset}{A
-      \rightarrow_{\ctrlset{}}^S B}$. Then, the following holds
+  \item Case $\zsyseq{\Gamma}{A \rightarrow_{\reactlist{}}^S B}{[]}{A
+      \rightarrow_{\reactlist{}}^S B}$. Then, the following holds
 
     \[
       \begin{prooftree}
         \[
-          \zsyseq{\Gamma}{A}{\emptyset}{A}\qquad
-          \zsyseq{\Gamma}{B}{\emptyset}{B}
+          \zsyseq{\Gamma}{A}{[]}{A}\qquad
+          \zsyseq{\Gamma}{B}{[]}{B}
           \justifies
-          \zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B, A}{\ctrlset{}}{B}
+          \zsyseq{\Gamma}{A \rightarrow_{\reactlist{}}^S B, A}{\reactlist{}}{B}
         \]
         \justifies
-        \zsyseq{\Gamma}{A \rightarrow_{\ctrlset{}}^S B}{\emptyset}{A
-          \rightarrow_{\ctrlset{}}^S B}
+        \zsyseq{\Gamma}{A \rightarrow_{\reactlist{}}^S B}{[]}{A
+          \rightarrow_{\reactlist{}}^S B}
       \end{prooftree}
     \]
 
-    since $\elembases{A \rightarrow^S_{\ctrlset{}} B} = S$.
+    since $\elembases{A \rightarrow^S_{\reactlist{}} B} = S$ and
+    $\listplus{\basepluslist{\emptyset}{l}}{[]} = l$.
   \end{enumerate}
 \end{proof}
 
@@ -449,12 +487,13 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
   \[
     \begin{prooftree}
-      \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+      \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
       \qquad
-      \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+      \zsyseq{\Gamma}{\Delta_2, A}{\reactlist{2}}{B}
       \justifies
-      \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
-      \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+      \zsyseq{\Gamma}{\Delta_1, \Delta_2}{
+        \listplus{\basepluslist{\Delta_2}{\reactlist{1}}}{\reactlist{2}}}{B}
+      \using{\resplist{\Delta_2}{\reactlist{1}}}
     \end{prooftree}
   \]
 
@@ -465,6 +504,8 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
   logic. In particular, we consider four ``classes'' of cuts and show
   admissibility for all of them. The theorem follows from the fact that these
   four classes cover all possible uses of the cut rule.
+  We sometimes omit the side conditions about reaction lists and control sets
+  when trivially satisfied.
 
   \begin{description}
   \item[Identity cuts] One of the premises is obtained by an application of the
@@ -475,11 +516,11 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
       \[
         \begin{prooftree}
-          \[ \justifies \zsyseq{\Gamma}{A}{\emptyset}{A} \]
+          \[ \justifies \zsyseq{\Gamma}{A}{[]}{A} \]
           \qquad
-          \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+          \zsyseq{\Gamma}{\Delta_2, A}{\reactlist{2}}{B}
           \justifies
-          \zsyseq{\Gamma}{A, \Delta_2}{\ctrlset{2}}{B}
+          \zsyseq{\Gamma}{A, \Delta_2}{\reactlist{2}}{B}
         \end{prooftree}
       \]
 
@@ -489,11 +530,11 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
       \[
         \begin{prooftree}
-          \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+          \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
           \qquad
-          \zsyseq{\Gamma}{A}{\emptyset}{A}
+          \zsyseq{\Gamma}{A}{[]}{A}
           \justifies
-          \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
+          \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
         \end{prooftree}
       \]
 
@@ -509,20 +550,20 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}
+            \zsyseq{\Gamma}{\Delta_1}{[]}{A}
             \qquad
-            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+            \zsyseq{\Gamma}{\Delta_2}{[]}{B}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{A \otimes B}
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{[]}{A \otimes B}
           \]
           \qquad
           \[
-            \zsyseq{\Gamma}{\Delta_3, A, B}{\ctrlset{}}{C}
+            \zsyseq{\Gamma}{\Delta_3, A, B}{\reactlist{}}{C}
             \justifies
-            \zsyseq{\Gamma}{\Delta_3, A \otimes B}{\ctrlset{}}{C}
+            \zsyseq{\Gamma}{\Delta_3, A \otimes B}{\reactlist{}}{C}
           \]
           \justifies
-          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{}}{C}
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\reactlist{}}{C}
         \end{prooftree}
       \]
 
@@ -530,10 +571,10 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
       \[
         \begin{prooftree}
-          \zsyseq{\Gamma}{\Delta_2}{\emptyset}{B}
+          \zsyseq{\Gamma}{\Delta_2}{[]}{B}
           \qquad
           \[
-            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A}
+            \zsyseq{\Gamma}{\Delta_1}{[]}{A}
             \qquad
             \zsyseq{\Gamma}{\Delta_3, A, B}{\ctrlset{}}{C}
             \justifies
@@ -544,28 +585,30 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
         \end{prooftree}
       \]
 
-    \item Case $\rightarrow_{\ctrlset{}}^S$.
+    \item Case $\rightarrow_{\reactlist{}}^S$.
 
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+            \zsyseq{\Gamma}{\Delta_1, A}{\reactlist{1}}{B}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{A \rightarrow_{\ctrlset{1}}^{\elembases{\Delta_1}} B}
+            \zsyseq{\Gamma}{\Delta_1}{[]}{A \rightarrow_{\reactlist{1}}^{\elembases{\Delta_1}} B}
           \]
           \qquad
           \[
-            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{A}
+            \zsyseq{\Gamma}{\Delta_2}{[]}{A}
             \qquad
-            \zsyseq{\Gamma}{\Delta_3, B}{\ctrlset{2}}{C}
+            \zsyseq{\Gamma}{\Delta_3, B}{\reactlist{2}}{C}
             \justifies
             \zsyseq{\Gamma}{\Delta_2, \Delta_3, A
-              \rightarrow_{\ctrlset{1}}^{\elembases{\Delta_1}}
-              B}{\ctrlset{1}\cup\ctrlset{2}}{C}
-            \using{\respects{\Delta_3}{\ctrlset{1}}}
+              \rightarrow_{\reactlist{1}}^{\elembases{\Delta_1}}
+              B}{\baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}}}{C}
+            \using{\resplist{\Delta_3}{\reactlist{1}}}
           \]
           \justifies
-          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{\ctrlset{1}\cup\ctrlset{2}}{C}
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{
+            \baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}}
+          }{C}
         \end{prooftree}
       \]
 
@@ -574,17 +617,19 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_2}{\emptyset}{A}
+            \zsyseq{\Gamma}{\Delta_2}{[]}{A}
             \qquad
-            \zsyseq{\Gamma}{\Delta_1, A}{\ctrlset{1}}{B}
+            \zsyseq{\Gamma}{\Delta_1, A}{\reactlist{1}}{B}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}}{B}
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\reactlist{1}}{B}
           \]
           \quad
-          \zsyseq{\Gamma}{\Delta_3, B}{\ctrlset{2}}{C}
+          \zsyseq{\Gamma}{\Delta_3, B}{\reactlist{2}}{C}
           \justifies
-          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{\ctrlset{1}\cup\ctrlset{2}}{C}
-          \using{\respects{\Delta_3}{\ctrlset{1}}}
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3}{
+            \baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}}
+          }{C}
+          \using{\resplist{\Delta_3}{\reactlist{1}}}
         \end{prooftree}
       \]
 
@@ -599,16 +644,18 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_1, C, D}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma}{\Delta_1, C, D}{\reactlist{1}}{A}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1, C \otimes D}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma}{\Delta_1, C \otimes D}{\reactlist{1}}{A}
             \using{\otimes L}
           \]
           \qquad
-          \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+          \zsyseq{\Gamma}{\Delta_2, A}{\reactlist{2}}{B}
           \justifies
-          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{\ctrlset{1}\cup\ctrlset{2}}{B}
-          \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+          \using{\resplist{\Delta_2}{\reactlist{1}}}
         \end{prooftree}
       \]
 
@@ -617,15 +664,19 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_1, C, D}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma}{\Delta_1, C, D}{\reactlist{1}}{A}
             \qquad
-            \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
+            \zsyseq{\Gamma}{\Delta_2, A}{\reactlist{2}}{B}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C, D}{\ctrlset{1}\cup\ctrlset{2}}{B}
-            \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C, D}{
+              \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+            }{B}
+            \using{\resplist{\Delta_2}{\reactlist{1}}}
           \]
           \justifies
-          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
           \using{\otimes L}
         \end{prooftree}
       \]
@@ -635,15 +686,17 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma, C}{\Delta_1, C}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma, C}{\Delta_1, C}{\reactlist{1}}{A}
             \justifies
-            \zsyseq{\Gamma, C}{\Delta_1}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma, C}{\Delta_1}{\reactlist{1}}{A}
           \]
           \qquad
-          \zsyseq{\Gamma, C}{\Delta_2, A}{\ctrlset{2}}{B}
+          \zsyseq{\Gamma, C}{\Delta_2, A}{\reactlist{2}}{B}
           \justifies
-          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
-          \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+          \using{\resplist{\Delta_2}{\reactlist{1}}}
         \end{prooftree}
       \]
 
@@ -652,15 +705,19 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma, C}{\Delta_1, C}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma, C}{\Delta_1, C}{\reactlist{1}}{A}
             \qquad
-            \zsyseq{\Gamma, C}{\Delta_2, A}{\ctrlset{2}}{B}
+            \zsyseq{\Gamma, C}{\Delta_2, A}{\reactlist{2}}{B}
             \justifies
-            \zsyseq{\Gamma, C}{\Delta_1, C, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
-            \using{\elembases{\Delta_2} \notin \ctrlset{1}}
+            \zsyseq{\Gamma, C}{\Delta_1, C, \Delta_2}{
+              \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+            }{B}
+            \using{\resplist{\Delta_2}{\reactlist{1}}}
           \]
           \justifies
-          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
+          \zsyseq{\Gamma, C}{\Delta_1, \Delta_2}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
           \using{\copyrule}
         \end{prooftree}
       \]
@@ -670,52 +727,333 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
       \[
         \begin{prooftree}
           \[
-            \zsyseq{\Gamma}{\Delta_1}{\emptyset}{C}
+            \zsyseq{\Gamma}{\Delta_1}{[]}{C}
             \qquad
-            \zsyseq{\Gamma}{\Delta_2, D}{\ctrlset{1}}{A}
+            \zsyseq{\Gamma}{\Delta_2, D}{\reactlist{1}}{A}
             \justifies
-            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \rightarrow_{\ctrlset{}}^S D
-            }{\ctrlset{} \cup \ctrlset{1}}{A}
-            \using{\respects{\Delta_2}{\ctrlset{}}}
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \rightarrow_{\reactlist{}}^S D
+            }{
+              \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{1}}
+            }{A}
+            \using{\resplist{\Delta_2}{\reactlist{}}}
           \]
           \quad
-          \zsyseq{\Gamma}{\Delta_3, A}{\ctrlset{2}}{B}
+          \zsyseq{\Gamma}{\Delta_3, A}{\reactlist{2}}{B}
           \justifies
           \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3, C
-            \rightarrow_{\ctrlset{}}^S D}{\ctrlset{} \cup \ctrlset{1}\cup\ctrlset{2}}{B}
-          \using{\respects{\Delta_3}{\ctrlset{} \cup \ctrlset{1}}}
+            \rightarrow_{\reactlist{}}^S D}{
+            \baseandplus{\Delta_3}{(\baseandplus{\Delta_2}{\reactlist{}}{\reactlist{1}})}{l_2}
+          }{B}
+          \using{
+            \resplist{\Delta_3}{
+              (\baseandplus{\Delta_2}{\reactlist{}}{\reactlist{1}})}
+          }
         \end{prooftree}
       \]
 
-      Notice that, from set theory is follows that
+      Since
+      $\resplist{\Delta_3}{
+        (\baseandplus{\Delta_2}{\reactlist{}}{\reactlist{1}})}$, we also have
+      $\resplist{\Delta_3}{ \reactlist{1}}$. Therefore,
 
       \[
-        \respects{\Delta_3}{\ctrlset{}\cup\ctrlset{1}} \implies
-        \respects{\Delta_3}{\ctrlset{}} \wedge \respects{\Delta_3}{\ctrlset{1}}
+        \begin{prooftree}
+          \zsyseq{\Gamma}{\Delta_1}{[]}{C}
+          \quad
+          \[
+            \zsyseq{\Gamma}{\Delta_2, D}{\reactlist{1}}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_3, A}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_2, \Delta_3, D}{
+              \baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}}
+            }{A}
+            \using{\resplist{\Delta_3}{ \reactlist{1}}}
+          \]
+          \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, \Delta_3, C
+            \rightarrow_{\reactlist{}}^S D}{
+            \baseandplus{(\Delta_2,\Delta_3)}{l}{(\baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}})}
+          }{B}
+        \end{prooftree}
       \]
+
+      Notice that the equivalences below follow by set theory and predicate
+      logic, and by associativity of list concatenation:
+
+      \begin{align*}
+        \baseandplus{(\Delta_2,\Delta_3)}{l}{(\baseandplus{\Delta_3}{\reactlist{1}}{\reactlist{2}})}
+        & = \listplus{
+          (\baseandplus{(\Delta_2,\Delta_3)}{l}{\basepluslist{\Delta_3}{\reactlist{1}}})
+          }{
+          \reactlist{2}
+          } \\
+        & = \listplus{
+          (
+          \basepluslist{\Delta_3}{(\baseandplus{\Delta_2}{\reactlist{}}{\reactlist{1}})}
+          %\baseandplus{(\Delta_2,\Delta_3)}{l}{\basepluslist{\Delta_3}{\reactlist{1}}}
+          )
+          }{
+          \reactlist{2}
+          }
+      \end{align*}
+
+      Hence the thesis.
+
+    \end{enumerate}
+
+  \item[Right-commutative cuts] The cut formula is a side formula in the right
+    premise.
+
+    \begin{enumerate}
+    \item Case $\otimes L$.
+
       \[
-        \respects{\Delta_2}{\ctrlset{}} \wedge \respects{\Delta_3}{\ctrlset{}}
-        \implies \respects{\Delta_2, \Delta_3}{\ctrlset{}}
+        \begin{prooftree}
+          \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
+          \qquad
+          \[
+            \zsyseq{\Gamma}{\Delta_2, C, D, A}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_2, C \otimes D, A}{\reactlist{2}}{B}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+          \using{\resplist{(\Delta_2, C \otimes D)}{\reactlist{1}}}
+        \end{prooftree}
       \]
 
-      TODO: The second one is not true with control sets as sets of contexts!!!
+      Recalling the definition of elementary base, we have
+      $\elembases{\Delta_2, C\otimes D} = \elembases{\Delta_2, C, D}$, hence
+      $C\otimes D$ and $C,D$ are safely interchangeable in every context
+      above. Therefore, we have
 
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1}{\reactlist{1}}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_2, C, D, A}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, C, D}{
+              \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+            }{B}
+            \using{\resplist{(\Delta_2, C, D)}{\reactlist{1}}}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2, C \otimes D}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+        \end{prooftree}
+      \]
+
+    \item Case $\copyrule$.
+
+
+      \[
+        \begin{prooftree}
+          \zsyseq{\Gamma,C}{\Delta_1}{\reactlist{1}}{A}
+          \qquad
+          \[
+            \zsyseq{\Gamma,C}{\Delta_2, C, A}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma,C}{\Delta_2, A}{\reactlist{2}}{B}
+            \using{\copyrule}
+          \]
+          \justifies
+          \zsyseq{\Gamma,C}{\Delta_1, \Delta_2}{
+            \baseandplus{\Delta_2}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+          \using{\resplist{\Delta_2}{\reactlist{1}}}
+        \end{prooftree}
+      \]
+
+      Then, by inductive hypothesis, we have
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma,C}{\Delta_1}{\reactlist{1}}{A}
+            \qquad
+            \zsyseq{\Gamma,C}{\Delta_2, C, A}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma,C}{\Delta_2, C}{
+              \baseandplus{(\Delta_2, C)}{\reactlist{1}}{\reactlist{2}}
+            }{B}
+            \using{\resplist{(\Delta_2, C)}{\reactlist{1}}}
+          \]
+          \justifies
+          \zsyseq{\Gamma,C}{\Delta_1, \Delta_2}{
+            \baseandplus{(\Delta_2, C)}{\reactlist{1}}{\reactlist{2}}
+          }{B}
+          \using{\copyrule}
+        \end{prooftree}
+      \]
+
+      Recall that, by assumption, every formula $C$ in the unrestricted context
+      is such that $\elembases{C} = \emptyset$. In particular, this means that
+      $\Delta_2,C$ is equivalent to $\Delta_2$ in every context of the original
+      derivation, since $\elembases{\Delta_2,C} = \elembases{\Delta_2}$. It
+      follows that the derivation above is clearly valid.
+
+    \item Case $\rightarrow L$.
+
+      We can assume the cut formula to be active in the left premise, for
+      otherwise we would treat the cut as a left-commutative case.  Then, the
+      left premise must be the conclusion of either a $\rightarrow R$ or a
+      $\otimes R$ rule. Both rules conclude with an empty list, so we can assume
+      the list of the left premise to be empty. We distinguish two cases based
+      on the position of the cut formula in the derivation of right premise.
+
+      \begin{enumerate}
+      \item Case the cut formula ends up in the left premise of the cut.
+        \[
+          \begin{prooftree}
+            \zsyseq{\Gamma}{\Delta}{[]}{A}
+            \qquad
+            \[
+              \zsyseq{\Gamma}{\Delta_1, A}{[]}{C}
+              \qquad
+              \zsyseq{\Gamma}{\Delta_2, D}{\reactlist{2}}{B}
+              \justifies
+              \zsyseq{\Gamma}{\Delta_1, \Delta_2, A, C \rightarrow_{\reactlist{}}^S
+                D}{
+                \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{2}}
+              }{B}
+              \using{\resplist{\Delta_2}{\reactlist{}}}
+            \]
+            \justifies
+            \zsyseq{\Gamma}{\Delta, \Delta_1, \Delta_2,
+              C \rightarrow_{\reactlist{}}^S D
+            }{
+              \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{2}}
+            }{B}
+          \end{prooftree}
+        \]
+
+        Then, by inductive hypothesis
+
+        \[
+          \begin{prooftree}
+            \[
+              \zsyseq{\Gamma}{\Delta}{[]}{A}
+              \qquad
+              \zsyseq{\Gamma}{\Delta_1, A}{[]}{C}
+              \justifies
+              \zsyseq{\Gamma}{\Delta, \Delta_1}{[]}{C}
+            \]
+            \quad
+            \zsyseq{\Gamma}{\Delta_2, D}{\reactlist{2}}{B}
+            \justifies
+            \zsyseq{\Gamma}{\Delta, \Delta_1, \Delta_2,
+              C \rightarrow_{\reactlist{}}^S D
+            }{
+              \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{2}}
+            }{B}
+          \end{prooftree}
+        \]
+
+      \item Case the cut formula ends up in the right premise of the derivation
+        of the right premise of the cut.
+
+        \[
+          \begin{prooftree}
+            \zsyseq{\Gamma}{\Delta}{[]}{A}
+            \qquad
+            \[
+              \zsyseq{\Gamma}{\Delta_1}{[]}{C}
+              \qquad
+              \zsyseq{\Gamma}{\Delta_2, A, D}{\reactlist{2}}{B}
+              \justifies
+              \zsyseq{\Gamma}{\Delta_1, \Delta_2, A, C \rightarrow_{\reactlist{}}^S
+                D}{
+                \baseandplus{(\Delta_2, A)}{\reactlist{}}{\reactlist{2}}
+              }{B}
+              \using{\resplist{(\Delta_2, A)}{\reactlist{}}}
+            \]
+            \justifies
+            \zsyseq{\Gamma}{\Delta, \Delta_1, \Delta_2,
+              C \rightarrow_{\reactlist{}}^S D
+            }{
+              \baseandplus{(\Delta_2, A)}{\reactlist{}}{\reactlist{2}}
+            }{B}
+          \end{prooftree}
+        \]
+
+        Then, by inductive hypothesis
+
+        \[
+          \begin{prooftree}
+            \zsyseq{\Gamma}{\Delta_1}{[]}{C}
+            \qquad
+            \[
+              \zsyseq{\Gamma}{\Delta}{[]}{A}
+              \qquad
+              \zsyseq{\Gamma}{\Delta_2, A, D}{\reactlist{2}}{B}
+              \justifies
+              \zsyseq{\Gamma}{\Delta, \Delta_2, D}{\reactlist{2}}{B}
+            \]
+            \justifies
+            \zsyseq{\Gamma}{\Delta, \Delta_1, \Delta_2,
+              C \rightarrow_{\reactlist{}}^S D
+            }{
+              \baseandplus{(\Delta_2, \Delta)}{\reactlist{}}{\reactlist{2}}
+            }{B}
+            \using{\resplist{(\Delta_2, \Delta)}{\reactlist{}}}
+          \end{prooftree}
+        \]
+
+        Which gives the thesis, recalling that if
+        $\zsyseq{\Gamma}{\Delta}{[]}{A}$, then
+        $\elembases{\Delta} = \elembases{A}$ by Lemma.
+      \end{enumerate}
+
+    \item Case $\rightarrow R$. We can assume, as before, that the cut formula
+      is active in the left premise. Then,
+
+      \[
+        \begin{prooftree}
+          \zsyseq{\Gamma}{\Delta_1}{[]}{A}
+          \qquad
+          \[
+            \zsyseq{\Gamma}{\Delta_2, A, B}{\reactlist{}}{C}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_2, A}{[]}{
+              B \rightarrow_{\reactlist{}}^{\elembases{\Delta_2,A}} C}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{
+            []}{B \rightarrow_{\reactlist{}}^{\elembases{\Delta_2,A}} C}
+        \end{prooftree}
+      \]
+
+      Then, by inductive hypothesis
+
+      \[
+        \begin{prooftree}
+          \[
+            \zsyseq{\Gamma}{\Delta_1}{[]}{A}
+            \qquad
+            \zsyseq{\Gamma}{\Delta_2, A, B}{\reactlist{}}{C}
+            \justifies
+            \zsyseq{\Gamma}{\Delta_1, \Delta_2, B}{\reactlist{}}{C}
+          \]
+          \justifies
+          \zsyseq{\Gamma}{\Delta_1, \Delta_2}{
+            []}{B \rightarrow_{\reactlist{}}^{\elembases{\Delta_1,\Delta_2}} C}
+        \end{prooftree}
+      \]
+
+      which is just the thesis, recalling that if
+      $\zsyseq{\Gamma}{\Delta}{[]}{A}$, then
+      $\elembases{\Delta} = \elembases{A}$ by Lemma.
     \end{enumerate}
   \end{description}
 \end{proof}
 
---------------------------------------------------------------------------------
-
-  \[
-    \begin{prooftree}
-      \zsyseq{\Gamma}{\Delta_1}{\ctrlset{1}}{A}
-      \qquad
-      \zsyseq{\Gamma}{\Delta_2, A}{\ctrlset{2}}{B}
-      \justifies
-      \zsyseq{\Gamma}{\Delta_1, \Delta_2}{\ctrlset{1}\cup\ctrlset{2}}{B}
-      \using{\elembases{\Delta_2} \notin \ctrlset{1}}
-    \end{prooftree}
-  \]
 
 
 %%% Local Variables:
