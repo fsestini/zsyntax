@@ -16,8 +16,8 @@ import Data.Foldable (toList, foldlM)
 --------------------------------------------------------------------------------
 -- Command datatypes
 
-newtype ThrmName = TN String deriving (Eq, Ord)
-newtype CSString = CSS String deriving (Eq, Ord, Show)
+newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord)
+newtype CSString = CSS {unCSS :: String} deriving (Eq, Ord, Show)
 newtype AxiomsString = AS String deriving (Eq, Ord, Show)
 
 data QueriedSeq = QS
