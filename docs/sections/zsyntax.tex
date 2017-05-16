@@ -17,9 +17,7 @@ reference]. In the following we only repeat some of the definitions in [paper]
 on which the following sections built upon. Details and examples on how Zsyntax
 deals with monotonicity can be found in [paper].
 
-
-
-\begin{definition}[Elementary bases]
+\begin{definition}[Zsyntax elementary bases]
   \begin{enumerate}
   \item An elementary base of a formula $A$ is a context
     $\Gamma \in \bioformulas^*$ defined inductively as follows:
@@ -82,24 +80,24 @@ definition, the controlled $\rightarrow$ elimination rule becomes the following:
   \end{prooftree}
 \]
 
-\subsection{Reasons for a different monotonicity control}
+\subsection{Reasons for a different conditional operator}
 
-In the sections that follow, we will define an alternative provability relation
-$\models$ for Zsyntax (which is just a different way to present the natural
-deduction-style calculus as in [paper]), that is strictly related to the
-one in [paper]. The purpose is to give a precise formalization of the
-logic that we intend to implement, and at the same time establish the
-similarities (and differences) with the original formulation.
+In [paper], the authors describe Zsyntax, a logical calculus for biological
+reactions which from now on will be referred to as \znd{}. In the sections that
+follow, we will define an alternative natural deduction calculus that is
+strictly related to, albeit in some rather profound way different to, the one
+given in [paper].
+The calculus is given in terms of its annotated provability relation $\models$,
+as taking the rules of [paper] and annotating them would have been less elegant.
+The purpose is to give a precise formalization of the logic that we intend to
+implement in the sequent calculus, and at the same time clarify the similarities
+(and differences) with the original formulation.
 
-Our provability relation , as well as the sequent calculus based on it, uses a
-different kind of Z-conditional (linear implication) that the one described in
-[paper], and a different (weaker) definition of control set.  The reason for the
-first is logical, and lies in an asymmetry between introduction and elimination
-rules of the conditional operator as presended in [paper]. The second has more
-technical reasons, as it seemed necessary in order to get a satisfactory
-cut-free sequent calculus.
-
-\subsubsection{Conditional operator}
+The fundamental difference between our natural deduction calculus \eznd{} and
+\znd{} lies in a different kind of Z-conditional (linear implication) operator.
+The reason is logical, and lies in an unsatisfactory asymmetry between
+introduction and elimination rules of the conditional operator presended in
+[paper].
 
 We now recall the definition of the Z-conditional operator in [paper], and
 illustrate how the one used here is different. The introduction rule for the
@@ -188,30 +186,31 @@ rule, prevents us to deduce a theorem that we certainly know to be
 particular instance of $A \rightarrow B$ that we are eliminating comes form
 $\Gamma$, which is not really affected by the presence of $\Delta$.
 
+In essence, the Z-conditional described above is \emph{too general}, as it
+implicitly contains an existential quantification: to introduce an element of
+type $A \rightarrow B$ is to know that \emph{there exists} an aggregate that,
+paired with $A$, transitions to $B$. To prove something by elimination on an
+element of type $A \rightarrow B$ is to prove it without knowledge on which
+aggregate was used to establish $A \rightarrow B$, that is, to prove it for an
+arbitrary $A \rightarrow B$ (this indeed corresponds to considering all of them,
+or at least all of them according to our knowledge of the system so far, as in
+the elimination rule in [paper]).
+
 If we translate the calculus into sequents as is, this asymmetry between local
 instances and global properties, introduction and elimination rules, and thus
 between right and left sequent rules, inevitably prevents an elegant cut-free
 calculus to be found. To restore the symmetry, we decided to use a different
-kind of implication, one that keeps explicit track of its control set and
-elementary base. We write
+kind of implication, one that keeps explicit track of both the aggregate from
+which it originated and the history of transitions that were used to establish
+its validity.
 
-\[
-  A \limp_{\ctrlset{}}^{S} B
-\]
-
-to mean the type of a biological aggregate with elementary base $S$ that, if
-paired with an element of type $A$, reacts to give an element of type $B$. In
-other words, to know that $A \limp_{\ctrlset{}}^{S} B$ holds is to know that
-$\Gamma, S, A \models \Gamma, B$, for any $\Gamma$ that respects the control set
-$\ctrlset{}$.
-
-Notice that, even though this new definitions allow us to restore some form of
-symmetry between left and right rules for the conditional operator, the
+Notice that, even though this new operator (given in the section that follows)
+allows us to restore some form of symmetry between left and right rules, the
 resulting logic is still intrinsically non-commutative, as the success of a
 derivation depends on the order in which inference rules are used. This is of
 course a property that we want our logical system to have, if deductions are to
 represent biological reactions. The price to be paid is in the resulting proof
-theory, which gets more complicated and lacks other properties that more
+theory, which gets more complicated and lacks properties that more
 standard logics have. As an example, despite what is said in [paper], the
 deduction theorem fails to hold even in plain Zsyntax. In particular
 
@@ -226,8 +225,29 @@ eliminating $A \rightarrow B$ and then introducting $B$ to prove the conclusion.
 However, there is no way to prove $\Gamma, B \vdash C$, as the presence of $B$
 prevents $A \rightarrow B$ to be used.
 
+\subsection{An alternative Z-conditional operator}
+
+Our calculus \eznd{} will replace the conditional operator in \znd{} with the
+following:
+
+\[
+  A \rightarrow_{\reactlist{}}^S B
+\]
+
+where $A,B$ are formulas, $S$ is a set of atomic formulas of the bonding
+language $\bioformulas$, and $l$ is a list defined in a suitable way. The
+meaning of such annotations will become clear as we introduce the concepts.
+
 The introduction of our modified conditional operator requires a new
 definition of elementary base for a formula and for a (multi)set of formulas.
+Recall that elementary bases in [paper] are sets of elementary contexts of
+elements of the bonding language $\bioformulas$. Such definition is necessary,
+as conditional operators of type $A \rightarrow B$ refer to \emph{all}
+known reactions of such type. Since in our formalism there is a one-to-one
+correspondence between an instance of a conditional operator and a known
+reaction, we must redefine elementary bases with such \emph{locality} in mind.
+For this reason, our elementary bases are just sets of formulas of the bonding
+language, rather than sets of contexts.
 
 \begin{definition}[Elementary base]
   The elementary base $\elembases{A} \subseteq \bioformulas$ of a formula $A$ is
@@ -236,243 +256,160 @@ definition of elementary base for a formula and for a (multi)set of formulas.
   \begin{enumerate}
   \item $\elembases{A} = \{ A \}$, if $A \in \bioformulas$;
   \item $\elembases{A \otimes B} = \elembases{A} \cup \elembases{B}$;
-  \item $\elembases{A \rightarrow_{\ctrlset{}}^S B} = S$.
+  \item $\elembases{A \rightarrow_{\reactlist{}}^S B} = S$.
   \end{enumerate}
 \end{definition}
 
-\subsubsection{Control sets}
+Control sets are defined as before, that is, as sets of linear contexts (lists)
+of atomic formulas of the bonding language. We now define the type of lists that
+will be used as part of conditional formulas.
 
-As we said above, our weaker (with respect to the one given in [paper]) notion
-of control sets has purely technical reasons. In particular, in order for the
-proof of cut elimination to go through, we need the following fact about control
-sets to hold:
-
-\[
-  \forall \Delta_1, \Delta_2, \ctrlset{},\quad
-  \Delta_1 \notin \ctrlset{} \wedge \Delta_2 \notin \ctrlset{}
-  \implies
-  \Delta_1, \Delta_2 \notin \ctrlset{}
-\]
-
-where $\Delta_1, \Delta_2$ is the usual multiset union. This is of course not
-true in general, at least for the notion of control set given in [paper].  We
-speculate, however, that our contrained notion is still enough to cover many
-interesting applications in molecular biology, so to justify the development of
-an automated theorem prover based on it.
-
-The constraint above basically forces the following concrete definition of
-control set upon us:
-
-\begin{definition}
+\begin{definition}[Reaction list]
   \begin{enumerate}
-  \item A control set is a subset $\ctrlset{} \subseteq \bioformulas$;
-  \item A (multi)set of formulas $\Delta$ \emph{respects} a control set
-    $\ctrlset{}$, written $\respects{\Delta}{\ctrlset{}}$, if
+  \item A \emph{reaction list} is a list of pairs where the first component is
+    an elementary base, and the second component is a control set. Concatenation
+    of reaction lists, written $\listplus{l_1}{l_2}$, is defined in the usual
+    way;
+  \item A context $\Delta$ is said to \emph{respect} a reaction list $l$,
+    written $\resplist{\Delta}{l}$, if
 
     \[
-      \forall A \in \ctrlset{}, A \notin \elembases{\Delta}
+      \forall (\nabla, \ctrlset{})\in l, \respects{\nabla, \Delta}{\ctrlset{}}
     \]
 
+  \item The operation of adjoining an elementary base $\Delta$ to a reaction
+    list $l$, written $\basepluslist{\Delta}{l}$, is recursively defined as
+    follows:
+
+    \begin{align*}
+      \basepluslist{\Delta}{[]} &= [] \\
+      \basepluslist{\Delta}{(\nabla;\ctrlset{}):l} &= (\Delta,\nabla;\ctrlset{}):\basepluslist{\Delta}{l}
+    \end{align*}
   \end{enumerate}
 \end{definition}
+
+As the meaning of our conditional operator is tightly related to its
+meta-linguistic counterpart, we posticipate giving its intuitive meaning until
+the definition of the provability relation that we will consider, and the
+related inference rules.
 
 \subsection{The calculus \eznd{}}
 
-% As we have seen, the logical framework of Zsyntax is dynamic in the sense that
-% knowledge about biochemical reactions changes over time as facts are
-% discovered. In other terms, this means that the contents of elementary bases
-% and control sets that we consider as part of our system change.
-
-% To give a precise definition of proof (in natural deduction style) or derivation
-% (in sequent calculus), however, we need a way to refer to a particular
-% \emph{current state} of the system, that is, to the current value of the
-% elementary bases and control sets. We thus give the concept of a \emph{world},
-% which is just a structure that describes the state of the system in a given
-% point in time.
-
-% \begin{definition}[World]
-%   A \emph{world assignment} is a map of type
-%   $\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*)$.  A
-%   \emph{world} $w$ is a pair of world assignments, respectively called the
-%   \emph{control} map and the \emph{elementary} map.
-
-%   \[
-%     (w_{\text{ctrl}}, w_{\text{elem}}) \in W \equiv
-%     (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
-%     \times (\mathcal{L} \times \mathcal{L} \to \mathcal{P}(\bioformulas^*))
-%   \]
-% \end{definition}
-
-% Elementary bases and control sets are therefore from now on considered in
-% reference to a particular world $w$: the only difference is that the control set
-% of a formula $A \rightarrow B$ is given by $w_{\text{ctrl}}(A,B)$, whereas the set
-% of elementary bases is given by $w_{\text{elem}}(A,B)$. Thus, the $\rightarrow$
-% elimination rule can be rewritten as
-
-% \[
-%   \begin{prooftree}
-%     \Gamma, A \rightarrow B \, : \,
-%     \elembasesw{\Gamma}{w} \cap w_{\text{ctrl}}(A, B) = \emptyset
-%     \justifies
-%     \Gamma, B
-%   \end{prooftree}
-% \]
-
-% where $\elembasesw{\Gamma}{w}$ is exactly as $\elembases{\Gamma}$ but using $w$
-% for the elementary bases of the conditionals.
-
 We now give an alternative formalization of the rules of Zsyntax, that uses the
-modified conditional operator. As explained in the previous section, this yields
-a strictly stronger calculus as far with respect to proofs involving
-conditionals (if we forget our weaker notion of control set), as it is possible
-to prove theorems that are not provable in plain \znd{}. The resulting lack of
-soundness w.r.t. \znd{} is not a problem in our opinion, as we think that the
-theorems that \znd{} misses should actually be provable.
+modified conditional operator.
+As it will be clear, our modification yields a strictly stronger calculus with
+respect to proofs involving conditionals, as reactions (as the one given in the
+previous section) that are not provable in \znd{} will be in \eznd{}.
 
-% This calculus is
-% nevertheless complete in a certain way: if a theorem holds in \znd{}, that it is
-% possible to annotate all conditionals that appear in the proof in such a way
-% that the resulting is also a proof in \eznd{}.
+The resulting lack of soundness w.r.t. \znd{} is both obvious and not
+problematic. Obvious since we have understood that the Z-conditional of \znd{} and
+the one given here are of different strenghts (our being stronger), as asserting
+that a particular reaction is valid is a stronger statement than just asserting
+that one exists. It follows that some reactions that are provable in \eznd{}
+will not be provable in \znd{}, simply because the logic of \znd{} is not
+expressive enough. This leads to the reason why such lack of soundness is not
+problematic, as more expressiveness is obviously better than less.
+Having said that, it is nevertheless reasonable to ask ourselves how to express
+Zsyntax assertions in our language. We discuss this point after the detailed
+definition of the calculus and the conditional operator.
 
 \eznd{} proofs involve a judgement which is basically the provability relation
-of Zsyntax as in [paper], decorated with information about the control sets of
-the biological reactions described by the relation.
+of Zsyntax as in [paper], decorated with information about the series of
+biological reactions that were used to establish the proof. Such \emph{history}
+is represented in terms of the previously defined reaction lists.
 
 \begin{definition}[Enhanced provability judgement]
   Enhanced provability judgements are judgements of the form
 
   \[
-    \Gamma \models_{\ctrlset{}} \Delta
+    \Gamma \models_{\reactlist{}} \Delta
   \]
 
-  where $\Gamma, \Delta$ are lists of formulas, and $\ctrlset{}$ is a control
-  set.
+  where $\Gamma, \Delta$ are lists of formulas, and $\reactlist{}$ is a reaction
+  list.
 \end{definition}
 
-% The intuitive meaning of affirming a judgement of the form
-% $\Delta \models_{\ctrlset{}}^w \nabla$ is to know that there exists a sequence
-% of Zsyntax rule applications with which it is possible to reach the Z-state
-% $\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, under the elementary bases
-% and control sets given by the world $w$, provided that $\Gamma$ is compatible
-% with the control set $\ctrlset{}$.
+Here, the reaction list $l$ gives a kind of history of reactions that brought
+from $\Gamma$ to $\Delta$: to a pair $(\nabla, \ctrlset{}) \in l$ we associate
+the information that $\Gamma$, during its transition to become $\Delta$, reached
+a Z-state which elementary base was $\nabla$, and used a transition with
+control set $\ctrlset{}$ to advance to the next intermediate aggregate.
+In other words, the reaction list $l$ keeps track of the intermediate forms that
+$\Gamma$ assumed in its transition to $\Delta$, and the control sets of the
+conditional formulas that allowed such intermediate reactions.
 
-The intuitive meaning of affirming a judgement of the form
-$\Delta \models_{\ctrlset{}} \nabla$ is to know that there exists a sequence of
-Zsyntax rule applications with which it is possible to reach the Z-state
-$\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, provided that $\Gamma$ is
-compatible with the control set $\ctrlset{}$.
+Hence, the intuitive meaning of affirming a judgement of the form
+$\Delta \models_{\reactlist{}} \nabla$ is to know that there exists a sequence
+of \eznd{} rule applications with which it is possible to reach the Z-state
+$\Gamma, \nabla$ from the Z-state $\Gamma, \Delta$, for any $\Gamma$ that is
+compatible to $l$, or \emph{respects} it. Intuitively, this means that $\Gamma$
+does not interfere with any of the intermediate reactions that bring $\Delta$ to
+$\nabla$.
 
-% \paragraph{World extension}
+The reaction list annotations on the conditional operator have the same meaning
+as the ones used in the provability relation, as the former is just an object
+language internalization of the latter, meta-linguistic concept.  Elementary
+base annotations in a conditional formula, say $A \rightarrow^S B$, are instead
+used to keep track of the real biological nature of the element of type
+$A \rightarrow B$ that we are considering.
+In particular, to know that $A \rightarrow^S B$ is true is to know that $S, A
+\models B$. This interpretation justifies our definition of elementary base:
+since an element of type $A \rightarrow^S B$ really represents an aggregate with
+elementary base $S$, it makes perfect sense to consider $S$ as the elementary
+base of $A \rightarrow^S B$.
 
-% A world $w$ codifies our knowledge given by the theorems (i.e., biological
-% transitions) so far proved. Worlds are dynamic objects in the sense that they
-% change as new reactions are discovered. In particular, we gain new information
-% on the control set $\ctrlset{A \rightarrow B}$ whenever a new reaction of the
-% form $\Gamma, A \models B$ is discovered. We therefore define a world extension
-% operation as follows:
-
-% \begin{definition}[World extension]
-%   A derivation $\Gamma, A \models_{\ctrlset{}} B$ extends a world $w$ to produce
-%   a world $w'$, written $w[\Gamma, A \models_{\ctrlset{}} B] = w'$, as follows:
-
-%   \[
-%     w[\Gamma, A \models_{\ctrlset{}} B]_{\text{ctrl}}(C,D) =
-%     \begin{cases}
-%       w_{\text{ctrl}}(A,B) \cup \ctrlset{}, & \text{if } A \rightarrow B \equiv
-%       C \rightarrow D \\
-%       w_{\text{ctrl}}(C,D), & \text{otherwise}
-%     \end{cases}
-%   \]
-%   \[
-%     w[\Gamma, A \models_{\ctrlset{}} B]_{\text{elem}}(C,D) =
-%     \begin{cases}
-%       w_{\text{elem}}(A,B) \cup w_{\text{elem}}(\Gamma), & \text{if } A \rightarrow B \equiv
-%       C \rightarrow D \\
-%       w_{\text{elem}}(C,D), & \text{otherwise}
-%     \end{cases}
-%   \]
-% \end{definition}
-
-% \paragraph{Technical detail about worlds}
-
-% Proofs in the natural deduction calculus (and, analogously, derivations in the
-% sequent calculus) consider a fixed world in all parts of the proof. In other
-% terms, the \emph{current} world is of course allowed to (and will) change
-% between proofs (this is how the system is dynamic), but it is \strong{not}
-% allowed to change \strong{within} a proof. Even though it wouldn't be difficult
-% to give a natural deduction calculus that accounts for world dynamics within the
-% same proof, it becomes problematic when dealing with the corresponding sequent
-% calculus derivations, and in particular in the proof of cut elimination. For
-% this reason, we choose to consider only proofs with fixed worlds, and in
-% particular we require that the world considered in the proof is aware of all
-% transitions of the form $\Gamma, A \models B$ that may have been
-% \emph{discovered} for the first time from the proof itself. This is actually a
-% quite reasonable thing to do: given the dynamic nature of the calculus, every
-% previously established theorem must be re-checked every time the current world
-% is changed with new information. Therefore, it only saves time (and computation)
-% to eagerly check a proof with a world as up-to-date as possible.
-
-We now give a translation from the calculus \znd{} given in [paper] to our
-enhanced calculus \eznd{}, which will be formed by inference rules having as
+We now take the calculus \znd{} given in [paper] as a model to define our
+modified calculus \eznd{}, which will be formed by inference rules having as
 premises and conclusion judgements of the form
-$\Gamma \models_{\ctrlset{}} \Delta$.
+$\Gamma \models_{\reactlist{}} \Delta$.
 
 \paragraph{Empirical rules}
 
 Empirical rules are not part of the calculus, but are treated as axioms as
-hinted in Section [TODO] of [paper]. As an example, postulating that $A$
-transitions to $B$ provided $\ctrlset{}$ is respected is the same as affirming
-$\models A \rightarrow_{\ctrlset{}}^\emptyset B$.
+hinted in Section [TODO] of [paper]. In our language, to postulate that $A$
+transitions to $B$ provided that the control set $\ctrlset{}$ is respected can
+be done by affirming that the following formula is true in the empty context:
+
+\[
+  A \rightarrow_{(\emptyset, \ctrlset{}):[]}^\emptyset B
+\]
+
+This is coherent with our interpretation of the annotations of conditional
+operators. An axiom is indeed by definition true in the empty context (hence the
+empty elementary base in the formula), and represents an atomic transition
+(hence the empty elementary base in the reaction list, as an atomic transition
+has no intermediate steps) which can happen unless $\ctrlset{}$ is respected
+(hence the control set $\ctrlset{}$ in the reaction list.)
+
+As axioms can be used \emph{ad libitum} in a proof, we need a way to introduce
+them at any stage:
+
+\[
+  \begin{prooftree}
+    A \ \text{axiom}
+    \justifies
+    \Gamma \models_{[]} \Gamma, A
+  \end{prooftree}
+\]
 
 \paragraph{$\rightarrow$ introduction}
-
-% The rule in [paper] is as follows:
-
-% \[
-%   \begin{prooftree}
-%     \Gamma, \Delta \qquad
-%     \[
-%       \Gamma, A
-%       \leadsto
-%       B
-%     \]
-%     \justifies
-%     A \rightarrow B, \Delta
-%   \end{prooftree}
-% \]
-
-% Thus, whenever it can be shown that $\Gamma, A \vdash_{\ctrlset{}} B$ for some
-% $\ctrlset{}$, $\Gamma$ may be considered \emph{ipso facto} of type
-% $A \rightarrow B$, that is
-% $\Gamma, \Delta \vdash_{\emptyset} A \rightarrow B, \Delta$.
-% Notice, however, that in this process we gain knowledge of the fact that
-% $\Gamma, A \models B$, so the \emph{world} against which the side conditions are
-% checked must be updated accordingly (or rather, must already be up to date, for
-% what we said before). This leads to the following rule:
 
 We have the following rule:
 
 \[
   \begin{prooftree}
-    \Gamma, A \models_{\ctrlset{}} B
+    \Gamma, A \models_{\reactlist{}} B
     \justifies
-    \Gamma, \Delta \models_{\emptyset}
-    A \rightarrow_{\ctrlset{}}^{\elembases{\Gamma}} B, \Delta
+    \Gamma, \Delta \models_{[]}
+    A \rightarrow_{\reactlist{}}^{\elembases{\Gamma}} B, \Delta
   \end{prooftree}
 \]
 
-Notice how the information on elementary base and control set associated with
-the conditional just introduced is preserved locally in the formula itself.
-Also, the null control set in the conclusion is just a translation of the fact
-that going from $\Gamma$ to $A \rightarrow B$ is just a matter of symbols, and
-does not involve any real reaction.
-
-% Here, the side condition $w[\Gamma,A\vdash_{\ctrlset{}}B] = w$ means that the
-% proof may happen in an arbitrary world, provided it already contains the
-% additional knowledge that the premise has just established. In other words, we
-% require that the world against which we check the validity of the proof is a
-% fixed point with respect to the extension operation represented by
-% $\Gamma,A\models_{\ctrlset{}}B$.
+Notice how the information on the reaction that was proved to establish the
+truth of the conditional just introduced is preserved locally in the formula
+itself. Also, notice how the empty reaction list in the conclusion represent the
+fact that going from $\Gamma$ to $A \rightarrow B$ is just an act of renaming
+rather than an actual biological reaction.
 
 \paragraph{$\rightarrow$ elimination}
 
@@ -487,20 +424,29 @@ The rule in [paper]
   \end{prooftree}
 \]
 
-Can be straighforwardly translated to our formalism as follows:
+Can be translated to our formalism as follows:
 
 \[
   \begin{prooftree}
-    \elembases{\Gamma} \notin \ctrlset{}
+    \resplist{\Gamma}{\reactlist{}}
     \justifies
-    \Gamma, A \rightarrow_{\ctrlset{}}^S B, A \vdash_{\ctrlset{}} \Gamma, B
+    \Gamma, A \rightarrow_{\reactlist{}}^S B, A
+    \models_{\basepluslist{\Gamma}{\reactlist{}}} \Gamma, B
   \end{prooftree}
 \]
 
-The $\ctrlset{}$ in the conclusion witnesses the fact that not only
-$A\rightarrow B$ can be eliminated if $\Gamma$ respects the associated control
-set, but also that any other context in which the whole transition is placed
-must respect it.
+The intuition behind the reaction list in the conclusion is quite simple.  The
+conditional witnesses the fact that we can transition from $A$ to $B$ with some
+intermediate reactions $\reactlist{}$, in every context $\Gamma$ that respects
+them. Therefore, we can safely add $\Gamma$ to the initial aggregate to get to
+$\Gamma, B$ using the conditional at hand.
+
+The reaction list of the overall transition that results from this is composed
+of the initial reaction list $\reactlist{}$ of the conditional that has been
+used, with the addition of (the elementary base of) $\Gamma$ in all its
+components. This is to represent the fact that the intermediate reactions of the
+conclusion are just those of $\reactlist{}$ with the addition of a passive
+context $\Gamma$ alongside.
 
 \paragraph{$\otimes$ introduction and elimination}
 
@@ -509,14 +455,14 @@ The $\otimes$ introduction and elimination rules are straighforward:
 \[
   \begin{prooftree}
     \justifies
-    \Gamma, A, B \models_{\emptyset} \Gamma, A \otimes B
+    \Gamma, A, B \models_{[]} \Gamma, A \otimes B
   \end{prooftree}
 \]
 
 \[
   \begin{prooftree}
     \justifies
-    \Gamma, A \otimes B \models_{\emptyset} \Gamma, A, B
+    \Gamma, A \otimes B \models_{[]} \Gamma, A, B
   \end{prooftree}
 \]
 
@@ -527,7 +473,7 @@ Obviously, the trivial transition is allowed:
 \[
   \begin{prooftree}
     \justifies
-    \Gamma \models_{\emptyset} \Gamma
+    \Gamma \models_{[]} \Gamma
   \end{prooftree}
 \]
 
@@ -536,57 +482,32 @@ of Zsyntax rule applications, we need a way to compose such sequences:
 
 \[
   \begin{prooftree}
-    \Gamma \models_{\ctrlset{1}} \Delta
+    \Gamma \models_{\reactlist{1}} \Delta
     \qquad
-    \Delta \models_{\ctrlset{2}} \nabla
+    \Delta \models_{\reactlist{2}} \nabla
     \justifies
-    \Gamma \models_{\ctrlset{1} \cup \ctrlset{2}} \nabla
+    \Gamma \models_{\listplus{\reactlist{1}}{\reactlist{2}}} \nabla
   \end{prooftree}
 \]
 
-The following easy to establish result holds:
+We can formalize our intuition about reaction list annotations and controlled
+monotonicity with the following rule:
 
-\begin{proposition}
-  The following rule is admissible:
+\[
+  \begin{prooftree}
+    \Gamma \models_{\reactlist{}} \Delta
+    \qquad
+    \resplist{\nabla}{\reactlist{}}
+    \justifies
+    \Gamma, \nabla \models_{\basepluslist{\nabla}{\reactlist{}}} \Delta, \nabla
+  \end{prooftree}
+\]
 
-  \[
-    \begin{prooftree}
-      \Gamma \models_{\ctrlset{}} \Delta
-      \qquad
-      \nabla \notin \ctrlset{}
-      \justifies
-      \Gamma, \nabla \models_{\ctrlset{}} \Delta, \nabla
-    \end{prooftree}
-  \]
-\end{proposition}
-\begin{proof}
-  Straightforward induction on the derivations.
-\end{proof}
-
-The next section provides a sequent calculus that is proved sound and complete
-with respect to \eznd{}.
-
-% Notice how composition forces the two subsequences to happen under the same
-% world $w$. We then have the following properties, which will be particularly
-% useful when implementing the constraint-solving part of the automated deduction
-% engine.
-
-% \begin{proposition}
-%   If $\Gamma \models_{\ctrlset{}}^w \Delta$, then any subderivation $\Gamma'
-%   \models_{\ctrlset{}'}^{w'} \Delta'$ is such that $w = w'$.
-% \end{proposition}
-% \begin{proof}
-%   Straightforward induction on the derivation.
-% \end{proof}
-
-% \begin{proposition}
-%   If $\Gamma \models_{\ctrlset{}}^w \Delta$, then for every subderivation
-%   $\Gamma', A \models_{\ctrlset{}'}^w B$ it holds that $w[\Gamma', A
-%   \models_{\ctrlset{}'} B] = w$.
-% \end{proposition}
-% \begin{proof}
-%   Follows directly from the proposition above.
-% \end{proof}
+which is obviously close, both in its form and in its justification, to the
+$\rightarrow$ elimination rule. The admissibility of this rule is justified by a
+simple examination of the rules of the calculus, so we skip a detailed
+proof. Such proof, however, can be easily formalized as a much simpler version
+of the cut elimination given in the next section.
 
 %%% Local Variables:
 %%% mode: latex
