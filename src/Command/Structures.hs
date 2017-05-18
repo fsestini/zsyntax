@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
 
@@ -21,26 +22,34 @@ newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord)
 newtype CSString = CSS {unCSS :: String} deriving (Eq, Ord, Show)
 newtype AxiomsString = AS String deriving (Eq, Ord, Show)
 
-data QueriedSeq = QS
-  { axStr :: AxiomsString
-  , fromStr :: String
-  , toStr :: String
-  } deriving (Eq, Ord)
-
-instance Show QueriedSeq where
-  show (QS (AS ax) fr to) = ax ++ " ; " ++ fr ++ " ===> " ++ to
+data QueriedSeq axlistrepr frmlrepr = QS
+  { axStr :: axlistrepr
+  , fromStr :: frmlrepr
+  , toStr :: frmlrepr
+  } deriving (Eq, Ord, Show)
 
 instance Show ThrmName where
   show (TN name) = name
 
-data Command = AddAxiom ThrmName CSString String String
-             | ChangeAxiom ThrmName CSString String String
-             | RemoveAxiom ThrmName
-             | AddTheorem ThrmName QueriedSeq
-             | Query QueriedSeq
-             | LoadFile FilePath
-             | SaveToFile FilePath
-             deriving (Eq, Show)
+class Repr a b where
+  repr :: a -> b
+
+data Command ctrepr axrepr frmlrepr axlistrepr
+  = AddAxiom ThrmName
+             ctrepr
+             axrepr
+             axrepr
+  | ChangeAxiom ThrmName
+                ctrepr
+                axrepr
+                axrepr
+  | RemoveAxiom ThrmName
+  | AddTheorem ThrmName
+               (QueriedSeq axlistrepr frmlrepr)
+  | Query (QueriedSeq axlistrepr frmlrepr)
+  | LoadFile FilePath
+  | SaveToFile FilePath
+  deriving (Eq, Show)
 
 type BioAtoms = String
 type UIElemBase = ElemBase
@@ -53,8 +62,8 @@ type UIAxiom = SAxiom ControlType BioAtoms
 -- interface.
 type UIFormula = SFormula UIElemBase ControlType String
 newtype AxEnv = AE (M.Map ThrmName UIAxiom)
-newtype ThrmEnv =
-  TE (D.BankersDequeue (ThrmName, (QueriedSeq, Maybe (Either UIAxiom UIFormula))))
+newtype ThrmEnv axlrepr frepr =
+  TE (D.BankersDequeue (ThrmName, (QueriedSeq axlrepr frepr, Maybe (Either UIAxiom UIFormula))))
 
 class FEnv env where
   type Elems env :: *
@@ -65,8 +74,9 @@ class FEnv env where
   feLookup :: ThrmName -> env -> Maybe (Elems env)
   feAsList :: env -> [(ThrmName, Elems env)]
 
-instance FEnv ThrmEnv where
-  type Elems ThrmEnv = (QueriedSeq, Maybe (Either UIAxiom UIFormula))
+instance FEnv (ThrmEnv axlrepr frepr) where
+  type Elems (ThrmEnv axlrepr frepr) =
+    (QueriedSeq axlrepr frepr, Maybe (Either UIAxiom UIFormula))
   feEmpty = TE D.empty
   feInsert nm (q, sa) (TE thrms) =
     if isJust (lookup nm (toList thrms))
@@ -101,10 +111,11 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName -> (QueriedSeq, Maybe (Either UIAxiom UIFormula))
-      -> ThrmEnv -> m (QueriedSeq, Maybe (Either UIAxiom UIFormula)))
-  -> ThrmEnv
-  -> m ThrmEnv
+  => (ThrmName -> (QueriedSeq axl fr, Maybe (Either UIAxiom UIFormula))
+        -> ThrmEnv axl fr
+        -> m (QueriedSeq axl fr, Maybe (Either UIAxiom UIFormula)))
+  -> ThrmEnv axl fr
+  -> m (ThrmEnv axl fr)
 processThrms f (TE env) = foldlM f' feEmpty (toList env)
   where
     f' oldenv@ (TE queue) (nm,x) = do
