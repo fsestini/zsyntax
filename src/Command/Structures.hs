@@ -7,8 +7,9 @@ module Command.Structures where
 
 import Control.Monad.Free
 import qualified Data.Map as M
-import SFormula
-import Checking
+import SFormula hiding (ElemBase, CtrlSet)
+import Checking.ReactLists.RList
+import Checking.ReactLists.Sets
 import qualified Data.Dequeue as D
 import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
@@ -41,11 +42,19 @@ data Command = AddAxiom ThrmName CSString String String
              | SaveToFile FilePath
              deriving (Eq, Show)
 
-type SA = SAxiom SimpleCtrlSet String
-type SF = SFormula SimpleElemBase SimpleCtrlSet String
-newtype AxEnv = AE (M.Map ThrmName SA)
+type BioAtoms = String
+type UIElemBase = ElemBase
+type UICtrlType = CtrlSet
+type ControlType = RList UIElemBase CtrlSet
+-- The particular fully applied type of axioms that are used in the user
+-- interface.
+type UIAxiom = SAxiom ControlType BioAtoms
+-- The particular fully applied type of formulas that are used in the user
+-- interface.
+type UIFormula = SFormula UIElemBase ControlType String
+newtype AxEnv = AE (M.Map ThrmName UIAxiom)
 newtype ThrmEnv =
-  TE (D.BankersDequeue (ThrmName, (QueriedSeq, Maybe (Either SA SF))))
+  TE (D.BankersDequeue (ThrmName, (QueriedSeq, Maybe (Either UIAxiom UIFormula))))
 
 class FEnv env where
   type Elems env :: *
@@ -57,7 +66,7 @@ class FEnv env where
   feAsList :: env -> [(ThrmName, Elems env)]
 
 instance FEnv ThrmEnv where
-  type Elems ThrmEnv = (QueriedSeq, Maybe (Either SA SF))
+  type Elems ThrmEnv = (QueriedSeq, Maybe (Either UIAxiom UIFormula))
   feEmpty = TE D.empty
   feInsert nm (q, sa) (TE thrms) =
     if isJust (lookup nm (toList thrms))
@@ -71,7 +80,7 @@ instance FEnv ThrmEnv where
   feAsList (TE thrms) = toList thrms
 
 instance FEnv AxEnv where
-  type Elems AxEnv = SA
+  type Elems AxEnv = UIAxiom
   feEmpty = AE mempty
   feInsert n x (AE env) =
     if isJust (M.lookup n env)
@@ -92,8 +101,8 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName -> (QueriedSeq, Maybe (Either SA SF))
-      -> ThrmEnv -> m (QueriedSeq, Maybe (Either SA SF)))
+  => (ThrmName -> (QueriedSeq, Maybe (Either UIAxiom UIFormula))
+      -> ThrmEnv -> m (QueriedSeq, Maybe (Either UIAxiom UIFormula)))
   -> ThrmEnv
   -> m ThrmEnv
 processThrms f (TE env) = foldlM f' feEmpty (toList env)
