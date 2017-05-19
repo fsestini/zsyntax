@@ -2,7 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Parser (parseBioAggregate, parseBioAggregate1) where
+module Parser (bioExpr, parseBioAggregate, parseBioAggregate1) where
 
 import System.IO
 import qualified Data.List.NonEmpty as NE
