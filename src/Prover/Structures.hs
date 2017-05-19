@@ -231,7 +231,7 @@ isSubsequentOp (ConclSS s) (GoalSS goal) =
     else mzero
 
 fwdSubsumes
-  :: (ForwardSequent seqty, Show seqty, Ord seqty)
+  :: (ForwardSequent seqty, Ord seqty)
   => GlobalIndex seqty
   -> SearchSequent SSChecked seqty
   -> Maybe (SearchSequent FSChecked seqty)

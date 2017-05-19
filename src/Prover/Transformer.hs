@@ -39,8 +39,7 @@ import Prover.Search
 --------------------------------------------------------------------------------
 
 proverSearch'
-  :: ( Show seqty
-     , Ord seqty
+  :: ( Ord seqty
      , Monad m
      , SearchMonad mf
      , SearchPair seqty goalty
@@ -90,7 +89,7 @@ deriving instance
          (Monad m) =>
          MonadReader (ProverEnvironment goalty) (ProverT seqty goalty m)
 
-instance (Monad m, Ord seqty, ForwardSequent seqty, Show seqty) =>
+instance (Monad m, Ord seqty, ForwardSequent seqty) =>
          HasProverState seqty (ProverT seqty goalty m) where
   getRules = rules <$> get
   addRule r = do

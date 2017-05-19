@@ -54,7 +54,7 @@ class MonadPlus m => SearchMonad m where
 
 type SearchConstraint m mf seqty =
   (Monad m, SearchMonad mf, HasProverState seqty m
-   , HasProverEnvironment seqty m, Ord seqty, Eq seqty, Show seqty)
+   , HasProverEnvironment seqty m, Ord seqty, Eq seqty)
 
 doSearch
   :: SearchConstraint m mf seqty
