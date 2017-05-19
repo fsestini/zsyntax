@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -6,14 +7,18 @@
 
 module Command.Structures where
 
+import Control.Monad (join)
+import TypeClasses (filterOut)
+import qualified Data.List.NonEmpty as NE
 import Control.Monad.Free
-import qualified Data.Map as M
+import qualified Data.Map.Lazy as M
 import SFormula hiding (ElemBase, CtrlSet)
 import Checking.ReactLists.RList
 import Checking.ReactLists.Sets
 import qualified Data.Dequeue as D
 import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
+import Data.Bifunctor (second)
 
 --------------------------------------------------------------------------------
 -- Command datatypes
@@ -21,6 +26,8 @@ import Data.Foldable (toList, foldlM)
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord)
 newtype CSString = CSS {unCSS :: String} deriving (Eq, Ord, Show)
 newtype AxiomsString = AS String deriving (Eq, Ord, Show)
+
+data AddedAxiom axr ctr = AAx axr ctr axr
 
 data QueriedSeq axlistrepr frmlrepr = QS
   { axStr :: axlistrepr
@@ -31,8 +38,31 @@ data QueriedSeq axlistrepr frmlrepr = QS
 instance Show ThrmName where
   show (TN name) = name
 
-class Repr a b where
-  repr :: a -> b
+class ReprAx axrepr ctrepr cty a where
+  reprAx :: axrepr -> ctrepr -> axrepr -> Either String (SAxiom cty a)
+
+class ReprAxList axl where
+  reprAxs :: axl -> Either String [ThrmName]
+
+class ReprFrml fr a where
+  reprFrml :: fr -> Either String (NE.NonEmpty (BioFormula a))
+
+-- class ReprQS axr ctr axl fr eb cty a where
+--   reprAxs :: [(ThrmName, SAxiom cty a)] -- AxEnv axr ctr cty a
+--           -- -> ThrmEnv axl fr eb cty a
+--           -> axl
+--           -> Either String [SAxiom cty a]
+--   reprFrml :: fr -> Either String (NE.NonEmpty (BioFormula a))
+
+class CParse ctr axr fr axlr where
+  parseCommand :: String
+               -> Either String (Command ctr axr fr axlr)
+
+class CPrintAx axr ctr where
+  printAx :: ThrmName -> AddedAxiom axr ctr -> String
+
+class CPrintThrm axl fr where
+  printThrm :: ThrmName -> QueriedSeq axl fr -> String
 
 data Command ctrepr axrepr frmlrepr axlistrepr
   = AddAxiom ThrmName
@@ -51,19 +81,12 @@ data Command ctrepr axrepr frmlrepr axlistrepr
   | SaveToFile FilePath
   deriving (Eq, Show)
 
-type BioAtoms = String
-type UIElemBase = ElemBase
-type UICtrlType = CtrlSet
-type ControlType = RList UIElemBase CtrlSet
--- The particular fully applied type of axioms that are used in the user
--- interface.
-type UIAxiom = SAxiom ControlType BioAtoms
--- The particular fully applied type of formulas that are used in the user
--- interface.
-type UIFormula = SFormula UIElemBase ControlType String
-newtype AxEnv = AE (M.Map ThrmName UIAxiom)
-newtype ThrmEnv axlrepr frepr =
-  TE (D.BankersDequeue (ThrmName, (QueriedSeq axlrepr frepr, Maybe (Either UIAxiom UIFormula))))
+newtype AxEnv axr ctr cty a =
+  AE (M.Map ThrmName (AddedAxiom axr ctr, SAxiom cty a))
+newtype ThrmEnv axlrepr frepr eb cty a =
+  TE (D.BankersDequeue (ThrmName,
+    (QueriedSeq axlrepr frepr,
+      Maybe (Either (SAxiom cty a) (SFormula eb cty a)))))
 
 class FEnv env where
   type Elems env :: *
@@ -74,9 +97,9 @@ class FEnv env where
   feLookup :: ThrmName -> env -> Maybe (Elems env)
   feAsList :: env -> [(ThrmName, Elems env)]
 
-instance FEnv (ThrmEnv axlrepr frepr) where
-  type Elems (ThrmEnv axlrepr frepr) =
-    (QueriedSeq axlrepr frepr, Maybe (Either UIAxiom UIFormula))
+instance FEnv (ThrmEnv axlrepr frepr eb cty a) where
+  type Elems (ThrmEnv axlrepr frepr eb cty a) =
+    (QueriedSeq axlrepr frepr, Maybe (Either (SAxiom cty a) (SFormula eb cty a)))
   feEmpty = TE D.empty
   feInsert nm (q, sa) (TE thrms) =
     if isJust (lookup nm (toList thrms))
@@ -89,8 +112,8 @@ instance FEnv (ThrmEnv axlrepr frepr) where
   feLookup nm (TE thrms) = lookup nm (toList thrms)
   feAsList (TE thrms) = toList thrms
 
-instance FEnv AxEnv where
-  type Elems AxEnv = UIAxiom
+instance FEnv (AxEnv axr ctr cty a) where
+  type Elems (AxEnv axr ctr cty a) = (AddedAxiom axr ctr, SAxiom cty a)
   feEmpty = AE mempty
   feInsert n x (AE env) =
     if isJust (M.lookup n env)
@@ -100,6 +123,41 @@ instance FEnv AxEnv where
   feReplace n x (AE env) = AE (M.insert n x env)
   feLookup x (AE env) = M.lookup x env
   feAsList (AE m) = M.toList m
+
+printAxAll :: CPrintAx axr ctr => AxEnv axr ctr cty a -> [String]
+printAxAll (AE axs) = fmap ((uncurry printAx) . second fst) . M.toList $ axs
+
+printThrmAll :: CPrintThrm axl fr => ThrmEnv axl fr eb cty a -> [String]
+printThrmAll (TE thrms) = fmap (uncurry printThrm . second fst) . toList $ thrms
+
+legitAxioms :: AxEnv axr ctr cty a
+            -> ThrmEnv axl fr eb cty a
+            -> [(ThrmName, SAxiom cty a)]
+legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
+  where
+    fromAxs = fmap (second snd) $ M.toList axs
+    fromThrms =
+      filterOut .
+      fmap (aux . second (join . fmap (either Just (const Nothing)) . snd)) $
+      toList thrms
+    aux (x, y) = y >>= \yy -> return (x, yy)
+
+axsFromList
+  :: (ReprAxList axl)
+  => AxEnv axr ctr cty a
+  -> ThrmEnv axl fr eb cty a
+  -> axl
+  -> Either String [SAxiom cty a]
+axsFromList axs thrms list = do
+  names <- reprAxs list
+  mapM mmm names
+  where
+    axioms = legitAxioms axs thrms
+    mmm nm@(TN str) =
+      maybe
+        (Left $ "axioms '" ++ str ++ "' not in scope")
+        Right
+        (lookup nm axioms)
 
 replaceAssocL
   :: Eq a
@@ -111,11 +169,11 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName -> (QueriedSeq axl fr, Maybe (Either UIAxiom UIFormula))
-        -> ThrmEnv axl fr
-        -> m (QueriedSeq axl fr, Maybe (Either UIAxiom UIFormula)))
-  -> ThrmEnv axl fr
-  -> m (ThrmEnv axl fr)
+  => (ThrmName -> (QueriedSeq axl fr, Maybe (Either (SAxiom cty a) (SFormula eb cty a)))
+        -> ThrmEnv axl fr eb cty a
+        -> m (QueriedSeq axl fr, Maybe (Either (SAxiom cty a) (SFormula eb cty a))))
+  -> ThrmEnv axl fr eb cty a
+  -> m (ThrmEnv axl fr eb cty a)
 processThrms f (TE env) = foldlM f' feEmpty (toList env)
   where
     f' oldenv@ (TE queue) (nm,x) = do

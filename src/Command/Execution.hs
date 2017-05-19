@@ -1,5 +1,10 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -36,29 +41,9 @@ import Control.Monad.Trans.Except
 import Data.Foldable (toList)
 
 import Command.Structures
-import Command.Parser
-import Command.Export
 
-type MySeq a = Sequent SimpleElemBase SimpleCtrlSet a
-type MyNSeq a = NeutralSequent SimpleElemBase SimpleCtrlSet a Labels
-type MyDTSeq a = DTSequent (SimpleDerTerm a) SimpleElemBase SimpleCtrlSet a Labels
-type MyUnaryRule a = UnaryRule (SimpleDerTerm a) SimpleElemBase SimpleCtrlSet a Labels
-type MyGSeq a = GoalNeutralSequent SimpleElemBase SimpleCtrlSet a Labels
-type MySF a = SFormula SimpleElemBase SimpleCtrlSet a
-
---------------------------------------------------------------------------------
--- Querying types
-
-type BioAtoms = String
 type Labels = Int
-
-type QSeq = MySeq BioAtoms
-type QNSeq = MyNSeq BioAtoms
-type QDTSeq = MyDTSeq BioAtoms
-type QUnaryRule = MyUnaryRule BioAtoms
-type QGSeq = MyGSeq BioAtoms
-type QSF = MySF BioAtoms
-type QAxiom = SAxiom SimpleCtrlSet BioAtoms
+type Terms a = SimpleDerTerm a
 
 --------------------------------------------------------------------------------
 -- Single command execution
@@ -89,42 +74,47 @@ adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
 adjoinMsgE :: String -> Either String a -> Either String a
 adjoinMsgE str = first (str ++)
 
-tryInsertTheorem :: ThrmName -> (QueriedSeq, Either SA SF) -> ThrmEnv -> EUI ThrmEnv
+tryInsertTheorem
+  :: ThrmName
+  -> (QueriedSeq axlr fr, Either (SAxiom cty a) (SFormula eb cty a))
+  -> ThrmEnv axlr fr eb cty a
+  -> EUI (ThrmEnv axlr fr eb cty a)
 tryInsertTheorem nm@(TN name) (q, frml) thrms =
   maybe (throwE msg >> return thrms) return newThrms
   where
     newThrms = feInsert nm (q, Just frml) thrms
     msg = "theorem named '" ++ name ++ "' already present"
 
-tryInsertAxiom :: ThrmName -> SA -> AxEnv -> EUI AxEnv
+tryInsertAxiom :: ThrmName
+               -> (AddedAxiom axr ctr, SAxiom cty a)
+               -> (AxEnv axr ctr cty a)
+               -> EUI (AxEnv axr ctr cty a)
 tryInsertAxiom name@(TN nm) axiom env =
   maybe (throwE msg) return (feInsert name axiom env)
   where
     msg = "axiom named '" ++ nm ++ "' already present"
 
-parseAxiom :: String -> String -> CSString
-           -> Either String (SAxiom SimpleCtrlSet String)
-parseAxiom strFrom strTo (CSS ctrlset) = do
-  ctrl <- bimap show id $ parseCtrlSet ctrlset
-  fromAggr <- parseBioAggregate1 strFrom
-  toAggr <- parseBioAggregate1 strTo
-  return $
-    sAx (foldr1 bsConj . fmap bsAtom $ fromAggr)
-        (foldr1 bsConj . fmap bsAtom $ toAggr)
-        ctrl
-
-addAxiom :: AxEnv -> ThrmName -> CSString -> String -> String -> UI AxEnv
+addAxiom
+  :: ReprAx axr ctr cty a
+  => (AxEnv axr ctr cty a)
+  -> ThrmName
+  -> ctr
+  -> axr
+  -> axr
+  -> UI (AxEnv axr ctr cty a)
 addAxiom env name@(TN nm) ctrlset strFrom strTo =
-  case (parseAxiom strFrom strTo ctrlset) of
+  case (reprAx strFrom ctrlset strTo) of
     Left err -> (logUI $ "parse error: " ++ (show err)) >> return env
     Right axiom ->
-      case feInsert name axiom env of
+      case feInsert name (AAx strFrom ctrlset strTo, axiom) env of
         Just newEnv -> return newEnv
         Nothing ->
           logUI ("Axiom named '" ++ nm ++ "' already present") >> return env
 
 -- TODO: Ensure that lc is non-empty
-fromNS :: NeutralSequent SimpleElemBase SimpleCtrlSet BioAtoms l -> Either SA SF
+fromNS
+  :: (ElemBase eb a)
+  => NeutralSequent eb cty a l -> Either (SAxiom cty a) (SFormula eb cty a)
 fromNS (NS _ lc cs concl@(OLF conclF)) =
   maybe (Right (sImpl lcf mempty cs (fromLFormula conclF))) Left $ do
     from <- decideSF lcf
@@ -135,28 +125,84 @@ fromNS (NS _ lc cs concl@(OLF conclF)) =
     decideSF :: SFormula eb cs a -> Maybe (BSFormula cs a)
     decideSF (SF olf) = decideOLF olf
 
-addTheorem :: AxEnv -> ThrmEnv -> ThrmName -> QueriedSeq -> Free UIF (ThrmEnv)
+addTheorem
+  :: forall a eb cty axlr fr axr ctr.
+     ( Show a
+     , ElemBase eb a
+     , Ord a
+     , Ord (eb a)
+     , Ord (cty a)
+     , BaseCtrl eb cty a
+     , ReprAxList axlr
+     , ReprFrml fr a
+     )
+  => (AxEnv axr ctr cty a)
+  -> ThrmEnv axlr fr eb cty a
+  -> ThrmName
+  -> (QueriedSeq axlr fr)
+  -> Free UIF (ThrmEnv axlr fr eb cty a)
 addTheorem env thrms nm q =
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
     logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
-    forM_ impls (logUI . show)
+    forM_ impls (logUI . shower)
     return newThrms
   where
+    shower :: (SFormula U U a, SFormula U U a) -> String
+    shower = show
     res = do
       (DT dt ns) <-
         liftParse (queryToSequent env thrms q) >>= liftSR . runSearch
       newThrms <- tryInsertTheorem nm (q, fromNS ns) thrms
       return (transitions dt, newThrms)
 
-query :: AxEnv -> ThrmEnv -> QueriedSeq -> UI ()
+query
+  :: forall a cty axlr fr eb axr ctr.
+     ( Show a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (eb a)
+     , Ord (cty a)
+     , ReprAxList axlr
+     , ReprFrml fr a
+     )
+  => (AxEnv axr ctr cty a)
+  -> (ThrmEnv axlr fr eb cty a)
+  -> (QueriedSeq axlr fr)
+  -> UI ()
 query env thrms q = flip (toUI' logUI) implsM $ \impls -> do
   logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
-  forM_ impls (logUI . show)
+  forM_ impls (logUI . shower)
   where
+    shower :: (SFormula U U a, SFormula U U a) -> String
+    shower = show
     implsM = fmap (transitions . term) $
-      liftParse (queryToSequent env thrms q) >>= liftSR . runSearch
+      liftParse (queryToSequent env thrms q) >>= uiSearch
 
-processTheorems :: AxEnv -> ThrmEnv -> UI ThrmEnv
+uiSearch
+  :: forall eb cty a.
+     (BaseCtrl eb cty a, Ord a, Ord (eb a), Ord (cty a))
+  => Sequent eb cty a
+  -> ExceptT String (Free UIF) (DT (Terms a) (NeutralSequent eb cty a Labels) Labels)
+uiSearch = l . s
+  where
+    s :: Sequent eb cty a -> SearchRes (DTSequent (Terms a) eb cty a Labels)
+    s = runSearch
+    l :: SearchRes (DTSequent (Terms a) eb cty a Labels)
+      -> ExceptT String (Free UIF) (DT (Terms a) (NeutralSequent eb cty a Labels) Labels)
+    l = liftSR
+
+processTheorems
+  :: ( ElemBase eb a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     , ReprFrml fr a
+     , ReprAxList axlf
+     )
+  => (AxEnv axr ctr cty a)
+  -> (ThrmEnv axlf fr eb cty a)
+  -> UI (ThrmEnv axlf fr eb cty a)
 processTheorems axioms = processThrms doer
   where
     doer (TN name) (q, _) thrms = fmap ((,) q) . toUI Nothing . fmap Just $
@@ -166,56 +212,143 @@ processTheorems axioms = processThrms doer
       (DT _ ns) <- liftSR (runSearch actualSequent)
       return (fromNS ns)
 
-queryToSequent :: AxEnv -> ThrmEnv -> QueriedSeq -> Either String QSeq
-queryToSequent env thrms (QS (AS axiomsString) q1 q2) = do
+queryToSequent
+  :: forall axlf fr eb cty a axr ctr.
+     (Ord (eb a), Ord a, Ord (cty a), ReprAxList axlf, ReprFrml fr a)
+  => (AxEnv axr ctr cty a)
+  -> (ThrmEnv axlf fr eb cty a)
+  -> (QueriedSeq axlf fr)
+  -> Either String (Sequent eb cty a)
+queryToSequent env thrms (QS axiomsString q1 q2) = do
   lctxt <-
-    fmap (fmap sAtom) $ adjoinMsgE "linear context: " (parseBioAggregate1 q1)
+    (fmap (fmap sAtom) .
+     adjoinMsgE "linear context: " . reprFrml $
+     q1) :: Either String (NE.NonEmpty (SFormula eb cty a))
   concl <-
     fmap (foldr1 sConj . fmap sAtom) $
-    adjoinMsgE "conclusion: " (parseBioAggregate1 q2)
-  axioms <- adjoinMsgE "axioms: "
-      (mapM (parseAxiomStr env thrms) (splitTrim axiomsString))
-  return $
-    SQ (fromFoldable axioms) (fromFoldable (lctxt :: NE.NonEmpty QSF)) concl
+    adjoinMsgE "conclusion: " . reprFrml $ q2
+  axioms <- adjoinMsgE "axioms: " (axsFromList env thrms axiomsString)
+  return $ SQ (fromFoldable axioms) (fromFoldable lctxt) concl
 
-changeAxiom :: AxEnv -> ThrmName -> CSString -> String -> String -> ThrmEnv
-            -> UI (AxEnv, ThrmEnv)
+changeAxiom
+  :: ( ReprAx axr ctr cty a
+     , ElemBase eb a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     , ReprFrml fr a
+     , ReprAxList axlr
+     )
+  => (AxEnv axr ctr cty a)
+  -> ThrmName
+  -> ctr
+  -> axr
+  -> axr
+  -> (ThrmEnv axlr fr eb cty a)
+  -> UI (AxEnv axr ctr cty a, ThrmEnv axlr fr eb cty a)
 changeAxiom axEnv axName axCS axFrom axTo thrms = toUI (axEnv, thrms) $ do
-  axiom <- liftParse (parseAxiom axFrom axTo axCS)
-  let newAxEnv = feReplace axName axiom axEnv
+  axiom <- liftParse (reprAx axFrom axCS axTo)
+  let newAxEnv = feReplace axName (AAx axFrom axCS axTo, axiom) axEnv
   newThrms <- toEUI (processTheorems newAxEnv thrms)
   return (newAxEnv, newThrms)
 
-removeAxiom :: AxEnv -> ThrmName -> ThrmEnv -> UI (AxEnv, ThrmEnv)
+removeAxiom
+  :: ( ElemBase eb a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     , ReprFrml fr a
+     , ReprAxList axlf
+     )
+  => (AxEnv axr ctr cty a)
+  -> ThrmName
+  -> (ThrmEnv axlf fr eb cty a)
+  -> UI (AxEnv axr ctr cty a, ThrmEnv axlf fr eb cty a)
 removeAxiom axEnv axName thrms = do
   let newAxioms = feRemove axName axEnv
   newThrms <- processTheorems newAxioms thrms
   return (newAxioms, newThrms)
 
-loadFile :: FilePath -> StateT (AxEnv, ThrmEnv) (Free UIF) ()
+loadFile
+  :: forall ctr axr fr axlr eb cty a.
+     ( CParse ctr axr fr axlr
+     , ReprAx axr ctr cty a
+     , CPrintAx axr ctr
+     , CPrintThrm axlr fr
+     , ReprFrml fr a
+     , ReprAxList axlr
+     , ElemBase eb a
+     , Show a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     )
+  => FilePath
+  -> StateT (AxEnv axr ctr cty a, ThrmEnv axlr fr eb cty a) (Free UIF) ()
 loadFile path = do
   contents <- lift $ uiLoadFile path
-  let commandsE = mapM (parseCommand) (lines contents)
+  let commandsE = mapM parser (lines contents)
   case commandsE of
     Left err -> lift . logUI $ "error parsing the file: " ++ (show err)
     Right commands -> mapM_ execCommand commands
+  where
+    parser :: String -> Either String (Command ctr axr fr axlr)
+    parser = parseCommand
 
-saveToFile :: AxEnv -> ThrmEnv -> FilePath -> UI ()
+saveToFile
+  :: forall axlr fr axr ctr eb cty a.
+     (CPrintAx axr ctr, CPrintThrm axlr fr)
+  => (AxEnv axr ctr cty a) -> (ThrmEnv axlr fr eb cty a) -> FilePath -> UI ()
 saveToFile axEnv thrms path =
   uiSaveFile path . concat $ aux axStrs ++ aux thrmStrs
   where
-    axStrs = ppAxEnv axEnv
-    thrmStrs = ppThrmEnv thrms
+    axStrs = printAxAll axEnv
+    thrmStrs = printThrmAll thrms
     aux = (++ ["\n"]) . intersperse "\n"
 
 --------------------------------------------------------------------------------
 -- Generic command execution
 
-execCommand' :: Command -> AxEnv -> ThrmEnv -> UI (AxEnv, ThrmEnv)
+execCommand'
+  :: ( ReprAx axr ctr cty a
+     , CParse ctr axr fr axlr
+     , CPrintAx axr ctr
+     , CPrintThrm axlr fr
+     , ReprFrml fr a
+     , ReprAxList axlr
+     , ElemBase eb a
+     , Show a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     )
+  => Command ctr axr fr axlr
+  -> AxEnv axr ctr cty a
+  -> ThrmEnv axlr fr eb cty a
+  -> UI (AxEnv axr ctr cty a, ThrmEnv axlr fr eb cty a)
 execCommand' c axEnv thrms = fmap snd $ runStateT (execCommand c) (axEnv, thrms)
 
 execCommand
-  :: Command -> StateT (AxEnv, ThrmEnv) (Free UIF) ()
+  :: forall axr ctr cty a eb fr axlr.
+     ( ReprAx axr ctr cty a
+     , CParse ctr axr fr axlr
+     , CPrintAx axr ctr
+     , CPrintThrm axlr fr
+     , ReprFrml fr a
+     , ReprAxList axlr
+     , ElemBase eb a
+     , Show a
+     , BaseCtrl eb cty a
+     , Ord a
+     , Ord (cty a)
+     , Ord (eb a)
+     )
+  => Command ctr axr fr axlr
+  -> StateT (AxEnv axr ctr cty a, ThrmEnv axlr fr eb cty a) (Free UIF) ()
 execCommand (AddAxiom name ctrlset strFrom strTo) = do
   (env, thrms) <- get
   newEnv <- lift $ addAxiom env name ctrlset strFrom strTo
@@ -235,7 +368,7 @@ execCommand (AddTheorem name q) = do
 execCommand (Query q) = do
   (env, thrms) <- get
   lift (query env thrms q)
-execCommand (LoadFile path) = loadFile path
+execCommand (LoadFile path) = loadFile @ctr @axr @fr @axlr @_ @_ @_ path
 execCommand (SaveToFile path) = do
   (env, thrms) <- get
   lift $ saveToFile env thrms path
@@ -253,14 +386,21 @@ instance PickMonad LabelMonad Int where
     put (i + 1)
     return i
 
-runSearch :: QSeq -> SearchRes QDTSeq
+runSearch
+  :: ( Ord a
+     , ElemBase eb a
+     , Ord (eb a)
+     , Ord (cty a)
+     , BaseCtrl eb cty a
+     )
+  => Sequent eb cty a -> SearchRes (DTSequent (Terms a) eb cty a Labels)
 runSearch actualSequent = mySearch initS initR neutral
   where
     neutral = fst $ runState (unLM . myNeutralize $ actualSequent) 0
-    (initS, initR) = isr neutral
+    (initS, initR) = initialSequentsAndRules neutral
 
-isr :: QGSeq -> (S.Set (QDTSeq), [QUnaryRule])
-isr = initialSequentsAndRules
+--isr :: QGSeq -> (S.Set (QDTSeq), [QUnaryRule])
+-- isr = initialSequentsAndRules
 
 data SearchRes a = OkRes a | Saturated | ThresholdBreak deriving (Functor)
 instance Applicative SearchRes where
@@ -284,28 +424,30 @@ instance SearchMonad SearchRes where
   failSaturated = Saturated
   failThresholdBreak = ThresholdBreak
 
-mySearch :: S.Set QDTSeq -> [QUnaryRule] -> QGSeq -> SearchRes QDTSeq
+-- mySearch :: S.Set QDTSeq -> [QUnaryRule] -> QGSeq -> SearchRes QDTSeq
+mySearch
+  :: (ElemBase eb a, Ord l, Ord a, Ord (cty a))
+  => S.Set (DTSequent (Terms a) eb cty a l)
+  -> [UnaryRule (Terms a) eb cty a l]
+  -> (GoalNeutralSequent eb cty a l)
+  -> SearchRes (DTSequent (Terms a) eb cty a l)
 mySearch seqs rules = runIdentity . proverSearch seqs rules
 
-myNeutralize :: QSeq -> LabelMonad QGSeq
+myNeutralize
+  :: (Ord a, Ord (eb a), Ord (cty a))
+  => Sequent eb cty a -> LabelMonad (GoalNeutralSequent eb cty a Labels)
 myNeutralize = flip neutralize Nothing
+
+
 
 --------------------------------------------------------------------------------
 -- Aux
 
-parseCtrlSet :: String -> Either String (SimpleCtrlSet BioAtoms)
-parseCtrlSet str = fmap ctrlFromFoldable . parseBioAggregate $ str
+-- parseCtrlSet :: String -> Either String (SimpleCtrlSet BioAtoms)
+-- parseCtrlSet str = fmap ctrlFromFoldable . parseBioAggregate $ str
 
-parseAxiomStr :: AxEnv -> ThrmEnv -> String -> Either String QAxiom
-parseAxiomStr env thrms str =
-  case feLookup (TN str) env <|>
-       (join . fmap (join . fmap (either Just (const Nothing)) . snd) $
-        feLookup (TN str) thrms) of
-    Nothing -> Left $ "axiom '" ++ str ++ "' not in scope"
-    Just ax -> Right ax
+-- splitTrim :: String -> [String]
+-- splitTrim str = filter (not . null) $ map trim $ splitOn "," (trim str)
 
-splitTrim :: String -> [String]
-splitTrim str = filter (not . null) $ map trim $ splitOn "," (trim str)
-
-trim :: String -> String
-trim = dropWhileEnd isSpace . dropWhile isSpace
+-- trim :: String -> String
+-- trim = dropWhileEnd isSpace . dropWhile isSpace
