@@ -13,6 +13,7 @@
 \RequirePackage{mathtools}
 \RequirePackage{mdframed}
 \RequirePackage{array}% for \newcolumntype macro
+\RequirePackage{cite}
 
 \newcolumntype{L}{>{$}l<{$}} % math-mode version of "l" column type
 
