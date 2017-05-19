@@ -13,9 +13,10 @@ $C$. Zsyntax preserves the characteristics of linear logic as a logic of
 resources, but has a non-monotonic logical consequence relation, or rather one
 where such monotonicity is normally allowed apart from some specified cases. In
 this sense it is similar to other formalisms such as default logic [TODO add
-reference]. In the following we only repeat some of the definitions in [paper]
-on which the following sections built upon. Details and examples on how Zsyntax
-deals with monotonicity can be found in [paper].
+reference]. In the following we only repeat some of the definitions in
+\cite{adding-logic} on which the following sections built upon. Details and
+examples on how Zsyntax deals with monotonicity can be found in
+\cite{adding-logic}.
 
 \begin{definition}[Zsyntax elementary bases]
   \begin{enumerate}
@@ -47,11 +48,11 @@ example, is this knowledge provided manually by the user or managed
 automatically by the machine?). We leave this decision to the implementation
 details.
 
-[paper] then goes on to define control sets for conditionals $A \rightarrow B$
-in terms of elementary bases, calling them \emph{elementary control sets}.  In
-what follows, $\bioformulas^*$ denotes as usual the set of strings of formulas
-of the bonding language (which are just Z-states formed by formulas of the
-bonding language only.)
+\cite{adding-logic} then goes on to define control sets for conditionals
+$A \rightarrow B$ in terms of elementary bases, calling them \emph{elementary
+  control sets}.  In what follows, $\bioformulas^*$ denotes as usual the set of
+strings of formulas of the bonding language (which are just Z-states formed by
+formulas of the bonding language only.)
 
 \begin{definition}
   The \emph{elementary control set}
@@ -82,14 +83,14 @@ definition, the controlled $\rightarrow$ elimination rule becomes the following:
 
 \subsection{Reasons for a different conditional operator}
 
-In [paper], the authors describe Zsyntax, a logical calculus for biological
-reactions which from now on will be referred to as \znd{}. In the sections that
-follow, we will define an alternative natural deduction calculus that is
-strictly related to, albeit in some rather profound way different to, the one
-given in [paper].
-The calculus is given in terms of its annotated provability relation $\models$,
-as taking the rules of [paper] and annotating them would have been less elegant.
-The purpose is to give a precise formalization of the logic that we intend to
+In \cite{adding-logic}, the authors describe Zsyntax, a logical calculus for
+biological reactions which from now on will be referred to as \znd{}. In the
+sections that follow, we will define an alternative natural deduction calculus
+that is strictly related to, albeit in some rather profound way different to,
+the one given in \cite{adding-logic}.  The calculus is given in terms of its
+annotated provability relation $\models$, as taking the rules of
+\cite{adding-logic} and annotating them would have been less elegant.  The
+purpose is to give a precise formalization of the logic that we intend to
 implement in the sequent calculus, and at the same time clarify the similarities
 (and differences) with the original formulation.
 
@@ -97,11 +98,12 @@ The fundamental difference between our natural deduction calculus \eznd{} and
 \znd{} lies in a different kind of Z-conditional (linear implication) operator.
 The reason is logical, and lies in an unsatisfactory asymmetry between
 introduction and elimination rules of the conditional operator presended in
-[paper].
+\cite{adding-logic}.
 
-We now recall the definition of the Z-conditional operator in [paper], and
-illustrate how the one used here is different. The introduction rule for the
-Z-conditional is given in [paper] as follows:
+We now recall the definition of the Z-conditional operator in
+\cite{adding-logic}, and illustrate how the one used here is different. The
+introduction rule for the Z-conditional is given in \cite{adding-logic} as
+follows:
 
 \[
   \begin{prooftree}
@@ -129,7 +131,7 @@ reactions) of the form $\Gamma, A \vdash B$ under the type $A \rightarrow B$.
 To be fair, information is not actually thrown away, as it is supposed to be
 remembered as part of the control sets and elementary bases associated with the
 type $A \rightarrow B$. This however does not solve the asymmetry between the
-two rules. In fact, consider the elimination rule given in [paper]:
+two rules. In fact, consider the elimination rule given in \cite{adding-logic}:
 
 \[
   \begin{prooftree}
@@ -140,11 +142,11 @@ two rules. In fact, consider the elimination rule given in [paper]:
   \end{prooftree}
 \]
 
-From the definition of control set in [paper], we have that the deduction above
-is allowed only if the context $\Gamma$ ``respects'' the control set
-$\ctrlset{A\rightarrow B}^*$, in the sense that it is forbidden if $\Gamma$
-is known to block \emph{some instance} of $A \rightarrow B$, that is, $\Gamma,
-\Delta, A \not \models B$ is known for \emph{some} $\Delta$.
+From the definition of control set in \cite{adding-logic}, we have that the
+deduction above is allowed only if the context $\Gamma$ ``respects'' the control
+set $\ctrlset{A\rightarrow B}^*$, in the sense that it is forbidden if $\Gamma$
+is known to block \emph{some instance} of $A \rightarrow B$, that is,
+$\Gamma, \Delta, A \not \models B$ is known for \emph{some} $\Delta$.
 
 To see how this definition clashes with the introduction rule, consider the
 following example. Suppose we know that $\Gamma, A \vdash B$ in any possible
@@ -194,7 +196,7 @@ element of type $A \rightarrow B$ is to prove it without knowledge on which
 aggregate was used to establish $A \rightarrow B$, that is, to prove it for an
 arbitrary $A \rightarrow B$ (this indeed corresponds to considering all of them,
 or at least all of them according to our knowledge of the system so far, as in
-the elimination rule in [paper]).
+the elimination rule in \cite{adding-logic}).
 
 If we translate the calculus into sequents as is, this asymmetry between local
 instances and global properties, introduction and elimination rules, and thus
@@ -210,8 +212,8 @@ resulting logic is still intrinsically non-commutative, as the success of a
 derivation depends on the order in which inference rules are used. This is of
 course a property that we want our logical system to have, if deductions are to
 represent biological reactions. The price to be paid is in the resulting proof
-theory, which gets more complicated and lacks properties that more
-standard logics have. As an example, despite what is said in [paper], the
+theory, which gets more complicated and lacks properties that more standard
+logics have. As an example, despite what is said in \cite{adding-logic}, the
 deduction theorem fails to hold even in plain Zsyntax. In particular
 
 \[
@@ -238,12 +240,12 @@ where $A,B$ are formulas, $S$ is a set of atomic formulas of the bonding
 language $\bioformulas$, and $l$ is a list defined in a suitable way. The
 meaning of such annotations will become clear as we introduce the concepts.
 
-The introduction of our modified conditional operator requires a new
-definition of elementary base for a formula and for a (multi)set of formulas.
-Recall that elementary bases in [paper] are sets of elementary contexts of
+The introduction of our modified conditional operator requires a new definition
+of elementary base for a formula and for a (multi)set of formulas. Recall that
+elementary bases in \cite{adding-logic} are sets of elementary contexts of
 elements of the bonding language $\bioformulas$. Such definition is necessary,
-as conditional operators of type $A \rightarrow B$ refer to \emph{all}
-known reactions of such type. Since in our formalism there is a one-to-one
+as conditional operators of type $A \rightarrow B$ refer to \emph{all} known
+reactions of such type. Since in our formalism there is a one-to-one
 correspondence between an instance of a conditional operator and a known
 reaction, we must redefine elementary bases with such \emph{locality} in mind.
 For this reason, our elementary bases are just sets of formulas of the bonding
@@ -302,21 +304,21 @@ respect to proofs involving conditionals, as reactions (as the one given in the
 previous section) that are not provable in \znd{} will be in \eznd{}.
 
 The resulting lack of soundness w.r.t. \znd{} is both obvious and not
-problematic. Obvious since we have understood that the Z-conditional of \znd{} and
-the one given here are of different strenghts (our being stronger), as asserting
-that a particular reaction is valid is a stronger statement than just asserting
-that one exists. It follows that some reactions that are provable in \eznd{}
-will not be provable in \znd{}, simply because the logic of \znd{} is not
-expressive enough. This leads to the reason why such lack of soundness is not
-problematic, as more expressiveness is obviously better than less.
-Having said that, it is nevertheless reasonable to ask ourselves how to express
-Zsyntax assertions in our language. We discuss this point after the detailed
-definition of the calculus and the conditional operator.
+problematic. Obvious since we have understood that the Z-conditional of \znd{}
+and the one given here are of different strenghts (our being stronger), as
+asserting that a particular reaction is valid is a stronger statement than just
+asserting that one exists. It follows that some reactions that are provable in
+\eznd{} will not be provable in \znd{}, simply because the logic of \znd{} is
+not expressive enough. This leads to the reason why such lack of soundness is
+not problematic, as more expressiveness is obviously better than less.  Having
+said that, it is nevertheless reasonable to ask ourselves how to express Zsyntax
+assertions in our language. We discuss this point after the detailed definition
+of the calculus and the conditional operator.
 
 \eznd{} proofs involve a judgement which is basically the provability relation
-of Zsyntax as in [paper], decorated with information about the series of
-biological reactions that were used to establish the proof. Such \emph{history}
-is represented in terms of the previously defined reaction lists.
+of Zsyntax as in \cite{adding-logic}, decorated with information about the
+series of biological reactions that were used to establish the proof. Such
+\emph{history} is represented in terms of the previously defined reaction lists.
 
 \begin{definition}[Enhanced provability judgement]
   Enhanced provability judgements are judgements of the form
@@ -358,7 +360,7 @@ since an element of type $A \rightarrow^S B$ really represents an aggregate with
 elementary base $S$, it makes perfect sense to consider $S$ as the elementary
 base of $A \rightarrow^S B$.
 
-We now take the calculus \znd{} given in [paper] as a model to define our
+We now take the calculus \znd{} given in \cite{adding-logic} as a model to define our
 modified calculus \eznd{}, which will be formed by inference rules having as
 premises and conclusion judgements of the form
 $\Gamma \models_{\reactlist{}} \Delta$.
@@ -366,9 +368,10 @@ $\Gamma \models_{\reactlist{}} \Delta$.
 \paragraph{Empirical rules}
 
 Empirical rules are not part of the calculus, but are treated as axioms as
-hinted in Section [TODO] of [paper]. In our language, to postulate that $A$
-transitions to $B$ provided that the control set $\ctrlset{}$ is respected can
-be done by affirming that the following formula is true in the empty context:
+hinted in Section [TODO] of \cite{adding-logic}. In our language, to postulate
+that $A$ transitions to $B$ provided that the control set $\ctrlset{}$ is
+respected can be done by affirming that the following formula is true in the
+empty context:
 
 \[
   A \rightarrow_{(\emptyset, \ctrlset{}):[]}^\emptyset B
@@ -413,7 +416,7 @@ rather than an actual biological reaction.
 
 \paragraph{$\rightarrow$ elimination}
 
-The rule in [paper]
+The rule in \cite{adding-logic}
 
 \[
   \begin{prooftree}

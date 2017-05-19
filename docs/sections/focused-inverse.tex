@@ -1,26 +1,23 @@
 \section{Focused inverse method}
 
-The next step is to think of how to use our forward derived rule calculus with
-the inverse method described in the preceding sections. As we already said, the
-key technical property that makes the inverse method possible is the
-\emph{subformula property}.  We do not directly show such property for our
-forward derived rule calculus, but we limit ourselves to observe that every
-derivation in our version of the calculus corresponds to a structurally
-identical derivation of the forward calculus for intuitionistic linear logic in
-[cmu thesis]. It is then easy to convince ourselves that our calculus has the
-subformula property.
-
-On a more technical level, the primary issue in the forward direction is to
-enumerate the formulas for which we need to derive inference rules. As the
-calculus of derived rules has only neutral sequents as premises and conclusions,
-we only need to generate rules for formulas that occur in neutral sequents; we
-call them \emph{frontier formulas} as in [cmu thesis]. To find the frontier
-formulas in a goal sequent, we abstractly replay the focusing and active phases
-to identify the phase transitions: each transition produces a frontier
-formula.
+The last crucial step in building an automated deduction procedure for \zss{} is
+to think of how to use our forward derived rule calculus with the inverse method
+described in the preceding sections. On a more technical level, the primary
+issue in the implementation of the inverse method is to enumerate the formulas
+for which we need to derive inference rules. As the calculus of derived rules
+has only neutral sequents as premises and conclusions, we only need to generate
+rules for formulas that occur in neutral sequents; we call those \emph{frontier
+  formulas} as in [cmu thesis]. To find the frontier formulas in a goal sequent,
+we abstractly replay the focusing and active phases to identify the phase
+transitions: each transition produces a frontier formula.
 
 To generate the frontier, we use \emph{decorated formulas} to keep track of the
-polarity as well as linearity of the formula.
+polarity as well as linearity of the formula. A positive polarity marks formulas
+that will occur on the right of the sequent symbol, whereas a negarive polarity
+marks those that will occur on the left. Moreover, formulas marked with a dot
+are linear, that is they must be used exactly once, whereas those marked with an
+exclamation mark are unrestricted, that is they can be used freely zero or more
+times.
 
 \[
   \textsf{DecFormula} ::= \decplus{\declinear{A}} \, | \,
@@ -100,9 +97,12 @@ unrestricted formulas, as they are all negative.
 \end{definition}
 
 In the preparatory phase for the inverse method, we calculate the frontier
-formulas of the goal sequent. There is no need to generate initial sequents
+formulas of the goal sequent. There is no need to compute the initial sequents
 separately, as the generation of the derived rules on the frontier formulas
-already does that. In particular, for each formula $A$ in the frontier
+already does that. In particular, we just take as initial sequents all rules
+with zero premises among those generated from the frontier formulas.
+
+The generation proceeds as follows: for each formula $A$ in the frontier
 
 \begin{itemize}
 \item If $A$ is a positive linear atom or a positive linear conjunction, we
@@ -116,71 +116,74 @@ already does that. In particular, for each formula $A$ in the frontier
 \end{itemize}
 
 \begin{example}
-  Consider the goal sequent $\zsyseq{A_1, A_2}{q,n}{\ctrlset{}}{d \otimes d
-    \otimes d}$, where $\ctrlset{}$ is to be determined, and $A_1, A_2$ are
+  Consider the goal sequent $\zsyseq{A_1, A_2}{q,n}{\reactlist{}}{d \otimes d
+    \otimes d}$, where $\reactlist{}$ is to be determined, and $A_1, A_2$ are
   axioms defined as follows:
 
   \begin{align*}
-    A_1 & \equiv q \rightarrow_{\emptyset}^{\emptyset} d \otimes d \otimes n \\
-    A_2 & \equiv n \otimes n \rightarrow_{\{ q \}}^{\emptyset} d
+    A_1 & \equiv q \rightarrow_{[]}^{\emptyset} d \otimes d \otimes n \\
+    A_2 & \equiv n \otimes n \rightarrow_{[(\emptyset, \ctrlset{})]}^{\emptyset} d
   \end{align*}
 
-  A derivation of such sequent in $\zss$ is as follows:
+  where $[(\emptyset, \ctrlset{})]$ is just a shorthand for
+  $(\emptyset, \ctrlset{}):[]$, and $\ctrlset{}$ is defined such that for any
+  $\Delta$, $\respects{\Delta}{\ctrlset{}}$ iff $q \notin \Delta$.  A derivation
+  of such sequent in $\zss$ is as follows:
 
   {\scriptsize{\[
     \begin{prooftree}
       \[
-        \[\justifies\zsyseq{A_1, A_2}{q}{\emptyset}{q}\] \,
+        \[\justifies\zsyseq{A_1, A_2}{q}{\emptyctrl{}}{q}\] \,
         \[
           \[
             \[
               \[
                 \[
-                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyset}{n}\]
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyctrl{}}{n}\]
                   \quad
-                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyset}{n}\]
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyctrl{}}{n}\]
                   \justifies
-                  \zsyseq{A_1, A_2}{n,n}{\emptyset}{n \otimes n}
+                  \zsyseq{A_1, A_2}{n,n}{\emptyctrl{}}{n \otimes n}
                 \]
                 \,
                 \[
                   \[
-                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
                     \quad
-                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
                     \justifies
-                    \zsyseq{A_1, A_2}{d, d}{\emptyset}{d \otimes d}
+                    \zsyseq{A_1, A_2}{d, d}{\emptyctrl{}}{d \otimes d}
                   \]
                   \quad
-                  \[\justifies\zsyseq{A_1, A_2}{d}{\emptyset}{d}\]
+                  \[\justifies\zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
                   \justifies
-                  \zsyseq{A_1, A_2}{d, d, d}{\emptyset}{d \otimes d \otimes d}
+                  \zsyseq{A_1, A_2}{d, d, d}{\emptyctrl{}}{d \otimes d \otimes d}
                 \]
                 \justifies
-                \zsyseq{A_1, A_2}{n \otimes n \rightarrow_{\{ q \}}^{\emptyset} d,
-                  d, d, n,n}{\{ q \}}{d \otimes d \otimes d}
+                \zsyseq{A_1, A_2}{n \otimes n \rightarrow_{[(\emptyset,\ctrlset{})]}^{\emptyset{}} d,
+                  d, d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
               \]
               \justifies
-              \zsyseq{A_1, A_2}{d, d, n,n}{\{ q \}}{d \otimes d
+              \zsyseq{A_1, A_2}{d, d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
                 \otimes d}
               \using{\copyrule}
             \]
             \justifies
-            \zsyseq{A_1, A_2}{d \otimes d, n,n}{\{ q \}}{d \otimes d
+            \zsyseq{A_1, A_2}{d \otimes d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
               \otimes d}
             \using{\otimes L}
           \]
           \justifies
-          \zsyseq{A_1, A_2}{d \otimes d \otimes n,n}{\{ q \}}{d \otimes d
+          \zsyseq{A_1, A_2}{d \otimes d \otimes n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
             \otimes d}
           \using{\otimes L}
         \]
         \justifies
-        \zsyseq{A_1, A_2}{q \rightarrow_{\emptyset}^{\emptyset} d \otimes d
-          \otimes n, q,n}{\{ q \}}{d \otimes d \otimes d}
+        \zsyseq{A_1, A_2}{q \rightarrow_{\emptyctrl{}}^{\emptyset{}} d \otimes d
+          \otimes n, q,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
       \]
       \justifies
-      \zsyseq{A_1, A_2}{q,n}{\{ q \}}{d \otimes d \otimes d}
+      \zsyseq{A_1, A_2}{q,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
       \using{\copyrule}
     \end{prooftree}
   \]}}
@@ -189,15 +192,15 @@ Let us see now how to derive the same goal sequent in the forward derived rule
 calculus. The frontier of the full goal sequent
 
 \[
-  \zfneuseq{q \limp d\otimes d\otimes n, n \otimes n \limp d}{q,n}{\ctrlset{}}
+  \zfneuseq{q \rightarrow d\otimes d\otimes n, n \otimes n \rightarrow d}{q,n}{[(\emptyset,\ctrlset{})]}
   {d \otimes d \otimes d}
 \]
 
 is given by the top-level decorations
 
 \[
-  \decunrestr{(q \limp d \otimes d \otimes n)},
-  \decunrestr{(n \otimes n \limp d)},
+  \decunrestr{(q \rightarrow d \otimes d \otimes n)},
+  \decunrestr{(n \otimes n \rightarrow d)},
   \decminuslinear{q}, \decminuslinear{n},
   \decpluslinear{(d \otimes d \otimes d)}
 \]
@@ -210,14 +213,14 @@ formulas give rise to the derived rules as follows
 \item $\decminuslinear{q}$ is a negative atom, hence it is ignored.
   Same for $\decminuslinear{n}$ and $\decminuslinear{d}$;
 
-\item The unrestricted formula $q \limp d \otimes d \otimes d$ gives
+\item The unrestricted formula $q \rightarrow d \otimes d \otimes d$ gives
   rise to a derived rule as follows
 
   {
     \scriptsize{
       \[
         \begin{prooftree}
-          \zfneuseq{\Gamma}{\Delta, d, d, n}{\ctrlset{}}{Q}
+          \zfneuseq{\Gamma}{\Delta, d, d, n}{\reactlist{}}{Q}
           \quad
           \[
             \justifies
@@ -230,22 +233,22 @@ formulas give rise to the derived rules as follows
               \factrelj{
                 \bkwseq{d,d,n}{\cdot}{\cdot}
               }{
-                \zfneuseq{\Gamma}{\Delta,d,d,n}{\ctrlset{}}{Q}
+                \zfneuseq{\Gamma}{\Delta,d,d,n}{\reactlist{}}{Q}
               }{
-                \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+                \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
               }
             \]
             \justifies
             \factrelj{
               \bkwseq{\cdot}{d \otimes d \otimes n}{\cdot}
             }{
-              \zfneuseq{\Gamma}{\Delta,d,d,n}{\ctrlset{}}{Q}
+              \zfneuseq{\Gamma}{\Delta,d,d,n}{\reactlist{}}{Q}
             }{
-              \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+              \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
             }
           \]
           \justifies
-          \zfneuseq{\Gamma, A_1}{\Delta, q}{\ctrlset{}}{Q}
+          \zfneuseq{\Gamma, A_1}{\Delta, q}{\reactlist{}}{Q}
         \end{prooftree}
       \]
     }
@@ -255,14 +258,14 @@ formulas give rise to the derived rules as follows
 
   \[
     \begin{prooftree}
-      \zfneuseq{\Gamma}{\Delta, d, d, n}{\ctrlset{}}{Q}
+      \zfneuseq{\Gamma}{\Delta, d, d, n}{\reactlist{}}{Q}
       \justifies
-      \zfneuseq{\Gamma, A_1}{\Delta, q}{\ctrlset{}}{Q}
+      \zfneuseq{\Gamma, A_1}{\Delta, q}{\reactlist{}}{Q}
     \end{prooftree}
   \]
 
-\item The negative unrestricted formula $n \otimes n \limp d$ gives rise to a
-  derived rule as follows
+\item The negative unrestricted formula $n \otimes n \rightarrow d$ gives rise
+  to a derived rule as follows
 
   {\scriptsize{\[
     \begin{prooftree}
@@ -284,30 +287,32 @@ formulas give rise to the derived rules as follows
           \factrelj{
             \bkwseq{d}{\cdot}{\cdot}
           }{
-            \zfneuseq{\Gamma}{\Delta,d}{\ctrlset{}}{Q}
+            \zfneuseq{\Gamma}{\Delta,d}{\reactlist{}}{Q}
           }{
-            \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+            \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
           }
         \]
         \justifies
         \factrelj{
           \bkwseq{\cdot}{d}{\cdot}
         }{
-          \zfneuseq{\Gamma}{\Delta,d}{\ctrlset{}}{Q}
+          \zfneuseq{\Gamma}{\Delta,d}{\reactlist{}}{Q}
         }{
-          \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}
+          \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
         }
       \]
       \quad
       \[
-        \respects{\Delta}{\{ q \}}
+        \resplist{\Delta}{[(\emptyset, \ctrlset{})]}
         \proofdotseparation=0ex
         \proofdotnumber=0
         \leadsto
-        \zfneuseq{\Gamma}{\Delta, d}{\ctrlset{}}{Q}
+        \zfneuseq{\Gamma}{\Delta, d}{\reactlist{}}{Q}
       \]
       \justifies
-      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{\ctrlset{}\cup\{q\}}{Q}
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{
+        \baseandplus{\Delta}{[(\emptyset,\ctrlset{})]}{\reactlist{}}
+      }{Q}
     \end{prooftree}
   \]}}
 
@@ -315,10 +320,12 @@ formulas give rise to the derived rules as follows
 
   \[
     \begin{prooftree}
-      \zfneuseq{\Gamma}{\Delta, d}{\ctrlset{}}{Q}
+      \zfneuseq{\Gamma}{\Delta, d}{\reactlist{}}{Q}
       \justifies
-      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{\ctrlset{}\cup\{q\}}{Q}
-      \using{\respects{\Delta}{\{ q \}}}
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{
+        \baseandplus{\Delta}{[(\emptyset,\ctrlset{})]}{\reactlist{}}
+      }{Q}
+      \using{\respects{\Delta}{\ctrlset{}}}
     \end{prooftree}
   \]
 
@@ -339,7 +346,7 @@ formulas give rise to the derived rules as follows
         \frfrelj{d \otimes d \otimes d}{\cdot}{\fneuseq{\cdot}{d,d,d}{\cdot}}
       \]
       \justifies
-      \zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}
+      \zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}
     \end{prooftree}
   \]
 
@@ -348,7 +355,7 @@ formulas give rise to the derived rules as follows
   \[
     \begin{prooftree}
       \justifies
-      \zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}
+      \zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}
     \end{prooftree}
   \]
 
@@ -360,12 +367,12 @@ follows:
 \[
   \begin{prooftree}
     \[
-      \[\justifies\zfneuseq{\cdot}{d,d,d}{\emptyset}{d \otimes d \otimes d}\]
+      \[\justifies\zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}\]
       \justifies
-      \zfneuseq{A_2}{d,d,n,n}{\{q\}}{d \otimes d \otimes d}
+      \zfneuseq{A_2}{d,d,n,n}{[(\emptyset, \ctrlset{})]}{d \otimes d \otimes d}
     \]
     \justifies
-    \zfneuseq{A_1, A_2}{q, n}{\{q\}}{d \otimes d \otimes d}
+    \zfneuseq{A_1, A_2}{q, n}{[(\emptyset, \ctrlset{})]}{d \otimes d \otimes d}
   \end{prooftree}
 \]
 

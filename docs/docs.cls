@@ -41,6 +41,7 @@
 \newcommand{\resplist}[2]{#1 \dagger #2}
 \newcommand{\reactlist}[1]{l_{#1}}
 \newcommand{\baseandplus}[3]{\listplus{\basepluslist{#1}{#2}}{#3}}
+\newcommand{\emptyctrl}{[]}
 
 % Standard backward sequents
 \newcommand{\bkwseq}[3]{#1 ; #2 \Longrightarrow #3}

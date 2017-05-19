@@ -13,28 +13,28 @@ be able to restore all details of a derivation from the term alone.
     \[
       \begin{prooftree}
         \justifies
-        \seqpt{\dtinit{p}}{\zfwdseq{\cdot}{p}{\emptyset}{p}}
+        \seqpt{\dtinit{p}}{\zsyseq{\Gamma}{p}{\emptyctrl{}}{p}}
       \end{prooftree}
       \qquad\qquad
       \begin{prooftree}
         \seqpt{\mathcal{D}}{
-          \zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{C}}
+          \zsyseq{\Gamma, A}{\Delta, A}{\reactlist{}}{C}}
         \justifies
         \seqpt{\dtcopy{\mathcal{D}}{A}}{
-          \zfwdseq{\Gamma \cup A}{\Delta}{\ctrlset{}}{C}}
+          \zsyseq{\Gamma, A}{\Delta}{\reactlist{}}{C}}
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta}{\emptyset}{A}}
+        \seqpt{\mathcal{D}}{\zsyseq{\Gamma}{\Delta}{\emptyctrl{}}{A}}
         \qquad
-        \seqpt{\mathcal{D'}}{\zfwdseq{\Gamma'}{\Delta'}{\emptyset}{B}}
+        \seqpt{\mathcal{D'}}{\zsyseq{\Gamma}{\Delta'}{\emptyctrl{}}{B}}
         \justifies
         \seqpt{
           \dtotimesr{\mathcal{D}}{\mathcal{D'}}
         }{
-          \zfwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta'}{\emptyset}{A \otimes B}
+          \zsyseq{\Gamma}{\Delta, \Delta'}{\emptyctrl{}}{A \otimes B}
         }
       \end{prooftree}
     \]
@@ -44,57 +44,59 @@ be able to restore all details of a derivation from the term alone.
         \seqpt{
           \mathcal{D}
         }{
-          \zfwdseq{\Gamma}{\Delta, A, B}{\ctrlset{}}{C}
+          \zsyseq{\Gamma}{\Delta, A, B}{\reactlist{}}{C}
         }
         \justifies
         \seqpt{
           \dtotimesl{\mathcal{D}}{A}{B}
         }{
-          \zfwdseq{\Gamma}{\Delta, A \otimes B}{\ctrlset{}}{C}
+          \zsyseq{\Gamma}{\Delta, A \otimes B}{\reactlist{}}{C}
         }
       \end{prooftree}
       \qquad
       \begin{prooftree}
-        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{B}}
+        \seqpt{\mathcal{D}}{\zsyseq{\Gamma}{\Delta, A}{\reactlist{}}{B}}
         \justifies
         \seqpt{
           \dtlimpr{\mathcal{D}}{A}
         }{
-          \zfwdseq{\Gamma}{\Delta}{\emptyset}{A \limp B}
+          \zsyseq{\Gamma}{\Delta}{\emptyctrl{}}{
+            A \rightarrow_{\reactlist{}}^{\elembases{\Delta}} B}
         }
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        \seqpt{\mathcal{D}}{\zfwdseq{\Gamma}{\Delta}{\emptyset}{A}}
+        \seqpt{\mathcal{D}}{\zsyseq{\Gamma}{\Delta}{\emptyctrl{}}{A}}
         \qquad
-        \seqpt{\mathcal{D'}}{\zfwdseq{\Gamma'}{\Delta', B}{\ctrlset{}'}{C}}
+        \seqpt{\mathcal{D'}}{\zsyseq{\Gamma}{\Delta', B}{\reactlist{}'}{C}}
         \justifies
         \seqpt{
-          \dtlimpl{\mathcal{D}}{\mathcal{D'}}{B}{\ctrlset{}}{S}
+          \dtlimpl{\mathcal{D}}{\mathcal{D'}}{B}{\reactlist{}}{S}
         }{
-          \zfwdseq{\Gamma \cup \Gamma'}{\Delta, \Delta',
-            A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{}\cup\ctrlset{}'}{C}
+          \zsyseq{\Gamma}{\Delta, \Delta',
+            A \rightarrow_{\reactlist{}}^S B}{
+            \baseandplus{\Delta'}{\reactlist{}}{\reactlist{}'}
+          }{C}
         }
       \end{prooftree}
     \]
   \end{mdframed}
-  \caption{Forward calculus with derivation terms}
-  \label{fig:fwdderterm}
+  \caption{Backward calculus with derivation terms}
+  \label{fig:bkwdderterm}
 \end{figure}
 
-The forward calculus given in Figure~\ref{fig:fwdderterm} serves as a full
+The backward calculus given in Figure~\ref{fig:bkwdderterm} serves as a full
 definition of our derivation terms. However, every derivation (in particular,
-during automated proof search) is going to be performed in the derived rule
-calculus. We therefore need a way to extract a derivation term for the forward
-calculus in Figure~\ref{fig:fwdderterm} from a derivation of the derived rule
-calculus in Figure~\ref{fig:fwdderrulecalculus}. This is no difficult task to
-achieve, as one would expect.
+during automated proof search) is going to be performed in the forward derived
+rule calculus in Figure~\ref{fig:fwdderrulecalculus}. We therefore need a way to
+extract a backward derivation term from a derivation of the forward derived rule
+calculus. This is no difficult task to achieve, as one would expect.
 
 For this purpose, we now extend the relations and rules of the forward derived
 rule calculus to produce derivation terms for the calculus in
-Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
+Figure~\ref{fig:bkwdderterm}, as well as neutral sequents.
 
 \begin{figure}[h]
   \begin{mdframed}
@@ -110,7 +112,7 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
       \begin{prooftree}
         \justifies
         \relj{\frfrel{R}}{
-          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{R}}
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}}
         }{\seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta}}}
         \using{\faplus}
       \end{prooftree}
@@ -162,9 +164,9 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
         \relj{
           \factrel{\zsyseq{\Delta}{\cdot}{\cdot}{\cdot}}
         }{
-          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}}
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{C}}
         }{
-          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta'}{\ctrlset{}}{C}}
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta'}{\reactlist{}}{C}}
         }
         \using{\matchrule}
       \end{prooftree}
@@ -174,9 +176,9 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
       \begin{prooftree}
         \justifies
         \relj{
-          \factrel{\zsyseq{\Delta}{\cdot}{\ctrlset{}}{C}}
+          \factrel{\zsyseq{\Delta}{\cdot}{\reactlist{}}{C}}
         }{
-          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{C}}
+          \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{C}}
         }{
           \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta'}}
         }
@@ -197,7 +199,7 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
           \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{\cdot}}
         })
         \justifies
-        \seqpt{\mathcal{D}}{\fneuseq{\Gamma}{\Delta}{Q}}
+        \seqpt{\mathcal{D}}{\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{Q}}
         \using{\focplusrule}
       \end{prooftree}
     \]
@@ -214,21 +216,23 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
           \relj{\factrel{
               \zsyseq{\cdot}{B}{\cdot}{\cdot}}
           }{s}{
-            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}
+            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\reactlist{}'}{C}}
           }
         \]
         \quad
         \[
-          \respects{\Delta_2}{\ctrlset{}}
+          \resplist{\Delta_2}{\reactlist{}}
           \proofdotseparation=1.2ex
           \proofdotnumber=0
           \leadsto
           s_1 \quad \dots \quad s_n \quad s
         \]
         \justifies
-        \seqpt{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\ctrlset{}}{S}}{
+        \seqpt{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\reactlist{}}{S}}{
           \zfneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2,
-          A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{}\cup\ctrlset{}'}{C}}
+            A \rightarrow_{\reactlist{}}^S B}{
+            \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+          }{C}}
         \using{\rightarrow L}
       \end{prooftree}
     \]
@@ -244,22 +248,24 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
           \relj{\factrel{
               \zsyseq{\cdot}{B}{\cdot}{\cdot}}
           }{s}{
-            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\ctrlset{}'}{C}}}
+            \seqpt{\mathcal{D}'}{\zfneuseq{\Gamma_2}{\Delta_2}{\reactlist{}'}{C}}}
         \]
         \quad
         \[
-          \respects{\Delta_2}{\ctrlset{}}
+          \resplist{\Delta_2}{\reactlist{}}
           \proofdotseparation=1.2ex
           \proofdotnumber=0
           \leadsto
           s_1 \quad \dots \quad s_n \quad s
         \]
         \justifies
-        \seqpt{\dtcopy{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\ctrlset{}}{\emptyset}}{
-          A \rightarrow_{\ctrlset{}}^{\emptyset} B}}
-        {\zfneuseq{\Gamma_1, \Gamma_2, A \rightarrow_{\ctrlset{}}^{\emptyset} B
+        \seqpt{\dtcopy{\dtlimpl{\mathcal{D}}{\mathcal{D}'}{B}{\reactlist{}}{\emptyset}}{
+          A \rightarrow_{\reactlist{}}^{\emptyset} B}}
+        {\zfneuseq{\Gamma_1, \Gamma_2, A \rightarrow_{\reactlist{}}^{\emptyset} B
         }{\Delta_1, \Delta_2,
-        }{\ctrlset{}\cup\ctrlset{}'}{C}}
+        }{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{C}}
         \using{\copyrule}
       \end{prooftree}
     \]
@@ -267,11 +273,11 @@ Figure~\ref{fig:fwdderterm}, as well as neutral sequents.
     \[
       \begin{prooftree}
         s \qquad
-        \relj{\factrel{\zsyseq{\cdot}{A}{\ctrlset{}}{B}}}{s}{
+        \relj{\factrel{\zsyseq{\cdot}{A}{\reactlist{}}{B}}}{s}{
           \seqpt{\mathcal{D}}{\zfneuseqempty{\Gamma}{\Delta}}}
         \justifies
-        \seqpt{\dtlimpr{\mathcal{D}}{A}}{\zfneuseq{\Gamma}{\Delta}{\emptyset}{A
-          \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}}
+        \seqpt{\dtlimpr{\mathcal{D}}{A}}{\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{A
+          \rightarrow_{\reactlist{}}^{\elembases{\Delta}} B}}
         \using{\rightarrow R}
       \end{prooftree}
     \]

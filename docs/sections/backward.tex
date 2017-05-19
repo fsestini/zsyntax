@@ -21,7 +21,12 @@ annotated sequents of the following form
 
 where $\Gamma$ is the \emph{unrestricted context}, namely one where contraction
 and weakening are accepted, $\Delta$ is the usual linear context, and $l$ is a
-reaction list. The intuitive explanation is that a valid sequent of this form
+reaction list. The distinction between unrestricted and linear contexts in the
+same sequent goes back to \cite{GIRARD1993201}, and provides in our setting a
+simple and clear way to represent the ``globally known'' sets of biological
+axioms that can be used freely during proof search.
+
+The intuitive explanation is that a valid sequent of this form
 witnesses the fact that, under the set $\Gamma$ of biological axioms available
 in $\Gamma$, there exists a sequence of Zsyntax transitions that bring the
 aggregate $\Delta$ to the aggregate $C$. In particular, this reaction happens in

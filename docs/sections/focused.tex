@@ -1,23 +1,67 @@
 \section{Focused derivations}
 
-TODO what are focused derivations...
+Focused derivations originated in the context of the proof theory of linear
+logic. The idea was introduced by Andreoli \cite{andreoli92} to reduce the
+computational complexity of proof search in the sequent calculus.
+In a focused calculus, non-atomic formulas are classified as asynchronous or
+synchronous according to their behaviour during bottom-up proof search.
+Asynchronous formulas are such that they can be decomposed on the right of the
+sequent symbol without affecting provability, that is, they have an invertible
+right (introduction) rule. An example is the $\limp$ connective of linear logic.
 
-In our case, a focused derivation has two phases as usual, but the actions that
-are taken are slightly different. In the active phase all possible rules are
-applied to $\otimes$ propositions on the left of the sequent symbol. When only
-atoms or implications remain, one formula is selected and a \emph{focused phase}
-may begin if that formula is a $\otimes$ formula on the right.
+Synchronous formulas, on the other hand, are such that their decomposition on
+the right can make a provable sequent evolve into a non-provable sequent, i.e.,
+they have a non-invertible right rule. Decomposition for such connectives
+therefore depends on ``synchronizing'' with other parts of the context.  An
+example is given by the $\otimes$ connectives, which, given its multiplicative
+nature, has a right rule that when used backwards involves a non-deterministic
+choice on how to partition the context between the two premises.
 
-Contrary to other focused calculi, we do not have a symmetric subdivision of the
-connectives into synchronous and asynchronous ones. In particular, the unusual
-non-invertibility of the $\rightarrow R$ rule prevents us to treat $\rightarrow$
-as a right asynchronous connective. Moreover, additional care is required when
-adapting the ideas of focused linear logic to our case. The reason is that
-Zsyntax derivations contains rule applications that are not commutative in
-general: since focusing is a way to group similar derivations under suitable
-equivalence classes, many derivations that are equivalent for plain linear logic
-are very different for Zsyntax. It is therefore necessary to weaken the amount
-of focusing in order to keep the calculus complete.
+This classification is sufficient for classical linear logic, which enjoys an
+elegant formulation as a one-sided sequent calculus.  Intuitionistic calculi
+are, in contrast, characterized by an asymmetry between the left and right part
+of the sequent, to is makes more sense to talk about right- (respectively,
+left-) synchronous connectives, characterized by a non-invertible right- (left-)
+rule, and right- (left-) asynchronous connectives, characterized by an
+invertible right- (left-) rule.  It turns our that, under this classification,
+right-synchronous connectives are left-asynchronous, and vice versa.
+
+It can be shown that proof search for (intuitionistic) linear logic can be
+structured according to two phases without losing completeness. The active phase
+acts on asynchronous formulas, and consists of applying left (right) rules to
+left- (right-) asynchronous connectives until all connectives are synchronous.
+In the focused phase that follows, some synchronous formula is selected and
+becomes the ``focus'' of this phase. The phase consists of applying the
+associated non-invertible rule to the focused formula and to any synchronous
+subformula that is generated during the phase.
+The power of focusing as a tool for automated deduction then is clear, and lies
+in its reduction of the search space (once a formula is selected for focusing,
+all rules are applied only to it or its subformulas).
+
+Our logic lacks some of the properties of plain intuitionistic linear logic, and
+this prevents us to adapt focusing from [thesis] to our case in a
+straightforward way.
+Contrary to ILL, we do not have a good symmetric subdivision of the connectives
+into synchronous and asynchronous ones. To start with, non-invertibility of the
+$\rightarrow R$ rule prevents us to treat $\rightarrow$ as a right asynchronous
+connective. Moreover, the logic is strongly order-dependent, so rule
+applications in a Zsyntax proof/derivation do not in general commute with each
+other. Since focusing groups derivations under equivalence classes, many
+derivations that are equivalent under focusing for plain linear logic are very
+different for Zsyntax. It is therefore necessary to weaken the amount of
+focusing in order to keep the calculus complete.
+In order not to lose completeness, we are forced to keep the rules for
+implications as they are. In other words, we lose $\rightarrow$ as both a
+left-synchronous and a right-asynchronous connective.
+
+In the weakened focused calculus that results, we can still identify the two
+usual phases (active and focused), but the actions that are allowed during these
+phases are restricted. As $\otimes$ retains all its properties from linear
+logic, we can still focus on conjunctions on the right of the sequent symbol,
+and freely eliminate conjunctions on the left. Hence, during the active phase,
+all possible rules are applied to $\otimes$ propositions on the left. When only
+atoms or implications remain, we may start a \emph{focused phase} if there is a
+$\otimes$ formula on the right.
 
 Our backward focusing calculus consists of the following new kinds of sequents:
 
@@ -28,7 +72,7 @@ Our backward focusing calculus consists of the following new kinds of sequents:
     \textbf{symbol} & \textbf{meaning} \\
     \hline
     $\zfocseq{\Gamma}{\nabla}{A}$ & focal sequent with $A$ under focus \\
-    $\ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{}}{C}$ & active sequent \\
+    $\ztriseq{\Gamma}{\Delta}{\Omega}{\reactlist{}}{C}$ & active sequent \\
     \hline
   \end{tabular}
 \end{table}
@@ -43,7 +87,7 @@ linear context that may contain all kinds of formulas.
 For active sequents, the $\otimes$ formulas in $\Omega$ are decomposed until
 they become either an implication or an atom, in which case they are transferred
 to $\Delta$. Eventually, the active sequent is reduced to the form
-$\ztriseq{\Gamma}{\Delta}{\cdot}{\ctrlset{}}{C}$, which we call
+$\ztriseq{\Gamma}{\Delta}{\cdot}{\reactlist{}}{C}$, which we call
 \emph{neutral sequents} as in [cmu thesis]. From here we can either perform a
 act on an implication (on the left or on the right), or launch a focused phase
 selecting a focusable proposition on the conclusion.
@@ -67,92 +111,99 @@ atoms specifically.
 
 \begin{figure}[h]
   \begin{mdframed}
-\[
-  \begin{prooftree}
-    \justifies
-    \zfocseq{\Gamma}{p}{p}
-    \using{\init}
-  \end{prooftree}
-  \qquad\qquad
-  \begin{prooftree}
-    \ztriseq{\Gamma}{\Delta, P}{\Omega}{\ctrlset{}}{C}
-    \justifies
-    \ztriseq{\Gamma}{\Delta}{\Omega, P}{\ctrlset{}}{C}
-    \using{\lact}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \justifies
+        \zfocseq{\Gamma}{p}{p}
+        \using{\init}
+      \end{prooftree}
+      \qquad\qquad
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta, P}{\Omega}{\reactlist{}}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\Omega, P}{\reactlist{}}{C}
+        \using{\lact}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \zfocseq{\Gamma}{\Delta}{C} \qquad Q\; \text{focusable}
-    \justifies
-    \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{C}
-    \using{focus}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{R}
-    \justifies
-    \zfocseq{\Gamma}{\Delta}{R}
-    \using{blur}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta}{C} \qquad Q\; \text{focusable}
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyctrl}{C}
+        \using{focus}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyctrl}{R}
+        \justifies
+        \zfocseq{\Gamma}{\Delta}{R}
+        \using{blur}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \zfocseq{\Gamma, A \rightarrow_{\ctrlset{}}^\emptyset B}{\Delta_1}{A}
-    \qquad
-    \ztriseq{\Gamma, A \rightarrow_{\ctrlset{}}^\emptyset B}{\Delta_2}{B}{\ctrlset{}'}{C}
-    \justifies
-    \ztriseq{\Gamma, A \rightarrow_{\ctrlset{}}^\emptyset B}{
-      \Delta_1, \Delta_2}{\cdot}{\ctrlset{} \cup \ctrlset{}'}{C}
-    \using{copy}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma, A \rightarrow_{\reactlist{}}^\emptyset B}{\Delta_1}{A}
+        \qquad
+        \ztriseq{\Gamma, A \rightarrow_{\reactlist{}}^\emptyset B}{\Delta_2}{B}{\reactlist{}'}{C}
+        \qquad
+        \resplist{\Delta_2}{\reactlist{}}
+        \justifies
+        \ztriseq{\Gamma, A \rightarrow_{\reactlist{}}^\emptyset B}{
+          \Delta_1, \Delta_2}{\cdot}{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{C}
+        \using{\copyrule}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \ztriseq{\Gamma}{\Delta}{\Omega, A, B}{\ctrlset{}}{C}
-    \justifies
-    \ztriseq{\Gamma}{\Delta}{\Omega, A \otimes B}{\ctrlset{}}{C}
-    \using{\otimes L}
-  \end{prooftree}
-  \qquad \qquad
-  \begin{prooftree}
-    \zfocseq{\Gamma}{\Delta_1}{A}
-    \qquad
-    \zfocseq{\Gamma}{\Delta_2}{B}
-    \justifies
-    \zfocseq{\Gamma}{\Delta_1, \Delta_2}{A \otimes B}
-    \using{\otimes R}
-  \end{prooftree}
-\]
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{\Omega, A, B}{\reactlist{}}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\Omega, A \otimes B}{\reactlist{}}{C}
+        \using{\otimes L}
+      \end{prooftree}
+      \qquad \qquad
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{A}
+        \qquad
+        \zfocseq{\Gamma}{\Delta_2}{B}
+        \justifies
+        \zfocseq{\Gamma}{\Delta_1, \Delta_2}{A \otimes B}
+        \using{\otimes R}
+      \end{prooftree}
+    \]
 
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{A}
+        \qquad
+        \ztriseq{\Gamma}{\Delta_2}{B}{\reactlist{}'}{C}
+        \qquad
+        \resplist{\Delta_2}{\reactlist{}}
+        \justifies
+        \ztriseq{\Gamma}{
+          \Delta_1, \Delta_2,
+          A \rightarrow_{\reactlist{}}^S B
+        }{\cdot}{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+          }{C}
+        \using{\rightarrow L}
+      \end{prooftree}
+    \]
 
-\[
-  \begin{prooftree}
-    \zfocseq{\Gamma}{\Delta_1}{A}
-    \qquad
-    \ztriseq{\Gamma}{\Delta_2}{B}{\ctrlset{}'}{C}
-    \justifies
-    \ztriseq{\Gamma}{
-      \Delta_1, \Delta_2,
-      A \rightarrow_{\ctrlset{}}^S B
-    }{\cdot}{\ctrlset{} \cup \ctrlset{}'}{C}
-    \using{\rightarrow L}
-  \end{prooftree}
-\]
-
-\[
-  \begin{prooftree}
-    \ztriseq{\Gamma}{\Delta}{A}{\ctrlset{}}{B}
-    \justifies
-    \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
-      A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
-    \using{\rightarrow R}
-  \end{prooftree}
-\]
-\end{mdframed}
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{A}{\reactlist{}}{B}
+        \justifies
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Delta}} B}
+        \using{\rightarrow R}
+      \end{prooftree}
+    \]
+  \end{mdframed}
   \caption{Backward focused calculus}
   \label{fig:bkwdfocused}
 \end{figure}
@@ -162,8 +213,8 @@ atoms specifically.
   \begin{enumerate}
   \item If $\zfocseq{\Gamma}{\Delta}{A}$, then
     $\zsyseq{\Gamma}{\Delta}{\emptyset}{A}$;
-  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{}}{C}$, then
-    $\zsyseq{\Gamma}{\Delta, \Omega}{\ctrlset{}}{C}$.
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\reactlist{}}{C}$, then
+    $\zsyseq{\Gamma}{\Delta, \Omega}{\reactlist{}}{C}$.
   \end{enumerate}
 \end{theorem}
 \begin{proof}
@@ -171,15 +222,94 @@ atoms specifically.
   the height of the derivation.
 \end{proof}
 
+\begin{lemma}\label{impllemma}
+  If $\ztriseq{\Gamma}{\Delta_1}{\Omega}{[]}{A}$,
+  $\ztriseq{\Gamma}{\Delta_2}{B}{\reactlist{}'}{C}$, and
+  $\resplist{\Delta_2}{\reactlist{}}$, then
+
+  $\ztriseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow_{\reactlist{}}^S B}{\Omega}{
+    \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+  }{C}$.
+\end{lemma}
+\begin{proof}
+  By induction on the left premise. If $\Omega$ is non-empty, we just use the
+  inductive hypothesis and commute on the left. Otherwirse, we can assume
+  $\Omega$ to be empty.
+
+  \begin{enumerate}
+  \item Case $\rightarrow$.
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{D}
+        \qquad
+        \ztriseq{\Gamma}{\Delta_1'}{E}{[]}{A}
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1, \Delta_1',
+          D \rightarrow_{[]}^S E}{\cdot}{[]}{A}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{D}
+        \,
+        \[
+          \ztriseq{\Gamma}{\Delta_1'}{E}{[]}{A}
+          \qquad
+          \ztriseq{\Gamma}{\Delta_2}{B}{\reactlist{}'}{C}
+          \justifies
+          \ztriseq{\Gamma}{\Delta_1', \Delta_2, A \rightarrow B}{E}{
+            \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}}{C}
+        \]
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1, \Delta_1', \Delta_2,
+          A \rightarrow B, D \rightarrow_{[]}^S E}{\cdot}{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{C}
+      \end{prooftree}
+    \]
+
+  \item Case focus.
+
+    \[
+      \begin{prooftree}
+        \zfocseq{\Gamma}{\Delta_1}{A}
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1}{\cdot}{[]}{A}
+      \end{prooftree}
+    \]
+
+    Then, the thesis follows by an application of $\rightarrow L$.
+  \item Case $\rightarrow R$. Then $A$ is an implication, therefore
+
+    \[
+      \begin{prooftree}
+        \[
+          \ztriseq{\Gamma}{\Delta_1}{\cdot}{[]}{A}
+          \justifies
+          \zfocseq{\Gamma}{\Delta_1}{A}
+          \using{blur}
+        \]
+        \quad
+        \ztriseq{\Gamma}{\Delta_2}{B}{\reactlist{}'}{C}
+        \justifies
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2, A \rightarrow B}{\cdot}{\reactlist{}'}{C}
+      \end{prooftree}
+    \]
+  \end{enumerate}
+\end{proof}
 
 \begin{lemma}\label{otimeslemma}\mbox{}
   \begin{enumerate}
-  \item If $\ztriseq{\Gamma}{\Delta_1}{\Omega}{\emptyset}{A}$ and
+  \item If $\ztriseq{\Gamma}{\Delta_1}{\Omega}{\emptyctrl}{A}$ and
     $\zfocseq{\Gamma}{\Delta_2}{B}$, then
-    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyset}{A \otimes B}$;
+    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyctrl}{A \otimes B}$;
   \item If $\zfocseq{\Gamma}{\Delta_1}{A}$
-    $\ztriseq{\Gamma}{\Delta_2}{\Omega}{\emptyset}{B}$, then
-    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyset}{A \otimes B}$.
+    $\ztriseq{\Gamma}{\Delta_2}{\Omega}{\emptyctrl}{B}$, then
+    $\ztriseq{\Gamma}{\Delta_1, \Delta_2}{\Omega}{\emptyctrl}{A \otimes B}$.
   \end{enumerate}
 \end{lemma}
 \begin{proof}
@@ -201,36 +331,37 @@ atoms specifically.
   \end{enumerate}
 \end{proof}
 
-\begin{theorem}\mbox{}
-
+\begin{theorem}\label{focusedcutelim}
   \begin{enumerate}
-  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\ctrlset{1}}{A}$, then
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\reactlist{1}}{A}$, then
     \begin{enumerate}
-    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{2}{C}$ and
-      $\respects{\Omega', \Delta'}{\ctrlset{1}}$, then
+    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{\reactlist{2}}{C}$ and
+      $\resplist{\Omega', \Delta'}{\reactlist{1}}$, then
 
       $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega'}{
-        \ctrlset{1} \cup \ctrlset{2}}{C}$.
+        \baseandplus{(\Delta',\Omega')}{\reactlist{1}}{\reactlist{2}}}{C}$.
     \item If $\ztriseq{\Gamma}{\Delta', A}{\Omega'}{2}{C}$ and
-      $\respects{\Omega', \Delta'}{\ctrlset{1}}$, then
+      $\resplist{\Omega', \Delta'}{\reactlist{1}}$, then
 
       $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega, \Omega'}{
-        \ctrlset{1} \cup \ctrlset{2}}{C}$;
+        \baseandplus{(\Delta', \Omega')}{\reactlist{1}}{\reactlist{2}}}{C}$;
     \end{enumerate}
 
-  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\emptyset}{A}$ and
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{\emptyctrl}{A}$ and
     $\zfocseq{\Gamma}{\Delta', A}{B}$, then
 
-    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\emptyset}{B}$.
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\emptyctrl}{B}$.
 
   \item If $\zfocseq{\Gamma}{\Delta}{A}$, then
     \begin{enumerate}
-    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{\ctrlset{}}{C}$, then
-      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\ctrlset{}}{C}$.
-    \item If $\ztriseq{\Gamma}{\Delta', A}{\Omega'}{\ctrlset{}}{C}$, then
-      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\ctrlset{}}{C}$.
+    \item If $\ztriseq{\Gamma}{\Delta'}{\Omega', A}{\reactlist{}}{C}$, then
+      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\reactlist{}}{C}$.
+    \item If $\ztriseq{\Gamma}{\Delta', A}{\Omega'}{\reactlist{}}{C}$, then
+      $\ztriseq{\Gamma}{\Delta'}{\Omega'}{\reactlist{}}{C}$.
     \end{enumerate}
-
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega}{[]}{A}$ and
+    $\zfocseq{\Gamma}{\Delta', A}{C}$, then
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{[]}{C}$.
   \end{enumerate}
 \end{theorem}
 \begin{proof}
@@ -247,13 +378,13 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 \begin{align*}
   \textsf{exp}(p) & = p \\
   \textsf{exp}(A \otimes B) & = \textsf{exp}(A), \textsf{exp}(B) \\
-  \textsf{exp}(A \rightarrow_{\ctrlset{}}^S B) & = A \rightarrow_{\ctrlset{}}^S B
+  \textsf{exp}(A \rightarrow_{\reactlist{}}^S B) & = A \rightarrow_{\reactlist{}}^S B
 \end{align*}
 \end{definition}
 
 \begin{lemma}\label{explemma}
-  If $\ztriseq{\Gamma}{\Delta, \textsf{exp}(A)}{\Omega}{\ctrlset{}}{C}$,
-  then $\ztriseq{\Gamma}{\Delta}{\Omega, A}{\ctrlset{}}{C}$.
+  If $\ztriseq{\Gamma}{\Delta, \textsf{exp}(A)}{\Omega}{\reactlist{}}{C}$,
+  then $\ztriseq{\Gamma}{\Delta}{\Omega, A}{\reactlist{}}{C}$.
 \end{lemma}
 \begin{proof}
   By induction on $A$. If $A$ is an atom or an implication, the thesis
@@ -265,15 +396,15 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
     \begin{prooftree}
       \[
         \[
-          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C), \textsf{exp}(D)}{\Omega}{\ctrlset{}}{E}
+          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C), \textsf{exp}(D)}{\Omega}{\reactlist{}}{E}
           \justifies
-          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C)}{\Omega, D}{\ctrlset{}}{E}
+          \ztriseq{\Gamma}{\Delta, \textsf{exp}(C)}{\Omega, D}{\reactlist{}}{E}
         \]
         \justifies
-        \ztriseq{\Gamma}{\Delta}{\Omega, C, D}{\ctrlset{}}{E}
+        \ztriseq{\Gamma}{\Delta}{\Omega, C, D}{\reactlist{}}{E}
       \]
       \justifies
-      \ztriseq{\Gamma}{\Delta}{\Omega, C \otimes D}{\ctrlset{}}{E}
+      \ztriseq{\Gamma}{\Delta}{\Omega, C \otimes D}{\reactlist{}}{E}
     \end{prooftree}
   \]
 \end{proof}
@@ -281,7 +412,7 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 \begin{lemma}[Identity expansions]\label{idexp}
   For any formula $A$,
   \begin{enumerate}
-  \item $\ztriseq{\Gamma}{\cdot}{A}{\emptyset}{A}$;
+  \item $\ztriseq{\Gamma}{\cdot}{A}{\emptyctrl{}}{A}$;
   \item $\zfocseq{\Gamma}{\textsf{exp}(A)}{A}$.
   \end{enumerate}
 \end{lemma}
@@ -318,14 +449,14 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
             \using{\otimes R}
           \]
           \justifies
-          \ztriseq{\Gamma}{\textsf{exp}(A), \textsf{exp}(B)}{\cdot}{\emptyset}{A \otimes B}
+          \ztriseq{\Gamma}{\textsf{exp}(A), \textsf{exp}(B)}{\cdot}{\emptyctrl{}}{A \otimes B}
         \]
         \justifies
-        \ztriseq{\Gamma}{\cdot}{A \otimes B}{\emptyset}{A \otimes B}
+        \ztriseq{\Gamma}{\cdot}{A \otimes B}{\emptyctrl{}}{A \otimes B}
       \end{prooftree}
     \]
 
-  \item If $A \equiv C \rightarrow_{\ctrlset{}}^S D$, then by inductive
+  \item If $A \equiv C \rightarrow_{\reactlist{}}^S D$, then by inductive
     hypothesis and Lemma~\ref{explemma} we get
 
     \[
@@ -335,21 +466,21 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
             \[
               \zfocseq{\Gamma}{\textsf{exp}(C)}{C}
               \qquad
-              \ztriseq{\Gamma}{\cdot}{D}{\emptyset}{D}
+              \ztriseq{\Gamma}{\cdot}{D}{\emptyctrl{}}{D}
               \justifies
-              \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D,
-                \textsf{exp}(C)}{}{\ctrlset{}}{D}
+              \ztriseq{\Gamma}{C \rightarrow_{\reactlist{}}^S D,
+                \textsf{exp}(C)}{}{\reactlist{}}{D}
             \]
             \justifies
-            \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D}{C}{\ctrlset{}}{D}
+            \ztriseq{\Gamma}{C \rightarrow_{\reactlist{}}^S D}{C}{\reactlist{}}{D}
           \]
           \justifies
-          \ztriseq{\Gamma}{C \rightarrow_{\ctrlset{}}^S D}{\cdot}{\emptyset}{
-            C \rightarrow_{\ctrlset{}}^S D}
+          \ztriseq{\Gamma}{C \rightarrow_{\reactlist{}}^S D}{\cdot}{\emptyctrl{}}{
+            C \rightarrow_{\reactlist{}}^S D}
         \]
         \justifies
-        \ztriseq{\Gamma}{\cdot}{C \rightarrow_{\ctrlset{}}^S D}{\emptyset}{
-          C \rightarrow_{\ctrlset{}}^S D}
+        \ztriseq{\Gamma}{\cdot}{C \rightarrow_{\reactlist{}}^S D}{\emptyctrl{}}{
+          C \rightarrow_{\reactlist{}}^S D}
       \end{prooftree}
     \]
 
@@ -360,11 +491,11 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 \begin{lemma}\label{idhelplemma}
   The following are derivable:
   \begin{enumerate}
-  \item $\ztriseq{\Gamma}{P}{\cdot}{\emptyset}{P}$;
-  \item $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}$;
-  \item $\ztriseq{\Gamma}{\cdot}{A \rightarrow_{\ctrlset{}}^S B,
-      A}{\ctrlset{}}{B}$;
-  \item $\ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyset}{A}$.
+  \item $\ztriseq{\Gamma}{P}{\cdot}{\emptyctrl{}}{P}$;
+  \item $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyctrl{}}{A \otimes B}$;
+  \item $\ztriseq{\Gamma}{\cdot}{A \rightarrow_{\reactlist{}}^S B,
+      A}{\reactlist{}}{B}$;
+  \item $\ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyctrl{}}{A}$.
   \end{enumerate}
 \end{lemma}
 \begin{proof}
@@ -374,41 +505,41 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 
 \begin{lemma}\label{activeinversion}\mbox{}
   \begin{enumerate}
-  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, A \otimes B}{\ctrlset{}}{C}$, then
-    $\ztriseq{\Gamma}{\Delta}{\Omega, A, B}{\ctrlset{}}{C}$;
-  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, \Omega'}{\ctrlset{}}{C}$, then
-    $\ztriseq{\Gamma}{\Delta, \textsf{exp}(\Omega')}{\Omega}{\ctrlset{}}{C}$
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, A \otimes B}{\reactlist{}}{C}$, then
+    $\ztriseq{\Gamma}{\Delta}{\Omega, A, B}{\reactlist{}}{C}$;
+  \item If $\ztriseq{\Gamma}{\Delta}{\Omega, \Omega'}{\reactlist{}}{C}$, then
+    $\ztriseq{\Gamma}{\Delta, \textsf{exp}(\Omega')}{\Omega}{\reactlist{}}{C}$
   \end{enumerate}
 \end{lemma}
 \begin{proof}
   Point 1 is proved by cut with
-  $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}$. Point 2 is proved by
+  $\ztriseq{\Gamma}{\cdot}{A, B}{\emptyctrl{}}{A \otimes B}$. Point 2 is proved by
   repeated application of point 1 on $\otimes$ formulas until they become either
   an atom or an implication, then by cut with
-  $\ztriseq{\Gamma}{P}{\cdot}{\emptyset}{P}$.
+  $\ztriseq{\Gamma}{P}{\cdot}{\emptyctrl{}}{P}$.
 \end{proof}
 
 \begin{theorem}[Completeness]
-  If $\zsyseq{\Gamma}{\Omega}{\ctrlset{}}{A}$, then
-  $\ztriseq{\Gamma}{\cdot}{\Omega}{\ctrlset{}}{A}$.
+  If $\zsyseq{\Gamma}{\Omega}{\reactlist{}}{A}$, then
+  $\ztriseq{\Gamma}{\cdot}{\Omega}{\reactlist{}}{A}$.
 \end{theorem}
 \begin{proof}
   The proof proceeds as in [cmu thesis], by proving that all rules of the
   backward calculus are admissible in the focused calculus.
 
   \begin{enumerate}
-  \item Case $\init$: $\zsyseq{\Gamma}{A}{\emptyset}{A}$. The thesis follows by
+  \item Case $\init$: $\zsyseq{\Gamma}{A}{\emptyctrl{}}{A}$. The thesis follows by
     Lemma~\ref{idexp}.
   \item Case $\copyrule$. Then, by inductive hypothesis, Lemma~\ref{idhelplemma}
     and cut admissibility, we have
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyset}{A}
+        \ztriseq{\Gamma, A}{\cdot}{\cdot}{\emptyctrl{}}{A}
         \qquad
-        \ztriseq{\Gamma, A}{\cdot}{\Omega, A}{\ctrlset{}}{C}
+        \ztriseq{\Gamma, A}{\cdot}{\Omega, A}{\reactlist{}}{C}
         \justifies
-        \ztriseq{\Gamma, A}{\cdot}{\Omega}{\ctrlset{}}{C}
+        \ztriseq{\Gamma, A}{\cdot}{\Omega}{\reactlist{}}{C}
       \end{prooftree}
     \]
 
@@ -419,41 +550,45 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma}{\cdot}{\Omega_2}{\emptyset}{B}
+        \ztriseq{\Gamma}{\cdot}{\Omega_2}{\emptyctrl{}}{B}
         \quad
         \[
-          \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyset}{A}
+          \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyctrl{}}{A}
           \qquad
-          \ztriseq{\Gamma}{\cdot}{A, B}{\emptyset}{A \otimes B}
+          \ztriseq{\Gamma}{\cdot}{A, B}{\emptyctrl{}}{A \otimes B}
           \justifies
-          \ztriseq{\Gamma}{\cdot}{\Omega_1, B}{\emptyset}{A \otimes B}
+          \ztriseq{\Gamma}{\cdot}{\Omega_1, B}{\emptyctrl{}}{A \otimes B}
         \]
         \justifies
-        \ztriseq{\Gamma}{\cdot}{\Omega_1, \Omega_2}{\emptyset}{A \otimes B}
+        \ztriseq{\Gamma}{\cdot}{\Omega_1, \Omega_2}{\emptyctrl{}}{A \otimes B}
       \end{prooftree}
     \]
 
-  \item Case $\rightarrow L$. Then, by inductive hypothesis, Lemma~\ref{idhelplemma}
-    and cut admissibility, we have
+  \item Case $\rightarrow L$. Then, by inductive hypothesis,
+    Lemma~\ref{idhelplemma} and cut admissibility, we have
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyset}{A}
+        \ztriseq{\Gamma}{\cdot}{\Omega_1}{\emptyctrl{}}{A}
         \quad
         \[
           \ztriseq{\Gamma}{\cdot}{
             A, A \rightarrow_{\ctrlset{}}^S B
-          }{\ctrlset{}}{B}
+          }{\reactlist{}}{B}
           \qquad
-          \ztriseq{\Gamma}{\cdot}{\Omega_2, B}{\ctrlset{}'}{C}
+          \ztriseq{\Gamma}{\cdot}{\Omega_2, B}{\reactlist{}'}{C}
           \justifies
           \ztriseq{\Gamma}{\cdot}{
-            \Omega_2, A, A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{} \cup \ctrlset{}'}{C}
-          \using{\respects{\Omega}{\ctrlset{}}}
+            \Omega_2, A, A \rightarrow_{\reactlist{}}^S B}{
+            \baseandplus{\Omega_2}{\reactlist{}}{\reactlist{}'}
+          }{C}
+          \using{\resplist{\Omega_2}{\reactlist{}}}
         \]
         \justifies
         \ztriseq{\Gamma}{\cdot}{\Omega_1, \Omega_2,
-        A \rightarrow_{\ctrlset{}}^S B}{\ctrlset{} \cup \ctrlset{}'}{C}
+          A \rightarrow_{\ctrlset{}}^S B}{
+          \baseandplus{\Omega_2}{\reactlist{}}{\reactlist{}'}
+      }{C}
       \end{prooftree}
     \]
 
@@ -462,9 +597,9 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma}{\cdot}{\Omega, A}{\ctrlset{}}{B}
+        \ztriseq{\Gamma}{\cdot}{\Omega, A}{\reactlist{}}{B}
         \justifies
-        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\ctrlset{}}{B}
+        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\reactlist{}}{B}
       \end{prooftree}
     \]
 
@@ -474,26 +609,26 @@ We define an auxiliary function on formulas, \textsf{exp}, as follows:
     \[
       \begin{prooftree}
         \[
-          \ztriseq{\Gamma}{\cdot}{\Omega, A}{\ctrlset{}}{B}
+          \ztriseq{\Gamma}{\cdot}{\Omega, A}{\reactlist{}}{B}
           \justifies
-          \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\ctrlset{}}{B}
+          \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{A}{\reactlist{}}{B}
         \]
         \justifies
-        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{\cdot}{\emptyset}{
-          A \rightarrow_{\ctrlset{}}^{\elembases{\Omega}} B}
+        \ztriseq{\Gamma}{\textsf{exp}(\Omega)}{\cdot}{\emptyctrl{}}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Omega}} B}
       \end{prooftree}
     \]
 
     Then, by repeated application of act and $\otimes L$, we get the conclusion
-    $\ztriseq{\Gamma}{\cdot}{\Omega}{\emptyset}{
-          A \rightarrow_{\ctrlset{}}^{\elembases{\Omega}} B}$.
+    $\ztriseq{\Gamma}{\cdot}{\Omega}{\emptyctrl{}}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Omega}} B}$.
 
   \end{enumerate}
 \end{proof}
 
 \subsection{Backward derived rules}
 
-The primary benefit of focusing is the ability to generate derived ``big step''
+One of the benefits of focusing is the ability to generate derived ``big step''
 inference rules: the intermediate results of a focusing or active phase are not
 important, since those steps are ``forced'' in some way. Each derived rule
 starts (at the bottom) with a neutral sequent from which a synchronous
@@ -594,9 +729,9 @@ Figure~\ref{fig:bkwdderivedcalculus}.
           \bactrel{\zsyseq
             {\Delta}{\cdot}{}{\cdot}}
         }{
-          \zbneuseq{\Gamma}{\Delta'}{\ctrlset{}}{Q}
+          \zbneuseq{\Gamma}{\Delta'}{\reactlist{}}{Q}
         }{
-          \zbneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{Q}
+          \zbneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{Q}
         }
         \using{match}
       \end{prooftree}
@@ -606,11 +741,11 @@ Figure~\ref{fig:bkwdderivedcalculus}.
       \begin{prooftree}
         \justifies
         \relj{
-          \bactrel{\zsyseq{\Delta}{\cdot}{\ctrlset{}}{Q}}
+          \bactrel{\zsyseq{\Delta}{\cdot}{\reactlist{}}{Q}}
         }{
           \bneuseq{\Gamma}{\Delta'}{\cdot}
         }{
-          \zbneuseq{\Gamma}{\Delta, \Delta'}{\ctrlset{}}{Q}
+          \zbneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{Q}
         }
         \using{match'}
       \end{prooftree}
@@ -624,10 +759,10 @@ Figure~\ref{fig:bkwdderivedcalculus}.
   \begin{mdframed}
     \[
       \begin{prooftree}
-        (\relj{\brfrel{Q}}{\zbneuseq{\Gamma}{\Delta}{\emptyset}{\cdot}}{\Sigma})
-        \quad \Sigma
+        (\relj{\brfrel{Q}}{\zbneuseq{\Gamma}{\Delta}{}{\cdot}}{\Sigma})
+        \qquad \Sigma
         \justifies
-        \zbneuseq{\Gamma}{\Delta}{\emptyset}{Q}
+        \zbneuseq{\Gamma}{\Delta}{\emptyctrl{}}{Q}
         \using{focus}
       \end{prooftree}
     \]
@@ -635,30 +770,33 @@ Figure~\ref{fig:bkwdderivedcalculus}.
     \[
       \begin{prooftree}
         \[
-        (\relj{\brfrel{A}}{\zbneuseq{\Gamma}{\Delta_1}{\emptyset}{\cdot}}{\Sigma})
+        (\relj{\brfrel{A}}{\zbneuseq{\Gamma}{\Delta_1}{}{\cdot}}{\Sigma})
         \proofdotseparation=1.2ex
         \proofdotnumber=0
         \leadsto
-        (\relj{\bactrel{\zsyseq{\cdot}{B}{\ctrlset{}'}{\cdot}}}
-        {\zbneuseq{\Gamma}{\Delta_2}{\ctrlset{}'}{Q}}{\Sigma'})
+        (\relj{\bactrel{\zsyseq{\cdot}{B}{}{\cdot}}}
+        {\zbneuseq{\Gamma}{\Delta_2}{\reactlist{}'}{Q}}{\Sigma'})
         \]
-        \quad \Sigma, \Sigma'
+        \qquad \Sigma, \Sigma'
+        \qquad \resplist{\Delta_2}{\reactlist{}}
         \justifies
         \zbneuseq{\Gamma}{\Delta_1, \Delta_2,
-          A \rightarrow_{\ctrlset{}}^S B
-        }{\ctrlset{} \cup \ctrlset{}'}{Q}
+          A \rightarrow_{\reactlist{}}^S B
+        }{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{Q}
         \using{\rightarrow L}
       \end{prooftree}
     \]
 
     \[
       \begin{prooftree}
-        (\relj{\bactrel{\zsyseq{\cdot}{A}{\ctrlset{}}{B}}}
-        {\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{\cdot}}{\Sigma})
-        \quad \Sigma
+        (\relj{\bactrel{\zsyseq{\cdot}{A}{\reactlist{}}{B}}}
+        {\zbneuseq{\Gamma}{\Delta}{}{\cdot}}{\Sigma})
+        \qquad \Sigma
         \justifies
-        \zbneuseq{\Gamma}{\Delta}{\emptyset}{
-          A \rightarrow_{\ctrlset{}}^{\elembases{\Delta}} B}
+        \zbneuseq{\Gamma}{\Delta}{\emptyctrl{}}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Delta}} B}
         \using{\rightarrow R}
       \end{prooftree}
     \]
@@ -667,20 +805,23 @@ Figure~\ref{fig:bkwdderivedcalculus}.
       \begin{prooftree}
         \[
           (\relj{\brfrel{A}}{\zbneuseq{\Gamma,
-              A \rightarrow_{\ctrlset{}}^S B
-            }{\Delta_1}{\emptyset}{\cdot}}{\Sigma})
+              A \rightarrow_{\reactlist{}}^{\emptyset} B
+            }{\Delta_1}{}{\cdot}}{\Sigma})
         \proofdotseparation=1.2ex
         \proofdotnumber=0
         \leadsto
-        (\relj{\bactrel{\zsyseq{\cdot}{B}{\ctrlset{}'}{\cdot}}}
+        (\relj{\bactrel{\zsyseq{\cdot}{B}{}{\cdot}}}
         {\zbneuseq{\Gamma,
-            A \rightarrow_{\ctrlset{}}^S B
-          }{\Delta_2}{\ctrlset{}'}{Q}}{\Sigma'})
+            A \rightarrow_{\reactlist{}}^{\emptyset} B
+          }{\Delta_2}{\reactlist{}'}{Q}}{\Sigma'})
         \]
-        \quad \Sigma, \Sigma'
+        \qquad \Sigma, \Sigma'
+        \qquad \resplist{\Delta_2}{\reactlist{}}
         \justifies
-        \zbneuseq{\Gamma, A \rightarrow_{\ctrlset{}}^S B}{\Delta_1, \Delta_2
-        }{\ctrlset{} \cup \ctrlset{}'}{Q}
+        \zbneuseq{\Gamma, A \rightarrow_{\reactlist{}}^{\emptyset} B}{\Delta_1, \Delta_2
+        }{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{Q}
         \using{\copyrule}
       \end{prooftree}
     \]
@@ -692,29 +833,29 @@ Figure~\ref{fig:bkwdderivedcalculus}.
 
 \begin{definition}
   A sequent of the backward derived rule calculus
-  $\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$
-  is sound if $\ztriseq{\Gamma}{\Delta}{\cdot}{\ctrlset{}}{Q}$.
+  $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$
+  is sound if $\ztriseq{\Gamma}{\Delta}{\cdot}{\reactlist{}}{Q}$.
 \end{definition}
 
 \begin{lemma}\label{bkwdder-soundness-lemma}
   \begin{enumerate}
-  \item If $\brfrelj{A}{\zbneuseq{\Gamma}{\Delta}{\emptyset}{\cdot}}{\Sigma}$
+  \item If $\brfrelj{A}{\zbneuseq{\Gamma}{\Delta}{}{\cdot}}{\Sigma}$
     and $\Sigma$
     are sound, then
 
     $\zfocseq{\Gamma}{\Delta}{A}$.
   \item If
-    $\bactrelj{\zsyseq{\Delta}{\Omega}{\ctrlset{}}{\cdot}}
-    {\zbneuseq{\Gamma}{\Delta'}{\ctrlset{}}{Q}}{\Sigma}$
+    $\bactrelj{\zsyseq{\Delta}{\Omega}{}{\cdot}}
+    {\zbneuseq{\Gamma}{\Delta'}{\reactlist{}}{Q}}{\Sigma}$
     and $\Sigma$ are sound, then
 
-    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\ctrlset{}}{Q}$.
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\reactlist{}}{Q}$.
   \item If
-    $\bactrelj{\zsyseq{\Delta}{\Omega}{\ctrlset{}}{Q}}
-    {\zbneuseq{\Gamma}{\Delta'}{\ctrlset{}}{\cdot}}{\Sigma}$
+    $\bactrelj{\zsyseq{\Delta}{\Omega}{\reactlist{}}{Q}}
+    {\zbneuseq{\Gamma}{\Delta'}{}{\cdot}}{\Sigma}$
     and $\Sigma$ are sound, then
 
-    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\ctrlset{}}{Q}$.
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\reactlist{}}{Q}$.
   \end{enumerate}
 \end{lemma}
 \begin{proof}
@@ -724,8 +865,8 @@ Figure~\ref{fig:bkwdderivedcalculus}.
 \end{proof}
 
 \begin{theorem}[Soundness]
-  If $\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$ then
-  $\ztriseq{\Gamma}{\Delta}{\cdot}{\ctrlset{}}{Q}$.
+  If $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$ then
+  $\ztriseq{\Gamma}{\Delta}{\cdot}{\reactlist{}}{Q}$.
 \end{theorem}
 \begin{proof}
   Straightforward induction on the derivation of the backward derived rules
@@ -765,13 +906,13 @@ Figure~\ref{fig:bkwdderivedcalculus}.
       \begin{prooftree}
         \zfocseq{\Gamma}{\Delta_1, \Delta_2}{Q} \qquad Q\; \text{right-focusable}
         \justifies
-        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{\cdot}{\emptyset}{Q}
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{\cdot}{\emptyctrl{}}{Q}
         \using{focus}
       \end{prooftree}
     \]
 
     Suppose $\gamma_1, \gamma_2$ are such that $\gamma_1 \uplus \gamma_2 =
-    Q$, and $\zeta_1 \uplus \zeta_2 = \emptyset$. Then, the following:
+    Q$, and $\zeta_1 \uplus \zeta_2 = \emptyctrl{}$. Then, the following:
 
     \[
       \relj{
@@ -779,12 +920,12 @@ Figure~\ref{fig:bkwdderivedcalculus}.
       }{
         \zbneuseq{\Delta_2}{\cdot}{\zeta_2}{\gamma_2}
       }{
-        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{Q}
+        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyctrl{}}{Q}
       }
     \]
 
     is derivable with either $\matchrule$ or $\matchprimerule$. We need to show
-    that $\zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{Q}$ is derivable. By
+    that $\zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyctrl{}}{Q}$ is derivable. By
     inductive hypothesis, we have
     $\relj{\brfrel{Q}}{\zbneuseq{\Gamma}{\Delta_1, \Delta_2}{}{\cdot}}{\Sigma}$ for
     some $\Sigma$ all derivable. But then,
@@ -794,7 +935,7 @@ Figure~\ref{fig:bkwdderivedcalculus}.
         \relj{\brfrel{Q}}{\zbneuseq{\Gamma}{\Delta_1, \Delta_2}{}{\cdot}}{\Sigma}
         \qquad \Sigma
         \justifies
-        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{Q}
+        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyctrl{}}{Q}
         \using{focus}
       \end{prooftree}
     \]
@@ -803,7 +944,7 @@ Figure~\ref{fig:bkwdderivedcalculus}.
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyset}{R}
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyctrl{}}{R}
         \justifies
         \zfocseq{\Gamma}{\Delta}{R}
         \using{blur}
@@ -811,17 +952,17 @@ Figure~\ref{fig:bkwdderivedcalculus}.
     \]
 
     By inductive hypothesis, we have
-    $\relj{\bactrel{\zsyseq{\cdot}{\cdot}{\emptyset}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
+    $\relj{\bactrel{\zsyseq{\cdot}{\cdot}{\emptyctrl{}}{R}}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{\Sigma}$,
     where all $\Sigma$ are derivable.
     But then is must have been derived with an instance of $\matchrule$, hence
-    $\zbneuseq{\Gamma}{\Delta}{\emptyset}{R}$ is derivable.
+    $\zbneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}$ is derivable.
     We then have
 
     \[
       \begin{prooftree}
         \justifies
         \relj{\brfrel{R}}{\bneuseq{\Gamma}{\Delta}{\cdot}}{
-          \zbneuseq{\Gamma}{\Delta}{\emptyset}{R}
+          \zbneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}
         }
         \using{FA^+}
       \end{prooftree}
@@ -833,20 +974,20 @@ Figure~\ref{fig:bkwdderivedcalculus}.
       \begin{prooftree}
         \zfocseq{\Gamma}{\Delta_1}{A}
         \qquad
-        \ztriseq{\Gamma}{\Delta_2}{B}{\ctrlset{}'}{C}
+        \ztriseq{\Gamma}{\Delta_2}{B}{\reactlist{}'}{C}
         \qquad
-        \respects{\Delta_2}{\ctrlset{}}
+        \resplist{\Delta_2}{\reactlist{}}
         \justifies
         \ztriseq{\Gamma}{
-          \Delta_1, \Delta_2, A \rightarrow_{\ctrlset{}}^S B
-        }{\cdot}{\ctrlset{} \cup \ctrlset{}'}{C}
+          \Delta_1, \Delta_2, A \rightarrow_{\reactlist{}}^S B
+        }{\cdot}{\baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}}{C}
         \using{\rightarrow L}
       \end{prooftree}
     \]
 
     Suppose $\Delta', \Delta'' = \Delta_1, \Delta_2,
-    A\rightarrow_{\ctrlset{}}^S B$, and $\gamma_1 \uplus \gamma_2 = C$,
-    $\zeta_1 \uplus \zeta_2 = \ctrlset{}\cup\ctrlset{}'$.
+    A\rightarrow_{\reactlist{}}^S B$, and $\gamma_1 \uplus \gamma_2 = C$,
+    $\zeta_1 \uplus \zeta_2 = \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}$.
     We can apply $\matchrule$ to immediately derive
 
 
@@ -859,14 +1000,15 @@ Figure~\ref{fig:bkwdderivedcalculus}.
         {\zbneuseq{\Gamma}
           {\Delta''}{\zeta_2}{\gamma_2}}{\zbneuseq{
             \Gamma}{\Delta', \Delta''}{
-            \ctrlset{}\cup\ctrlset{}'
+            \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
           }{C}}
         \using{\matchrule}
       \end{prooftree}
     \]
 
     We can see that
-    $\zbneuseq{\Gamma} {\Delta', \Delta''}{\ctrlset{}\cup\ctrlset{}'}{C}$ is
+    $\zbneuseq{\Gamma} {\Delta', \Delta''}{
+      \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}}{C}$ is
     derivable by inductive hypothesis on the premises and an application of
     $\rightarrow L$ of the derived rule calculus.
 
@@ -878,13 +1020,16 @@ Figure~\ref{fig:bkwdderivedcalculus}.
         \proofdotnumber=0
         \leadsto
         (\relj{\bactrel{\zsyseq{\cdot}{B}{}{\cdot}}}
-        {\zbneuseq{\Gamma}{\Delta_2}{\ctrlset{}'}{C}}{\Sigma'})
+        {\zbneuseq{\Gamma}{\Delta_2}{\reactlist{}'}{C}}{\Sigma'})
         \]
-        \quad \Sigma, \Sigma'
+        \qquad \Sigma, \Sigma'
+        \qquad \resplist{\Delta_2}{\reactlist{}}
         \justifies
         \zbneuseq{\Gamma}{\Delta_1, \Delta_2,
-          A \rightarrow_{\ctrlset{}}^S B
-        }{\ctrlset{} \cup \ctrlset{}'}{C}
+          A \rightarrow_{\reactlist{}}^S B
+        }{
+          \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+        }{C}
         \using{\rightarrow L}
       \end{prooftree}
     \]
@@ -895,17 +1040,17 @@ Figure~\ref{fig:bkwdderivedcalculus}.
 
     \[
       \begin{prooftree}
-        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{A}{\ctrlset{}}{B}
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{A}{\reactlist{}}{B}
         \justifies
-        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{\cdot}{\emptyset}{
-          A \rightarrow_{\ctrlset{}}^{\elembases{\Delta_1, \Delta_2}} B}
+        \ztriseq{\Gamma}{\Delta_1, \Delta_2}{\cdot}{\emptyctrl{}}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Delta_1, \Delta_2}} B}
         \using{\rightarrow R}
       \end{prooftree}
     \]
 
     Again, suppose
-    $\gamma_1 \uplus \gamma_2 = A \rightarrow_{\ctrlset{}}^{\elembases{\Delta_1,
-        \Delta_2}} B$, $\zeta_1 \uplus \zeta_2 = \emptyset$. We can immediately
+    $\gamma_1 \uplus \gamma_2 = A \rightarrow_{\reactlist{}}^{\elembases{\Delta_1,
+        \Delta_2}} B$, $\zeta_1 \uplus \zeta_2 = \emptyctrl{}$. We can immediately
     derive by either $\matchrule$ or $\matchprimerule$ the following
 
     \[
@@ -917,26 +1062,26 @@ Figure~\ref{fig:bkwdderivedcalculus}.
         {\zbneuseq{\Gamma}
           {\Delta_2}{\zeta_2}{\gamma_2}}{\zbneuseq{
             \Gamma}{\Delta_1, \Delta_2}{
-            \emptyset
-          }{A \rightarrow_{\ctrlset{}}^{\elembases{\Delta_1, \Delta_2}} B}}
+            \emptyctrl{}
+          }{A \rightarrow_{\reactlist{}}^{\elembases{\Delta_1, \Delta_2}} B}}
         \using{\matchrule}
       \end{prooftree}
     \]
 
     To see that
-    $\zbneuseq{ \Gamma}{\Delta_1, \Delta_2}{ \emptyset }{A
-      \rightarrow_{\ctrlset{}}^{\elembases{\Delta_1, \Delta_2}} B}$ is
+    $\zbneuseq{ \Gamma}{\Delta_1, \Delta_2}{ \emptyctrl{}}{A
+      \rightarrow_{\reactlist{}}^{\elembases{\Delta_1, \Delta_2}} B}$ is
     derivable, we use the inductive hypothesis on the premise of $\rightarrow R$
     and an application of the corresponding rule of the derived rule calculus.
 
     \[
       \begin{prooftree}
-        (\relj{\bactrel{\zsyseq{\cdot}{A}{\ctrlset{}}{B}}}
+        (\relj{\bactrel{\zsyseq{\cdot}{A}{\reactlist{}}{B}}}
         {\zbneuseq{\Gamma}{\Delta_1, \Delta_2}{}{\cdot}}{\Sigma})
         \quad \Sigma
         \justifies
-        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyset}{
-          A \rightarrow_{\ctrlset{}}^{\elembases{\Delta_1, \Delta_2}} B}
+        \zbneuseq{\Gamma}{\Delta_1, \Delta_2}{\emptyctrl{}}{
+          A \rightarrow_{\reactlist{}}^{\elembases{\Delta_1, \Delta_2}} B}
         \using{\rightarrow R}
       \end{prooftree}
     \]
@@ -948,8 +1093,8 @@ Figure~\ref{fig:bkwdderivedcalculus}.
 \end{proof}
 
 \begin{theorem}[Completeness]
-  If $\ztriseq{\Gamma}{\Delta}{\cdot}{\ctrlset{}}{Q}$, then
-  $\zbneuseq{\Gamma}{\Delta}{\ctrlset{}}{Q}$.
+  If $\ztriseq{\Gamma}{\Delta}{\cdot}{\reactlist{}}{Q}$, then
+  $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$.
 \end{theorem}
 \begin{proof}
   Straightforward induction on the derivation and application of
