@@ -22,9 +22,6 @@ import Data.Bifunctor (second)
 -- Command datatypes
 
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord)
-newtype CSString = CSS {unCSS :: String} deriving (Eq, Ord, Show)
-newtype AxiomsString = AS String deriving (Eq, Ord, Show)
-
 data AddedAxiom axr ctr = AAx axr ctr axr
 
 data QueriedSeq axlistrepr frmlrepr = QS
