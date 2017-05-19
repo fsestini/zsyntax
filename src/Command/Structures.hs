@@ -12,9 +12,7 @@ import TypeClasses (filterOut)
 import qualified Data.List.NonEmpty as NE
 import Control.Monad.Free
 import qualified Data.Map.Lazy as M
-import SFormula hiding (ElemBase, CtrlSet)
-import Checking.ReactLists.RList
-import Checking.ReactLists.Sets
+import SFormula hiding (ElemBase)
 import qualified Data.Dequeue as D
 import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
