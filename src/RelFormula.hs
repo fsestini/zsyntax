@@ -107,11 +107,11 @@ data FKind = KAtom | KConj | KImpl
     It is parameterized over the type of biological atoms. -}
 data BioFormula a  =  BioAtom a
                    |  BioInter (BioFormula a) (BioFormula a)
-                   deriving (Eq, Ord, Functor, Foldable)
+                   deriving (Eq, Ord, Functor, Foldable, Show)
 
-instance Show a => Show (BioFormula a) where
-  show (BioAtom x) = show x
-  show (BioInter x y) = show x ++ "<>" ++ show y
+instance T.Pretty a => T.Pretty (BioFormula a) where
+  pretty (BioAtom x) = T.pretty x
+  pretty (BioInter x y) = T.pretty x ++ "<>" ++ T.pretty y
 
 data LFormula :: (* -> *) -> (* -> *) -> FKind -> FComp -> * -> * -> * where
   Atom :: BioFormula a -> LFormula eb cs KAtom c a l
