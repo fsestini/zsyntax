@@ -6,15 +6,22 @@ import Control.Monad.IO.Class (liftIO)
 import Data.IORef (IORef, newIORef, writeIORef, readIORef)
 import Control.Monad (forM_)
 import Control.Monad.Free (foldFree)
+import Text.Parsec
+import Data.Bifunctor
+import qualified TypeClasses as T
+import qualified Data.List.NonEmpty as NE
+
+import Data.Char
+import Data.List
 
 import GUI.Elements
-
-import Command
+import GUI.Command
+import Command.Structures
 import Debug.Trace
 
-type AppState = (AxEnv, ThrmEnv)
-type AxItem = (ThrmName, SA)
-type ThrmItem = (ThrmName, (QueriedSeq, Maybe (Either SA SF)))
+type AppState = (GUIAxEnv, GUIThrmEnv)
+type AxItem = (ThrmName, Elems GUIAxEnv)
+type ThrmItem = (ThrmName, Elems GUIThrmEnv)
 
 data GUI = GUI
   { thrmsStore :: ListStore ThrmItem
@@ -28,8 +35,8 @@ gui = do
   initGUI
   w <- windowNew
   set w [ windowTitle := "Zsyntax"
-        , windowDefaultWidth := 1000
-        , windowDefaultHeight := 600
+        , windowDefaultWidth := 600
+        , windowDefaultHeight := 400
         , containerBorderWidth := 10 ]
 
   vbox <- vBoxNew False 0
@@ -47,13 +54,15 @@ gui = do
   addSep vbox
 
   -- Axioms list
-  axioms <- axiomsArea vbox show
+  axioms <- axiomsArea vbox
+    (("Name", T.pretty . fst) NE.:| [("Formula", prettyAA . fst . snd)])
 
   -- Separator
   addSep vbox
 
   -- Theorems list
-  thList <- theoremArea vbox show
+  thList <- theoremArea vbox
+    (("Name", T.pretty . fst) NE.:| [("Theorem", T.pretty . fst . snd)])
 
   let gui = GUI thList (storeAxioms axioms) b
 
@@ -64,16 +73,26 @@ gui = do
   on w deleteEvent $ liftIO mainQuit >> return False
   mainGUI
 
+prettyAA :: AddedAxiom AxArea ctr -> String
+prettyAA (AAx from _ to) = T.pretty from ++ " ---> " ++ T.pretty to
+
+parseThrmNames :: String -> Either String [ThrmName]
+parseThrmNames =
+  bimap show id . parse (sepBy (spaces *> thrmName <* spaces) comma <* eof) ""
+
 wireThrmEntry :: GUI -> IORef AppState -> TheoremEntryArea -> IO ()
 wireThrmEntry gui state tea = do
   onClicked (btnGo tea) $
     thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) >>=
-    execCommandInGUI gui state
+    either (printError gui) (execCommandInGUI gui state)
   onClicked (btnLoad tea) $
     loadFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
   onClicked (btnExport tea) $
     saveFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
   return ()
+
+printError :: GUI -> String -> IO ()
+printError gui str = appendLog (logBuffer gui) ("error: " ++ str)
 
 wireAxiomsArea :: GUI -> IORef AppState -> AxiomsArea AxItem -> IO ()
 wireAxiomsArea gui state axioms = do
@@ -87,15 +106,16 @@ wireAxiomsArea gui state axioms = do
     execCommandInGUI gui state (RemoveAxiom name)
   return ()
 
-askAddAxiom :: IO (Maybe Command)
+askAddAxiom :: IO (Maybe GUICommand)
 askAddAxiom = do
-  res <- axiomsDialog "Add axiom..." emptyADC
+  res <- axiomsDialog "Add axiom..." Nothing
   flip (maybe (return Nothing) ) res $ \adc -> do
     return . Just $ AddAxiom (name adc) (ctrl adc) (from adc) (to adc)
 
-askEditAxiom :: IO (Maybe Command)
+-- TODO: pass actual data, not Nothing
+askEditAxiom :: IO (Maybe GUICommand)
 askEditAxiom = do
-  res <- axiomsDialog "Change axiom..." emptyADC
+  res <- axiomsDialog "Change axiom..." Nothing
   flip (maybe (return Nothing)) res $ \adc -> do
     return . Just $ ChangeAxiom (name adc) (ctrl adc) (from adc) (to adc)
 
@@ -104,7 +124,7 @@ appendLog b str = do
   i <- textBufferGetEndIter b
   textBufferInsert b i (str ++ "\n")
 
-execCommandInGUI :: GUI -> IORef AppState -> Command -> IO ()
+execCommandInGUI :: GUI -> IORef AppState -> GUICommand -> IO ()
 execCommandInGUI gui state c = traceShow c $ do
   (ax,th) <- readIORef state
   (newAx, newTh) <- toIO gui $ execCommand' c ax th
@@ -116,15 +136,35 @@ resetStore :: ListStore a -> [a] -> IO ()
 resetStore store list =
   listStoreClear store >> forM_ list (listStoreAppend store)
 
-thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry -> IO Command
+thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry
+                  -> IO (Either String GUICommand)
 thrmAreaToCommand nmE axE fromE toE = do
-  nmTxt <- entryGetText nmE :: IO String
-  axTxt <- entryGetText axE :: IO String
-  fromTxt <- entryGetText fromE :: IO String
-  toTxt <- entryGetText toE :: IO String
-  if null (trim nmTxt)
-     then return $ Query (QS (AS axTxt) fromTxt toTxt)
-     else return $ AddTheorem (TN nmTxt) (QS (AS axTxt) fromTxt toTxt)
+  nmTxt <- entryGetText nmE
+  axTxt <- entryGetText axE
+  fromTxt <- entryGetText fromE
+  toTxt <- entryGetText toE
+  return $ do
+    axs <- parseThrmNames axTxt
+    from <- fmap FA . bimap show id . parseAggregate $ fromTxt
+    to <- fmap FA . bimap show id . parseAggregate $ toTxt
+    if null (trim nmTxt)
+      then return $ Query (QS (AL axs) from to)
+      else return $ AddTheorem (TN nmTxt) (QS (AL axs) from to)
+
+trim :: String -> String
+trim = dropWhileEnd isSpace . dropWhile isSpace
+
+
+-- thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry
+--                   -> IO (Either String GUICommand)
+-- thrmAreaToCommand nmE axE fromE toE = do
+--   nmTxt <- entryGetText nmE :: IO String
+--   axTxt <- entryGetText axE :: IO String
+--   fromTxt <- entryGetText fromE :: IO String
+--   toTxt <- entryGetText toE :: IO String
+--   if null (trim nmTxt)
+--      then return $ Query (QS (AS axTxt) fromTxt toTxt)
+--      else return $ AddTheorem (TN nmTxt) (QS (AS axTxt) fromTxt toTxt)
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
@@ -134,7 +174,7 @@ interpret _ (UISaveFile path content x) = writeFile path content >> return x
 toIO :: GUI -> UI a -> IO a
 toIO gui = foldFree (interpret gui)
 
-loadFileCommand :: IO (Maybe Command)
+loadFileCommand :: IO (Maybe GUICommand)
 loadFileCommand = do
   fileD <- fileChooserDialogNew (Just "Load file...") Nothing
     FileChooserActionOpen [("Cancel", ResponseCancel), ("Load", ResponseAccept)]
@@ -148,7 +188,7 @@ loadFileCommand = do
   widgetDestroy fileD
   return c
 
-saveFileCommand :: IO (Maybe Command)
+saveFileCommand :: IO (Maybe GUICommand)
 saveFileCommand = do
   fileD <- fileChooserDialogNew (Just "Save file as...") Nothing
     FileChooserActionSave [("Cancel", ResponseCancel), ("Save", ResponseAccept)]
