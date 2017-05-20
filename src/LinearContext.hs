@@ -21,7 +21,7 @@ import qualified Data.Map as M
 import Control.Monad.Fail
 import Prelude hiding (fail)
 import Context
-import qualified TypeClasses as T (CanMap(..))
+import qualified TypeClasses as T (CanMap(..), Pretty(..))
 
 --------------------------------------------------------------------------------
 -- Helper numeric datatype
@@ -58,7 +58,7 @@ minusOne n | n > 1 = Just (n - 1)
 
 --------------------------------------------------------------------------------
 
-newtype LinearCtxt a = LC (M.Map a Int) deriving (Eq, Ord)
+newtype LinearCtxt a = LC (M.Map a Int) deriving (Eq, Ord, Show)
 
 instance Foldable LinearCtxt where
   foldr f z (LC lc) = foldr f z listed
@@ -84,8 +84,8 @@ instance (Ord a) => Context (LinearCtxt a) a where
                          else fail "element not in context"
   asFoldable f lc = f lc
 
-instance Show a => Show (LinearCtxt a) where
-  show (LC m) = concat . intersperse "," . map show . M.keys $ m
+instance T.Pretty a => T.Pretty (LinearCtxt a) where
+  pretty (LC m) = concat . intersperse "," . map T.pretty . M.keys $ m
 
 instance T.CanMap LinearCtxt where
   type Constr LinearCtxt x = Ord x
