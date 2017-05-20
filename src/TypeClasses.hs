@@ -13,6 +13,7 @@ module TypeClasses
   , CanPartition(..)
   , PickMonad(..)
   , Coercible(..)
+  , Pretty(..)
   , filterOut
   ) where
 
@@ -22,6 +23,12 @@ import qualified Data.Either as ET (partitionEithers)
 import Prelude hiding (map)
 import Data.Foldable
 import Data.Constraint
+
+class Pretty a where
+  pretty :: a -> String
+
+instance Pretty String where
+  pretty s = s
 
 class CanPartitionEithers f where
   partitionEithers :: f (Either a b) -> (f a, f b)
