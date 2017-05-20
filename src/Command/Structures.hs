@@ -8,7 +8,7 @@
 module Command.Structures where
 
 import Control.Monad (join)
-import TypeClasses (filterOut)
+import TypeClasses (filterOut, Pretty(..))
 import qualified Data.List.NonEmpty as NE
 import Control.Monad.Free
 import qualified Data.Map.Lazy as M
@@ -21,7 +21,7 @@ import Data.Bifunctor (second)
 --------------------------------------------------------------------------------
 -- Command datatypes
 
-newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord)
+newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
 data AddedAxiom axr ctr = AAx axr ctr axr
 
 data QueriedSeq axlistrepr frmlrepr = QS
@@ -30,8 +30,12 @@ data QueriedSeq axlistrepr frmlrepr = QS
   , toStr :: frmlrepr
   } deriving (Eq, Ord, Show)
 
-instance Show ThrmName where
-  show (TN name) = name
+instance (Pretty axl, Pretty fr) => Pretty (QueriedSeq axl fr) where
+  pretty (QS axs from to) =
+    pretty axs ++ " ; " ++ pretty from ++ " ==> " ++ pretty to
+
+instance Pretty ThrmName where
+  pretty (TN name) = name
 
 class ReprAx axrepr ctrepr cty a where
   reprAx :: axrepr -> ctrepr -> axrepr -> Either String (SAxiom cty a)
