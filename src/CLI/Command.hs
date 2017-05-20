@@ -1,9 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module CLI.Command where
-
 
 import Text.Parsec.Char
 import Text.Parsec.Prim (unexpected)
@@ -27,11 +27,24 @@ import Data.Foldable (toList)
 import RelFormula (BioFormula)
 import Data.Bifunctor (bimap)
 import Context
+import qualified TypeClasses as T
 
 newtype AxList = AL [ThrmName] deriving (Show)
-newtype FrmlArea = FA (NE.NonEmpty (BioFormula BioAtoms)) deriving (Show)
-newtype AxArea = AA (NE.NonEmpty (BioFormula BioAtoms)) deriving (Show)
+newtype FrmlArea = FA
+  { unFA :: NE.NonEmpty (BioFormula BioAtoms)
+  } deriving (Show)
+-- TODO: probably useless to have a separate AxArea type. use FrmlArea.
+newtype AxArea = AA { unAA :: NE.NonEmpty (BioFormula BioAtoms) } deriving (Show)
 newtype CtrlArea = CA (CtrlSet BioAtoms) deriving (Show)
+
+instance T.Pretty FrmlArea where
+  pretty = concat . intersperse "," . fmap T.pretty . NE.toList . unFA
+
+instance T.Pretty AxArea where
+  pretty = concat . intersperse "," . fmap T.pretty . NE.toList . unAA
+
+instance T.Pretty AxList where
+  pretty (AL list) = concat . intersperse "," . fmap T.pretty $ list
 
 type BioAtoms = String
 type UIElemBase = ElemBase
@@ -189,8 +202,8 @@ exportAxiom (TN name) (AAx (AA from) (CA cty) (AA to)) =
   "add axiom " ++ name ++ " (" ++ aux from ++ ") (" ++ aux to
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
-ppBioFormula :: Show a => BioFormula a -> String
-ppBioFormula (L.BioAtom x) = show x
+ppBioFormula :: BioFormula BioAtoms -> String
+ppBioFormula (L.BioAtom x) = T.pretty x
 ppBioFormula (L.BioInter x y) = ppBioFormula x ++ " <> " ++ ppBioFormula y
 
 exportCtrl :: CtrlSet BioAtoms -> String
