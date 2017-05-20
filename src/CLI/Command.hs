@@ -260,5 +260,5 @@ exportTheorem (TN name) (QS (AL axStr) (FA fromStr) (FA toStr)) =
 -- splitTrim :: String -> [String]
 -- splitTrim str = filter (not . null) $ map trim $ splitOn "," (trim str)
 
--- trim :: String -> String
--- trim = dropWhileEnd isSpace . dropWhile isSpace
+trim :: String -> String
+trim = dropWhileEnd isSpace . dropWhile isSpace
