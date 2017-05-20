@@ -15,14 +15,15 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     AppMonad, GUI
+  exposed-modules:     CLI, GUI
   other-modules:       Prover.Class, Prover.Structures, Prover.Transformer, Rel
                      , Relation, TypeClasses, RelFormula, SFormula, Prover
                      , Prover.Search, Checking, Context, LinearContext
                      , UnrestrContext, DerivationTerm, ForwardSequent, Frontier
-                     , Parser, Command, Command.Parser, Command.Structures
-                     , Command.Execution, Command.Export, GUI.Elements
-                     , GUI.Control
+                     , Parser, Command.Structures, Command.Execution
+                     , CLI.Command, CLI.App
+                     , Checking.ReactLists.RList, Checking.ReactLists.Sets
+                     , GUI.Elements , GUI.Control, GUI.Command
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
                      , dequeue, gtk
