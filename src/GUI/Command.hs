@@ -19,7 +19,10 @@ module GUI.Command
   , UIF(..)
   , UI
   , execCommand
+  , execCommand'
   , aggregate1'
+  , thrmName
+  , comma
   , neCtxt
   , axiomList
   ) where
