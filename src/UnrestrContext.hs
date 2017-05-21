@@ -12,7 +12,8 @@ import qualified TypeClasses as T
 
 newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid)
 
-instance Ord a => Context (UnrestrCtxt a) a where
+instance Ord a => Context (UnrestrCtxt a) where
+  type Elems (UnrestrCtxt a) = a
   add x (UC set) = UC (S.insert x set)
   removeM x (UC set) = if S.member x set
                           then return . UC $ S.delete x set
