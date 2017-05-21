@@ -65,6 +65,16 @@ bfToAtoms (Conj f1 f2 _) = bfToAtoms f1 ++ bfToAtoms f2
 data LAxiom cty a l = LAx (BFormula a l) cty (BFormula a l) l
 
 deriving instance Functor (LAxiom cty a)
+
+axToFormula :: Monoid cty => LAxiom cty a l -> LFormula () cty KImpl CComplex a l
+axToFormula (LAx (BF f1) cty (BF f2) l) =
+  Impl
+    (mapEbCty (const mempty) (const mempty) f1)
+    mempty
+    cty
+    (mapEbCty (const mempty) (const mempty) f2)
+    l
+
 data Label a l = L l | A (BioFormula a) deriving (Eq, Ord, Show)
 
 label :: LFormula eb cs k c a l -> Label a l
