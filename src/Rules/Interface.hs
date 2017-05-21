@@ -126,6 +126,9 @@ switchF' = trimap snd snd snd . switchF
 data Opaque (frml :: FKind -> *) = forall k . O (frml k)
 data Neutral (frml :: FKind -> *) = forall k . (NeutralKind k) => N (frml k)
 
+opaque :: fr k -> Opaque fr
+opaque = O
+
 instance Formula (frml :: FKind -> *) => Eq (Opaque frml) where
   (O f1) == (O f2) = hetCompare f1 f2 == EQ
 
