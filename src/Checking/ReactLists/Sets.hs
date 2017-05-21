@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -12,9 +14,12 @@ module Checking.ReactLists.Sets
   , CtrlSetCtxt(..)
   ) where
 
-import qualified RelFormula as F
-       (BioFormula, ElemBase(..), ControlSet(..), BaseCtrl(..),
-        LFormula(..), ImplFormula(..))
+-- import qualified RelFormula as F
+--        (BioFormula, ElemBase(..), ControlSet(..), BaseCtrl(..),
+--         LFormula(..), ImplFormula(..))
+import SFormula (BioFormula(..))
+import LFormula (SrchFormula(..))
+import Rules
 import LinearContext
 import qualified Data.Set as S
 import Data.Monoid ((<>))
@@ -29,14 +34,14 @@ import Data.Foldable (toList)
     contexts in a control set. Actually, superset-closed contexts are the only
     way to specify infinite control sets. -}
 
-data CtrlSetCtxt a = Regular (LinearCtxt (F.BioFormula a))
-                   | SupsetClosed (LinearCtxt (F.BioFormula a))
+data CtrlSetCtxt a = Regular (LinearCtxt (BioFormula a))
+                   | SupsetClosed (LinearCtxt (BioFormula a))
                    deriving (Eq, Ord, Show)
 newtype CtrlSet a = CS
   { unCS :: S.Set (CtrlSetCtxt a)
   } deriving (Eq, Ord, Monoid, Show)
 newtype ElemBase a = EB
-  { unEB :: LinearCtxt (F.BioFormula a)
+  { unEB :: LinearCtxt (BioFormula a)
   } deriving (Eq, Ord, Monoid, Show)
 
 fromFoldableCtxts :: (Ord a, Foldable f) => f (CtrlSetCtxt a) -> CtrlSet a
@@ -52,12 +57,10 @@ respectsCtrlCtxt :: (Eq a, Ord a) => ElemBase a -> CtrlSetCtxt a -> Bool
 respectsCtrlCtxt (EB base) (Regular ctxt) = not (base == ctxt)
 respectsCtrlCtxt (EB base) (SupsetClosed ctxt) = not (ctxt `subCtxtOf` base)
 
-instance Ord a => F.ElemBase ElemBase a where
-  formulaBase (F.Atom bf) = EB (singletonCtxt bf)
-  formulaBase (F.Conj f1 f2 _) = F.formulaBase f1 <> F.formulaBase f2
-  formulaBase (F.Impl' (F.ImplF f1 eb cs f2 _)) = eb
+instance (Ord a, Ord l) => HasElemBase (SrchFormula (ElemBase a) cty a l) where
+  formulaBase (switchF' -> T1 (AR x _)) = EB (singletonCtxt x)
+  formulaBase (switchF' -> T2 (CR f1 f2 _)) = formulaBase f1 <> formulaBase f2
+  formulaBase (switchF' -> T3 (IR _ eb _ _ _)) = eb
 
-instance Ord a => F.ControlSet CtrlSet a where
-
-instance Ord a => F.BaseCtrl ElemBase CtrlSet a where
+instance Ord a => BaseCtrl (ElemBase a) (CtrlSet a) where
   respects = respectsCtrlSet
