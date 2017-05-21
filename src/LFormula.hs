@@ -9,7 +9,25 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE PatternSynonyms #-}
 
-module LFormula where
+module LFormula
+  ( GoalNSequent(..)
+  , BioFormula(..)
+  , LFormula(..)
+  , BFormula(..)
+  , LAxiom(..)
+  , Label(..)
+  , SrchFormula(..)
+  , SrchNeutral(..)
+  , SrchOpaque
+  , SrchAxiom(..)
+  , LGoalNSequent
+  , opaque
+  , label
+  , axToFormula
+  , liftComplexity
+  , deepHetCompare
+  , maybeNeutral
+  ) where
 
 import Rules
 import qualified TypeClasses as T
