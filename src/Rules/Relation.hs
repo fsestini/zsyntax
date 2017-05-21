@@ -57,7 +57,7 @@ matchLinearCtxt
   :: forall m frml . (MonadFail m, Formula frml)
   => SchemaLCtxt frml -> LCtxt frml -> m (LCtxt frml)
 matchLinearCtxt (SLC slc) lc =
-  asFoldable @_ @(Neutral frml) (foldrM removeM lc) slc
+  asFoldable (foldrM removeM lc) slc
 
 match
   :: (MonadFail m, Formula frml)
