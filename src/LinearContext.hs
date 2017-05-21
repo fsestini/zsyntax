@@ -77,7 +77,8 @@ instance Ord a => Monoid (LinearCtxt a) where
   mempty = LC M.empty
   (LC map1) `mappend` (LC map2) = LC $ M.unionWith (+) map1 map2
 
-instance (Ord a) => Context (LinearCtxt a) a where
+instance (Ord a) => Context (LinearCtxt a) where
+  type Elems (LinearCtxt a) = a
   add x (LC lc) = LC (M.insertWith (+) x 1 lc)
   removeM x (LC lc) = if M.member x lc
                          then return . LC $ M.update minusOne x lc
