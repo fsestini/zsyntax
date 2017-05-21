@@ -125,6 +125,15 @@ instance (Monoid eb, Monoid cty) =>
       (Impl
          (mapEbCty (const mempty) (const mempty) f1) mempty cty
          (mapEbCty (const mempty) (const mempty) f2) l)
+-- Mapping functions
+
+frmlMapAtoms
+  :: (T.CanMap' eb a1 a2, T.CanMap' cty a1 a2)
+  => (a1 -> a2) -> LFormula eb cty k c a1 l -> LFormula eb cty k c a2 l
+frmlMapAtoms f (Atom b) = Atom (fmap f b)
+frmlMapAtoms f (Conj f1 f2 l) = Conj (frmlMapAtoms f f1) (frmlMapAtoms f f2) l
+frmlMapAtoms f (Impl f1 eb cty f2 l) =
+  Impl (frmlMapAtoms f f1) (T.map' f eb) (T.map' f cty) (frmlMapAtoms f f2) l
 
 mapEbCty
   :: (eb1 -> eb2)
