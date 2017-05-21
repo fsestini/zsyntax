@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Rules.Frontier
-  ( GoalNSequent
+  ( GoalNSequent(..)
   , GNS
   , DTS
   , initialSequentsAndRules
