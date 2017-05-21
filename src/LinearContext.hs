@@ -7,7 +7,7 @@
 
 module LinearContext
   ( Context(..)
-  , singletonCtxt
+  , module Context
   , LinearCtxt
   , subCtxtOf
   ) where
