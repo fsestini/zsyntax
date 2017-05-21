@@ -21,11 +21,9 @@ import TypeClasses
 
 import Prover.Class
 import Prover.Structures
-       (InactivesResult, NoInactivesReason(..), SearchSequent, Stage(..),
+       (NoInactivesReason(..), SearchSequent, Stage(..),
         Rule, ActiveSequent, ConclSequent, RuleRes, ActiveSequents,
         initialIsBSChecked, initialIsFSChecked, foldActives, applyRule)
-
-import Debug.Trace
 
 {-
 
