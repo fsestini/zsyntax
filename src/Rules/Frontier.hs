@@ -12,6 +12,7 @@ module Rules.Frontier
   ( GoalNSequent(..)
   , GNS
   , DTS
+  , UnaryRule
   , initialSequentsAndRules
   ) where
 
