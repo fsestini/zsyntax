@@ -21,7 +21,6 @@ import Control.Monad.Fail
 import Control.Applicative
 import qualified Data.Map as M
 import qualified Data.Set as S
-import LabelledSequent
 import Formula
 import Rel (Rel)
 import Control.Monad.Trans.State.Lazy hiding (get, put)
