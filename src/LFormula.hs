@@ -14,6 +14,7 @@ module LFormula where
 import Rules
 import qualified TypeClasses as T
 import Data.Constraint
+import Data.Function (on)
 
 -- Formula complexity
 data FComp = CBasic | CComplex
