@@ -3,7 +3,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module UnrestrContext where
+module UnrestrContext
+  ( module Context
+  , UnrestrCtxt
+  ) where
 
 import qualified Data.Set as S
 import Context
