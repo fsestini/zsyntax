@@ -6,39 +6,51 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module SFormula
-  ( SFormula(..)
-  , BSFormula(..)
+  ( Sequent
+  , SFormula(..)
+  , LFormula(..)
   , SAxiom(..)
-  , Sequent(..)
-  , fromNF
+  , BioFormula(..)
+  , BSFormula
   , sAtom
-  , fromBasicNS
   , sConj
   , sImpl
   , neutralize
-  , sAxiomIsSFormula
-  , fromLFormula
-  , fromLAxiom
-  , BioFormula(..)
-  , LFormula(..)
-  , OLFormula(..)
-  , ElemBase(..)
-  , ControlSet(..)
-  , bsAtom
-  , bsConj
-  , sAx
-  , U(..)
-  , ImplFormula(..)
-  , pattern Impl
+  , fromSrch
   ) where
 
-import RelFormula
-import TypeClasses (PickMonad(..))
+  -- ( SFormula(..)
+  -- , BSFormula(..)
+  -- , SAxiom(..)
+  -- , Sequent(..)
+  -- , fromNF
+  -- , sAtom
+  -- , fromBasicNS
+  -- , sConj
+  -- , sImpl
+  -- , neutralize
+  -- , sAxiomIsSFormula
+  -- , fromLFormula
+  -- , fromLAxiom
+  -- , BioFormula(..)
+  -- , LFormula(..)
+  -- , OLFormula(..)
+  -- , ElemBase(..)
+  -- , ControlSet(..)
+  -- , bsAtom
+  -- , bsConj
+  -- , sAx
+  -- , pattern Impl
+  -- ) where
+
+import Control.Arrow ((>>>))
+import Data.Bifunctor (bimap)
+import LFormula
+import TypeClasses (PickMonad(..), Pretty(..))
 import Control.Monad
 import qualified Data.Set as S
 import UnrestrContext
 import LinearContext
-import Context
 import Data.Foldable
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
@@ -46,89 +58,92 @@ import qualified Data.List.NonEmpty as NE
 --------------------------------------------------------------------------------
 -- Basic simple formulas
 
-type BSFormula cs a = BFormula cs a ()
+type BSFormula a = BFormula a ()
   --forall k . BSF (LFormula U cs k CBasic a ())
 newtype SAxiom cs a = SA {unSA :: (LAxiom cs a ())}
 
-bsAtom :: BioFormula a -> BSFormula cs a
+bsAtom :: BioFormula a -> BSFormula a
 bsAtom x = BF (Atom x)
 
-bsConj :: BSFormula cs a -> BSFormula cs a -> BSFormula cs a
+bsConj :: BSFormula a -> BSFormula a -> BSFormula a
 bsConj (BF f1) (BF f2) = BF (Conj f1 f2 ())
 
-sAx :: BSFormula cs a -> BSFormula cs a -> cs a -> SAxiom cs a
-sAx (BF f1) (BF f2) cs = SA (ImplF f1 U cs f2 ())
+sAx :: BSFormula a -> BSFormula a -> cty -> SAxiom cty a
+sAx f1 f2 cs = SA (LAx f1 cs f2 ())
 
 --------------------------------------------------------------------------------
-
 -- Simple formulas
-newtype SFormula eb cs a = SF (OLFormula eb cs a ())
-newtype NSFormula eb cs a = NSF
-  { unNSF :: (NeutralFormula eb cs a ())
-  } deriving (Show)
 
+data SFormula eb cs a = forall k c . SF (LFormula eb cs k c a ())
+newtype NSFormula eb cty a = NSF
+  { unNSF :: (SrchNeutral eb cty a ())
+  } --deriving (Show)
+
+instance Pretty (SFormula eb cty a) where
+  pretty f = error "not implemented: SFormula.pretty"
 
 -- sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom cs a
 -- sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
 
-instance Show a => Show (SFormula eb cs a) where
-  show (SF (OLF f)) = deepShowFormula f
+-- instance Show a => Show (SFormula eb cs a) where
+--   show (SF (OLF f)) = deepShowFormula f
 
-deriving instance (Show a, Show (cs a)) => Show (SAxiom cs a)
+-- deriving instance (Show a, Show (cs a)) => Show (SAxiom cs a)
 
 -- instance Show a => Show (SAxiom cs a) where
 --   show (SA ax) = deepShowImpl ax
 
-instance (Ord a, Ord (eb a), Ord (cs a)) =>
-         Eq (SFormula eb cs a) where
-  (SF (OLF f1)) == (SF (OLF f2)) = deepHetCompare f1 f2 == EQ
+instance (Ord a, Ord eb, Ord cs) => Eq (SFormula eb cs a) where
+  (SF f1) == (SF f2) = deepHetCompare f1 f2 == EQ
 
-instance (Ord a, Ord (eb a), Ord (cs a)) =>
-         Ord (SFormula eb cs a) where
-  compare (SF (OLF f1)) (SF (OLF f2)) = deepHetCompare f1 f2
+instance (Ord a, Ord eb, Ord cs) => Ord (SFormula eb cs a) where
+  compare (SF f1) (SF f2) = deepHetCompare f1 f2
 
-instance (Ord a, Ord (cs a)) => Eq (SAxiom cs a) where
-  (SA ax1) == (SA ax2) = compare ax1 ax2 == EQ
+instance (Ord a, Ord cty, Monoid cty) => Eq (SAxiom cty a) where
+  (SA ax1) == (SA ax2) =
+    deepHetCompare (axToFormula ax1) (axToFormula ax2) == EQ
 
-instance (Ord a, Ord (cs a)) =>
-         Ord (SAxiom cs a) where
-  compare (SA ax1) (SA ax2) = deepImplCompare ax1 ax2
+instance (Ord a, Ord cty, Monoid cty) => Ord (SAxiom cty a) where
+  compare (SA ax1) (SA ax2) =
+    deepHetCompare (axToFormula ax1) (axToFormula ax2)
 
 sAtom :: BioFormula a -> SFormula eb cs a
-sAtom = SF . OLF . Atom
+sAtom = SF . Atom
 
 sConj :: SFormula eb cs a -> SFormula eb cs a -> SFormula eb cs a
-sConj (SF (OLF f1)) (SF (OLF f2)) =
-  fromLFormula (Conj (liftComplexity f1) (liftComplexity f2) ())
+sConj (SF f1) (SF f2) =
+  lToS (Conj (liftComplexity f1) (liftComplexity f2) ())
 
 sImpl :: SFormula eb cs a
-      -> eb a
-      -> cs a
+      -> eb
+      -> cs
       -> SFormula eb cs a
       -> SFormula eb cs a
-sImpl (SF (OLF f1)) eb cs (SF (OLF f2)) =
-  SF (OLF (Impl (liftComplexity f1) eb cs (liftComplexity f2) ()))
+sImpl (SF f1) eb cs (SF f2) =
+  SF (Impl (liftComplexity f1) eb cs (liftComplexity f2) ())
 
-fromLFormula
-  :: LFormula eb cs k c a l -> SFormula eb cs a
-fromLFormula = SF . OLF . fmap (const ())
+lToS :: LFormula eb cs k c a l -> SFormula eb cs a
+lToS = SF . fmap (const ())
 
-fromNF :: NeutralFormula eb cs a l -> SFormula eb cs a
-fromNF (NF f) = fromLFormula f
+-- fromNF :: NeutralFormula eb cs a l -> SFormula eb cs a
+-- fromNF (NF f) = fromLFormula f
 
-fromLAxiom :: LAxiom cs a l -> SAxiom cs a
-fromLAxiom = SA . fmap (const ())
+laxToSax :: LAxiom cs a l -> SAxiom cs a
+laxToSax = SA . fmap (const ())
 
-sAxiomIsSFormula
-  :: ElemBase eb a
-  => SAxiom cs a -> SFormula eb cs a
-sAxiomIsSFormula = fromLFormula . axiomIsFormula . unSA
+-- sAxiomIsSFormula
+--   :: ElemBase eb a
+--   => SAxiom cs a -> SFormula eb cs a
+-- sAxiomIsSFormula = fromLFormula . axiomIsFormula . unSA
+
+fromSrch :: SrchFormula eb cty a l k -> SFormula eb cty a
+fromSrch (Srch f) = SF (fmap (const ()) f)
 
 fromBasicNS
   :: NE.NonEmpty (BioFormula a)
-  -> cs a
-  -> BFormula cs a l
-  -> SAxiom cs a
+  -> cty
+  -> BFormula a l
+  -> SAxiom cty a
 fromBasicNS lc cs concl = case concl of
     BF f -> sAx fromF (BF (fmap (const ()) f)) cs
   where
@@ -137,32 +152,45 @@ fromBasicNS lc cs concl = case concl of
 --------------------------------------------------------------------------------
 -- Sequents.
 
-data Sequent eb cs a =
-  SQ (UnrestrCtxt (SAxiom cs a))
-     (LinearCtxt (SFormula eb cs a))
-     (SFormula eb cs a)
-  deriving Show
+data Sequent eb cty a =
+  SQ (UnrestrCtxt (SAxiom cty a))
+     (LinearCtxt (SFormula eb cty a))
+     (SFormula eb cty a)
+--  deriving Show
 
 neutralize
-  :: forall eb cs m l a . (PickMonad m l, Ord a, Ord l, Ord (eb a), Ord (cs a))
-  => Sequent eb cs a -> Maybe (cs a) -> m (GoalNeutralSequent eb cs a l)
-neutralize (SQ unrestr linear (SF (OLF concl))) goalCS =
-  GNS <$> nUnrestr <*> nLinear <*> (return goalCS) <*> nGoal
+  :: forall m l a cty eb.
+     (PickMonad m l, Ord a, Ord l, Ord eb, Ord cty, Monoid cty)
+  => Sequent eb cty a -> m (LGoalNSequent eb cty a l)
+neutralize (SQ unrestr linear (SF concl)) =
+  GNS <$> unrestrLabelled <*> linearNeutral <*> nGoal
   where
-    nUnrestr =
-      fmap fromFoldable $
-      mapM
-        ((traverse (const pick) . unSA) :: SAxiom cs a -> m (LAxiom cs a l)) $
-      (asFoldable toList unrestr)
-    nLinear =
-      fmap fromFoldable $
-      mapM
-        ((traverse (const pick) . unNSF) :: NSFormula eb cs a -> m (NeutralFormula eb cs a l)) $
-      (asFoldable (concatMap neutralizeFormula . toList) linear)
-    nGoal = OLF <$> traverse (const pick) concl
+    unrestrLabelled =
+      fmap fromFoldable . mapM pickLabelAx . asFoldable toList $ unrestr
+    linearNeutral =
+      fmap (fromFoldable . join) . mapM neutralizeFormula . asFoldable toList $
+      linear
+    nGoal = opaque <$> pickLabel concl
 
-neutralizeFormula :: SFormula eb cs a -> [NSFormula eb cs a]
-neutralizeFormula (SF (OLF (Conj f1 f2 _))) =
-  neutralizeFormula (SF (OLF f1)) ++ neutralizeFormula (SF (OLF f2))
-neutralizeFormula (SF (OLF a@(Atom _))) = [NSF (NF a)]
-neutralizeFormula (SF (OLF f@(Impl _ _ _ _ _))) = [NSF (NF f)]
+pickLabel :: PickMonad m l => LFormula eb cty k c a () ->
+  m (SrchFormula eb cty a l k)
+pickLabel = undefined -- traverse (const pick) concl
+
+pickLabelAx :: PickMonad m l => SAxiom cty a -> m (SrchAxiom cty a l)
+pickLabelAx = undefined -- traverse (const picK) . unSA
+
+labelSF :: (PickMonad m l) => SFormula eb cty a -> m (SrchOpaque eb cty a l)
+labelSF (SF f) = fmap (opaque . Srch) . traverse (const pick) $ f
+
+neutralizeOs
+  :: (Ord a, Ord l)
+  => [SrchOpaque eb cty a l] -> [SrchNeutral eb cty a l]
+neutralizeOs [] = []
+neutralizeOs list =
+  uncurry (++) . bimap id (neutralizeOs . join)
+  . T.partitionEithers . fmap maybeNeutral $ list
+
+neutralizeFormula
+  :: (PickMonad m l, Ord a, Ord l)
+  => SFormula eb cty a -> m [SrchNeutral eb cty a l]
+neutralizeFormula = labelSF >>> fmap (return >>> neutralizeOs)
