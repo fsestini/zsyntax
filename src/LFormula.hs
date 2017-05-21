@@ -51,7 +51,7 @@ deriving instance Traversable (LFormula eb cs k c a)
 -- Basic formulas
 
 data BFormula a l = forall k . BF (LFormula () () k CBasic a l)
--- deriving instance Functor (BFormula cs a)
+deriving instance Functor (BFormula a)
 
 -- fromBasicLFormula :: LFormula eb cs k CBasic a l -> BFormula cs a l
 -- fromBasicLFormula f = BF (mapEbCsF (const U) id f)
