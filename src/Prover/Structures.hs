@@ -46,16 +46,11 @@ module Prover.Structures
 
 import Data.Profunctor
 import Prelude hiding (fail)
-import qualified Data.Set as S
 import Rel
 import ForwardSequent
-import Control.Applicative (Alternative(..))
-import Control.Monad (MonadPlus(..), ap)
+import Control.Monad (MonadPlus(..))
 import qualified Data.Dequeue as D
 import Data.Foldable
---import qualified Data.HashSet as HS
-
-import Debug.Trace
 
 --------------------------------------------------------------------------------
 
