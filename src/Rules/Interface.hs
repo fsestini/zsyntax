@@ -51,7 +51,7 @@ class ImplClss (frml :: FKind -> *) where
   type Eb frml :: *
   type Cty frml :: *
   reprImpl :: frml KImpl -> ImplRepr frml (Eb frml) (Cty frml) (ImplPayload frml)
-  impl :: frml k1 -> Eb frml -> Cty frml ->  k2 -> ImplPayload frml -> frml KImpl
+  impl :: frml k1 -> Eb frml -> Cty frml -> frml k2 -> ImplPayload frml -> frml KImpl
 
 class ConjClss frml where
   type ConjPayload frml :: *
