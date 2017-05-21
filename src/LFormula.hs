@@ -43,6 +43,10 @@ data LFormula :: * -> * -> FKind -> FComp -> * -> * -> * where
     -> l
     -> LFormula eb cty KImpl CComplex a l
 
+deriving instance Functor (LFormula eb cs k c a)
+deriving instance Foldable (LFormula eb cs k c a)
+deriving instance Traversable (LFormula eb cs k c a)
+
 --------------------------------------------------------------------------------
 -- Basic formulas
 
