@@ -83,48 +83,6 @@ label (Conj _ _ lbl) = L lbl
 label (Impl _ _ _ _ lbl) = L lbl
 
 --------------------------------------------------------------------------------
-
-data LFormula' eb cty a l k = forall c . LF (LFormula eb cty k c a l)
-
-instance AtomClss (LFormula' eb cty a l) where
-  type AtomPayload (LFormula' eb cty a l) = ()
-  type AtomType (LFormula' eb cty a l) = (BioFormula a)
-  reprAtom (LF (Atom a)) = AR a ()
-  atom () a = LF (Atom a)
-
-instance ConjClss (LFormula' eb cty a l) where
-  type ConjPayload (LFormula' eb cty a l) = l
-  reprConj (LF (Conj f1 f2 l)) = CR (LF f1) (LF f2) l
-  conj (LF f1) (LF f2) l = LF (Conj (liftComplexity f1) (liftComplexity f2) l)
-
-instance ImplClss (LFormula' eb cty a l) where
-  type ImplPayload (LFormula' eb cty a l) = l
-  type Eb (LFormula' eb cty a l) = eb
-  type Cty (LFormula' eb cty a l) = cty
-  reprImpl (LF (Impl f1 eb cty f2 l)) = IR (LF f1) eb cty (LF f2) l
-  impl (LF f1) eb cty (LF f2) l =
-    LF (Impl (liftComplexity f1) eb cty (liftComplexity f2) l)
-
-instance AxiomClss (LAxiom cty a l) where
-  type SideFrml (LAxiom cty a l) = BFormula a l
-  type AxPayload (LAxiom cty a l) = l
-  type AxCty (LAxiom cty a l) = cty
-  reprAx (LAx f1 cty f2 l) = AxR f1 cty f2 l
-
-instance (Ord a, Ord l) => Formula (LFormula' eb cty a l) where
-  type Ax (LFormula' eb cty a l) = LAxiom cty a l
-  cases (LF (Atom a)) = AtomCase Dict
-  cases (LF (Conj _ _ _)) = ConjCase Dict
-  cases (LF (Impl _ _ _ _ _)) = ImplCase Dict
-  hetCompare (LF f1) (LF f2) = compare (label f1) (label f2)
-
-instance (Monoid eb, Monoid cty) =>
-         HasAxiom (LFormula' eb cty a l) where
-  axIsFormula (LAx (BF f1) cty (BF f2) l) =
-    LF
-      (Impl
-         (mapEbCty (const mempty) (const mempty) f1) mempty cty
-         (mapEbCty (const mempty) (const mempty) f2) l)
 -- Mapping functions
 
 frmlMapAtoms
@@ -188,3 +146,54 @@ deepHetCompare (Impl a1 eb1 cs1 b1 l1) (Impl a2 eb2 cs2 b2 l2) =
     ccs = compare cs1 cs2
     cl = compare l1 l2
 deepHetCompare (Impl _ _ _ _ _) _ = GT
+
+--------------------------------------------------------------------------------
+
+-- | Type of labelled formulas to be used during proof search.
+data SrchFormula eb cty a l k = forall c . LF (LFormula eb cty k c a l)
+newtype SrchAxiom cty a l = SrchAx { unSrchAx :: LAxiom cty a l }
+type SrchNeutral eb cty a l = Neutral (SrchFormula eb cty a l)
+type SrchOpaque eb cty a l = Opaque (SrchFormula eb cty a l)
+type LGoalNSequent eb cty a l =
+  GoalNSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+
+instance (Eq a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
+  (==) = on (==) (label . axToFormula . unSrchAx)
+instance (Ord a, Ord l, Monoid cty) => Ord (SrchAxiom cty a l) where
+  compare = on compare (label . axToFormula . unSrchAx)
+
+instance AtomClss (SrchFormula eb cty a l) where
+  type AtomPayload (SrchFormula eb cty a l) = ()
+  type AtomType (SrchFormula eb cty a l) = (BioFormula a)
+  reprAtom (LF (Atom a)) = AR a ()
+  atom () a = LF (Atom a)
+
+instance ConjClss (SrchFormula eb cty a l) where
+  type ConjPayload (SrchFormula eb cty a l) = l
+  reprConj (LF (Conj f1 f2 l)) = CR (LF f1) (LF f2) l
+  conj (LF f1) (LF f2) l = LF (Conj (liftComplexity f1) (liftComplexity f2) l)
+
+instance ImplClss (SrchFormula eb cty a l) where
+  type ImplPayload (SrchFormula eb cty a l) = l
+  type Eb (SrchFormula eb cty a l) = eb
+  type Cty (SrchFormula eb cty a l) = cty
+  reprImpl (LF (Impl f1 eb cty f2 l)) = IR (LF f1) eb cty (LF f2) l
+  impl (LF f1) eb cty (LF f2) l =
+    LF (Impl (liftComplexity f1) eb cty (liftComplexity f2) l)
+
+instance AxiomClss (SrchAxiom cty a l) where
+  type SideFrml (SrchAxiom cty a l) = BFormula a l
+  type AxPayload (SrchAxiom cty a l) = l
+  type AxCty (SrchAxiom cty a l) = cty
+  reprAx (SrchAx (LAx f1 cty f2 l)) = AxR f1 cty f2 l
+
+instance (Ord a, Ord l) => Formula (SrchFormula eb cty a l) where
+  type Ax (SrchFormula eb cty a l) = SrchAxiom cty a l
+  cases (LF (Atom a)) = AtomCase Dict
+  cases (LF (Conj _ _ _)) = ConjCase Dict
+  cases (LF (Impl _ _ _ _ _)) = ImplCase Dict
+  hetCompare (LF f1) (LF f2) = compare (label f1) (label f2)
+
+instance (Monoid eb, Monoid cty) =>
+         HasAxiom (SrchFormula eb cty a l) where
+  axIsFormula ax = LF (mapEbCty (const mempty) id . axToFormula . unSrchAx $ ax)
