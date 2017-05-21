@@ -153,22 +153,23 @@ type DTSequent term axs frml cty = DT term (NSequent axs frml cty)
 
 type Relation term axs frml cty b = Rel (DTSequent term axs frml cty) b
 
+-- | Type of unrestricted contexts. Unrestricted contexts are made out of
+-- elements of some type of axiomatic formulas.
 type UCtxt axs = UnrestrCtxt axs
+-- | Type of linear contexts. Linear contexts are made out of neutral formulas.
 type LCtxt frml = LinearCtxt (Neutral frml)
 
 -- | Linear contexts that appear in sequent schemas.
 newtype SchemaLCtxt frml = SLC (LCtxt frml) deriving (Monoid)
 
 {-| Type indicating the possible shapes of an active relation.
-
-    An active relations has the form
+    An active relation has the form
 
       act(delta ; omega ==>_zeta xi)[...] -> gamma' ; delta' -->> res
 
     where either
     1. xi is a formula, zeta is a control set, and res is empty, or
-    2. xi is empty, zeta is empty, and res is a formula.
-    -}
+    2. xi is empty, zeta is empty, and res is a formula. -}
 data ActCase = FullXiEmptyResult | EmptyXiFullResult
 
 -- | Sequent schemas.
