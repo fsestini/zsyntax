@@ -9,6 +9,8 @@
 module TypeClasses
   ( CanPartitionEithers(..)
   , CanMap(..)
+  , CanMap'(..)
+  , CMap
   , CanFilter(..)
   , CanPartition(..)
   , PickMonad(..)
@@ -42,9 +44,14 @@ filterOut = snd . E.partitionEithers . fmap mapper . toList
     mapper (Nothing) = Left ()
     mapper (Just x) = Right x
 
+type CMap f a b = (CanMap f, Constr f a, Constr f b)
+
 class CanMap f where
   type Constr f x :: Constraint
   map :: (Constr f a, Constr f b) => (a -> b) -> f a -> f b
+
+class CanMap' f a b where
+  map' :: (a -> b) -> f -> f
 
 class CanFilter f where
   filter :: (a -> Bool) -> f a -> f a
