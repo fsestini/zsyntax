@@ -141,3 +141,41 @@ liftComplexity (Atom x) = Atom x
 liftComplexity (Conj f1 f2 l) = Conj (liftComplexity f1) (liftComplexity f2) l
 liftComplexity (Impl f1 eb cty f2 l) =
   Impl (liftComplexity f1) eb cty (liftComplexity f2) l
+
+--------------------------------------------------------------------------------
+-- Deep heterogeneous comparison functions
+
+deepHetCompare
+  :: (Ord a, Ord l, Ord eb, Ord cs)
+  => LFormula eb cs k1 c1 a l -> LFormula eb cs k2 c2 a l -> Ordering
+deepHetCompare (Atom x1) (Atom x2) = compare x1 x2
+deepHetCompare (Atom _) _ = LT
+deepHetCompare (Conj a1 b1 lbl1) (Conj a2 b2 lbl2) =
+  if ca == EQ
+    then if cb == EQ
+           then cl
+           else cb
+    else ca
+  where
+    ca = deepHetCompare a1 a2
+    cb = deepHetCompare b1 b2
+    cl = compare lbl1 lbl2
+deepHetCompare (Conj _ _ _) (Atom _) = GT
+deepHetCompare (Conj _ _ _) (Impl _ _ _ _ _) = LT
+deepHetCompare (Impl a1 eb1 cs1 b1 l1) (Impl a2 eb2 cs2 b2 l2) =
+  if ca == EQ
+    then if cb == EQ
+           then if ceb == EQ
+                  then if ccs == EQ
+                         then cl
+                         else ccs
+                  else ceb
+           else cb
+    else ca
+  where
+    ca = deepHetCompare a1 a2
+    cb = deepHetCompare b1 b2
+    ceb = compare eb1 eb2
+    ccs = compare cs1 cs2
+    cl = compare l1 l2
+deepHetCompare (Impl _ _ _ _ _) _ = GT
