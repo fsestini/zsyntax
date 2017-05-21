@@ -21,7 +21,7 @@ import Control.Monad.Identity
 import Data.Bifunctor
 
 type ParseAtom = BioFormula String
-type ParseFormula = SFormula U U String
+type ParseFormula = SFormula () () String
 
 languageDef =
   emptyDef { Token.identStart      = letter
@@ -40,7 +40,7 @@ white = Token.whiteSpace lexer
 bioOperators = [[Infix (reservedOp "<>" >> return BioInter) AssocLeft]]
 logicOperators =
   [ [Infix (reservedOp "*" >> return sConj) AssocLeft]
-  , [Infix (reservedOp "->" >> return (flip (flip sImpl U) U)) AssocRight]
+  , [Infix (reservedOp "->" >> return (flip (flip sImpl ()) ())) AssocRight]
   ]
 
 bioExpr :: Parser ParseAtom
@@ -57,7 +57,7 @@ logicExpr = buildExpressionParser logicOperators logicTerm
 
 logicTerm :: Parser ParseFormula
 logicTerm =  parens logicExpr
-         <|> fmap sAtom bioExpr
+        <|> fmap sAtom bioExpr
 
 parseString :: String -> Either ParseError ParseFormula
 parseString str = parse (white >> logicExpr) "" str
@@ -72,15 +72,15 @@ parseBioFormula :: String -> Either ParseError (BioFormula String)
 parseBioFormula = parse (white >> bioExpr) ""
 
 toSFormula
-  :: (ElemBase eb String, ControlSet cs String)
+  :: (Monoid eb, Monoid cs)
   => M.Map String (SFormula eb cs String)
   -> ParseFormula
   -> SFormula eb cs String
-toSFormula m (SF (OLF (Atom a))) = toSAtom m a
-toSFormula m (SF (OLF (Conj f1 f2 _))) =
-  sConj (toSFormula m (SF (OLF f1))) (toSFormula m (SF (OLF f2)))
-toSFormula m (SF (OLF (Impl f1 _ _ f2 _))) =
-  (sImpl (toSFormula m (SF (OLF f1))) mempty mempty (toSFormula m (SF (OLF f2))))
+toSFormula m (SF (Atom a)) = toSAtom m a
+toSFormula m (SF (Conj f1 f2 _)) =
+  sConj (toSFormula m (SF f1)) (toSFormula m (SF f2))
+toSFormula m (SF (Impl f1 _ _ f2 _)) =
+  (sImpl (toSFormula m (SF f1)) mempty mempty (toSFormula m (SF f2)))
 
 -- parseSFormula
 --   :: (ElemBase eb String, ControlSet cs String)
