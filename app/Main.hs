@@ -1,8 +1,8 @@
 module Main where
 
-import AppMonad
+import CLI
 import GUI
 
---main = loopIO
+-- main = cli
 
 main = gui
