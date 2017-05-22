@@ -1,7 +1,12 @@
+{-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -9,83 +14,96 @@ module Command.Structures where
 
 import Control.Monad (join)
 import TypeClasses (filterOut, Pretty(..))
-import qualified Data.List.NonEmpty as NE
 import Control.Monad.Free
 import qualified Data.Map.Lazy as M
-import SFormula hiding (ElemBase)
 import qualified Data.Dequeue as D
 import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
-
---------------------------------------------------------------------------------
--- Command datatypes
+import Rules hiding (reprAx, AxRepr)
 
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
-data AddedAxiom axr ctr = AAx axr ctr axr
-
-data QueriedSeq axlistrepr frmlrepr = QS
-  { axStr :: axlistrepr
-  , fromStr :: frmlrepr
-  , toStr :: frmlrepr
-  } deriving (Eq, Ord, Show)
-
-instance (Pretty axl, Pretty fr) => Pretty (QueriedSeq axl fr) where
-  pretty (QS axs from to) =
-    pretty axs ++ " ; " ++ pretty from ++ " ==> " ++ pretty to
+data AddedAxiom axr = AAx axr
 
 instance Pretty ThrmName where
-  pretty (TN name) = name
+  pretty = unTN
 
-class ReprAx axrepr ctrepr cty a where
-  reprAx :: axrepr -> ctrepr -> axrepr -> Either String (SAxiom cty a)
+data QueriedSeq frepr = QS
+  { qsAxioms :: [ThrmName]
+  , qsFrom :: frepr
+  , qsTo :: frepr
+  } deriving (Eq, Ord, Show)
 
-class ReprAxList axl where
-  reprAxs :: axl -> Either String [ThrmName]
+instance Pretty frepr => Pretty (QueriedSeq frepr) where
+  pretty (QS _ from to) = pretty from ++ " ==> " ++ pretty to
 
-class ReprFrml fr a where
-  reprFrml :: fr -> Either String (NE.NonEmpty (BioFormula a))
+class CommAx axr ax where
+  reprAx :: axr -> Either String ax
 
--- class ReprQS axr ctr axl fr eb cty a where
---   reprAxs :: [(ThrmName, SAxiom cty a)] -- AxEnv axr ctr cty a
---           -- -> ThrmEnv axl fr eb cty a
---           -> axl
---           -> Either String [SAxiom cty a]
---   reprFrml :: fr -> Either String (NE.NonEmpty (BioFormula a))
+-- class CommFrml frepr frml | frml -> frepr where
+--   reprFrml :: frepr -> Either String frml
 
-class CParse ctr axr fr axlr where
-  parseCommand :: String
-               -> Either String (Command ctr axr fr axlr)
+class CParse  axr frepr where
+  parseCommand :: String -> Either String (Command axr frepr)
 
-class CPrintAx axr ctr where
-  printAx :: ThrmName -> AddedAxiom axr ctr -> String
+class CPrint axr frepr | axr -> frepr, frepr -> axr where
+  printAx :: ThrmName -> AddedAxiom axr -> String
+  printThrm :: ThrmName -> QueriedSeq frepr -> String
 
-class CPrintThrm axl fr where
-  printThrm :: ThrmName -> QueriedSeq axl fr -> String
-
-data Command ctrepr axrepr frmlrepr axlistrepr
-  = AddAxiom ThrmName
-             ctrepr
-             axrepr
-             axrepr
-  | ChangeAxiom ThrmName
-                ctrepr
-                axrepr
-                axrepr
+data Command axr frepr
+  = AddAxiom ThrmName axr
+  | ChangeAxiom ThrmName axr
   | RemoveAxiom ThrmName
-  | AddTheorem ThrmName
-               (QueriedSeq axlistrepr frmlrepr)
-  | Query (QueriedSeq axlistrepr frmlrepr)
+  | AddTheorem ThrmName (QueriedSeq frepr)
+  | Query (QueriedSeq frepr)
   | LoadFile FilePath
   | SaveToFile FilePath
   deriving (Eq, Show)
 
-newtype AxEnv axr ctr cty a =
-  AE (M.Map ThrmName (AddedAxiom axr ctr, SAxiom cty a))
-newtype ThrmEnv axlrepr frepr eb cty a =
-  TE (D.BankersDequeue (ThrmName,
-    (QueriedSeq axlrepr frepr,
-      Maybe (Either (SAxiom cty a) (SFormula eb cty a)))))
+type family DerT ax axr frepr :: *
+-- type family SrchF (frml :: *) :: FKind -> *
+
+class Search ax axr frepr where
+  type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
+  fromNS
+    :: NSequent
+        (Ax (SrchF ax axr frepr))
+            (SrchF ax axr frepr)
+            (Cty (SrchF ax axr frepr))
+    -> ThrmShape ax
+  queryToGoal
+    :: AxEnv axr ax
+    -> ThrmEnv frepr ax
+    -> QueriedSeq frepr
+    -> Either String
+        (GoalNSequent
+          (Ax (SrchF ax axr frepr))
+          (SrchF ax axr frepr)
+          (Cty (SrchF ax axr frepr)))
+
+-- class Search ax axr frepr | ax -> frml where
+--   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax
+--   queryToGoal
+--     :: AxEnv axr ax
+--     -> ThrmEnv frepr ax
+--     -> QueriedSeq frepr
+--     -> Either String (GoalNSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)))
+
+class (Pretty (TransRepr term)) => TransDerTerm term where
+  type TransRepr term :: *
+  transitions :: term -> [TransRepr term]
+
+--------------------------------------------------------------------------------
+
+newtype AxEnv axr ax =
+  AE (M.Map ThrmName (AddedAxiom axr, ax))
+newtype ThrmEnv frepr ax =
+  TE (D.BankersDequeue (ThrmName, (QueriedSeq frepr, Maybe (ThrmShape ax))))
+
+data ThrmShape ax = Axiomatic ax | NonAxiomatic
+toMaybe :: ThrmShape ax -> Maybe ax
+toMaybe (Axiomatic ax) = Just ax
+toMaybe NonAxiomatic = Nothing
 
 class FEnv env where
   type Elems env :: *
@@ -96,9 +114,8 @@ class FEnv env where
   feLookup :: ThrmName -> env -> Maybe (Elems env)
   feAsList :: env -> [(ThrmName, Elems env)]
 
-instance FEnv (ThrmEnv axlrepr frepr eb cty a) where
-  type Elems (ThrmEnv axlrepr frepr eb cty a) =
-    (QueriedSeq axlrepr frepr, Maybe (Either (SAxiom cty a) (SFormula eb cty a)))
+instance FEnv (ThrmEnv frepr ax) where
+  type Elems (ThrmEnv frepr ax) = (QueriedSeq frepr, Maybe (ThrmShape ax))
   feEmpty = TE D.empty
   feInsert nm (q, sa) (TE thrms) =
     if isJust (lookup nm (toList thrms))
@@ -111,8 +128,8 @@ instance FEnv (ThrmEnv axlrepr frepr eb cty a) where
   feLookup nm (TE thrms) = lookup nm (toList thrms)
   feAsList (TE thrms) = toList thrms
 
-instance FEnv (AxEnv axr ctr cty a) where
-  type Elems (AxEnv axr ctr cty a) = (AddedAxiom axr ctr, SAxiom cty a)
+instance FEnv (AxEnv axr ax) where
+  type Elems (AxEnv axr ax) = (AddedAxiom axr, ax)
   feEmpty = AE mempty
   feInsert n x (AE env) =
     if isJust (M.lookup n env)
@@ -123,32 +140,23 @@ instance FEnv (AxEnv axr ctr cty a) where
   feLookup x (AE env) = M.lookup x env
   feAsList (AE m) = M.toList m
 
-printAxAll :: CPrintAx axr ctr => AxEnv axr ctr cty a -> [String]
+printAxAll :: CPrint axr frepr => AxEnv axr ax -> [String]
 printAxAll (AE axs) = fmap ((uncurry printAx) . second fst) . M.toList $ axs
 
-printThrmAll :: CPrintThrm axl fr => ThrmEnv axl fr eb cty a -> [String]
+printThrmAll :: CPrint axr frepr => ThrmEnv frepr ax -> [String]
 printThrmAll (TE thrms) = fmap (uncurry printThrm . second fst) . toList $ thrms
 
-legitAxioms :: AxEnv axr ctr cty a
-            -> ThrmEnv axl fr eb cty a
-            -> [(ThrmName, SAxiom cty a)]
+legitAxioms :: AxEnv axr ax -> ThrmEnv frepr ax -> [(ThrmName, ax)]
 legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
   where
     fromAxs = fmap (second snd) $ M.toList axs
     fromThrms =
-      filterOut .
-      fmap (aux . second (join . fmap (either Just (const Nothing)) . snd)) $
-      toList thrms
+      filterOut . fmap (aux . second (join . fmap toMaybe . snd)) . toList $ thrms
     aux (x, y) = y >>= \yy -> return (x, yy)
 
 axsFromList
-  :: (ReprAxList axl)
-  => AxEnv axr ctr cty a
-  -> ThrmEnv axl fr eb cty a
-  -> axl
-  -> Either String [SAxiom cty a]
-axsFromList axs thrms list = do
-  names <- reprAxs list
+  :: AxEnv axr ax -> ThrmEnv frepr ax -> [ThrmName] -> Either String [ax]
+axsFromList axs thrms names = do
   mapM mmm names
   where
     axioms = legitAxioms axs thrms
@@ -168,11 +176,12 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName -> (QueriedSeq axl fr, Maybe (Either (SAxiom cty a) (SFormula eb cty a)))
-        -> ThrmEnv axl fr eb cty a
-        -> m (QueriedSeq axl fr, Maybe (Either (SAxiom cty a) (SFormula eb cty a))))
-  -> ThrmEnv axl fr eb cty a
-  -> m (ThrmEnv axl fr eb cty a)
+  => (ThrmName
+        -> (QueriedSeq frepr, Maybe (ThrmShape ax))
+        -> ThrmEnv frepr ax
+        -> m (QueriedSeq frepr, Maybe (ThrmShape ax)))
+  -> ThrmEnv frepr ax
+  -> m (ThrmEnv frepr ax)
 processThrms f (TE env) = foldlM f' feEmpty (toList env)
   where
     f' oldenv@ (TE queue) (nm,x) = do
