@@ -17,16 +17,17 @@ library
   hs-source-dirs:      src
   exposed-modules:     CLI, GUI
   other-modules:       Prover.Class, Prover.Structures, Prover.Transformer, Rel
-                     , Relation, TypeClasses, RelFormula, SFormula, Prover
+                     , TypeClasses, SFormula, LFormula, TH, Prover
                      , Prover.Search, Checking, Context, LinearContext
-                     , UnrestrContext, DerivationTerm, ForwardSequent, Frontier
+                     , UnrestrContext, SimpleDerivationTerm, ForwardSequent
                      , Parser, Command.Structures, Command.Execution
                      , CLI.Command, CLI.App
                      , Checking.ReactLists.RList, Checking.ReactLists.Sets
                      , GUI.Elements , GUI.Control, GUI.Command
+                     , Rules.Relation, Rules.Interface, Rules.Frontier, Rules
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
-                     , dequeue, gtk
+                     , dequeue, gtk, template-haskell
                      --, unordered-containers
   default-language:    Haskell2010
 
