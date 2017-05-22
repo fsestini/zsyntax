@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -21,18 +23,27 @@ module LFormula
   , SrchOpaque
   , SrchAxiom(..)
   , LGoalNSequent
+  , LNSequent
+  , LUnaryRule
+  , LDTSequent
+  , mapEbCty
+  , mapCtyAx
   , opaque
   , label
   , axToFormula
   , liftComplexity
   , deepHetCompare
   , maybeNeutral
+  , decideOF
+  , decideF
+  , decideN
   ) where
 
 import Rules
 import qualified TypeClasses as T
 import Data.Constraint
 import Data.Function (on)
+import TH
 
 -- Formula complexity
 data FComp = CBasic | CComplex
@@ -67,24 +78,51 @@ deriving instance Functor (LFormula eb cs k c a)
 deriving instance Foldable (LFormula eb cs k c a)
 deriving instance Traversable (LFormula eb cs k c a)
 
+instance T.Pretty a => T.Pretty (LFormula eb cty k c a l) where
+  pretty (Atom x) = T.pretty x
+  pretty (Conj f1 f2 _) = T.pretty f1 ++ " ⊗ " ++ T.pretty f2
+  pretty (Impl f1 _ _ f2 _) = "(" ++ T.pretty f1 ++ " → " ++ T.pretty f2 ++ ")"
+
 --------------------------------------------------------------------------------
 -- Basic formulas
 
 data BFormula a l = forall k . BF (LFormula () () k CBasic a l)
 deriving instance Functor (BFormula a)
+deriving instance Foldable (BFormula a)
+deriving instance Traversable (BFormula a)
 
--- fromBasicLFormula :: LFormula eb cs k CBasic a l -> BFormula cs a l
--- fromBasicLFormula f = BF (mapEbCsF (const U) id f)
+-- fromBasicLFormula :: LFormula eb cty k CBasic a l -> BFormula a l
+-- fromBasicLFormula f = BF (mapEbCty (const ()) (const ()) f)
 
 bfToAtoms :: LFormula eb cs k CBasic a l -> [BioFormula a]
 bfToAtoms (Atom x) = [x]
 bfToAtoms (Conj f1 f2 _) = bfToAtoms f1 ++ bfToAtoms f2
+
+decideF :: LFormula eb cty k c a l -> Maybe (BFormula a l)
+decideF (Atom x) = Just (BF (mapEbCty (const ()) (const ()) (Atom x)))
+decideF (Conj f1 f2 l) = do
+  (BF f1b) <- decideF f1
+  (BF f2b) <- decideF f2
+  return (BF (mapEbCty (const ()) (const ()) (Conj f1b f2b l)))
+decideF (Impl _ _ _ _ _) = Nothing
+
+decideN
+  :: (Ord a, Ord l)
+  => Neutral (SrchFormula eb cty a l) -> Maybe (BFormula a l)
+decideN (switchN -> Left (AR x _)) = Just (BF (Atom x))
+decideN (switchN -> Right (IR _ _ _ _ _)) = Nothing
+
+-- TODO temporary hack
+decideOF :: Opaque (SrchFormula eb cty a l) -> Maybe (BFormula a l)
+decideOF (O (Srch f)) = decideF f
 
 --------------------------------------------------------------------------------
 
 data LAxiom cty a l = LAx (BFormula a l) cty (BFormula a l) l
 
 deriving instance Functor (LAxiom cty a)
+deriving instance Foldable (LAxiom cty a)
+deriving instance Traversable (LAxiom cty a)
 
 axToFormula :: Monoid cty => LAxiom cty a l -> LFormula () cty KImpl CComplex a l
 axToFormula (LAx (BF f1) cty (BF f2) l) =
@@ -122,6 +160,10 @@ mapEbCty f g (Atom a) = Atom a
 mapEbCty f g (Conj f1 f2 l) = Conj (mapEbCty f g f1) (mapEbCty f g f2) l
 mapEbCty f g (Impl f1 eb cty f2 l) =
   Impl (mapEbCty f g f1) (f eb) (g cty) (mapEbCty f g f2) l
+
+mapCtyAx :: (cty1 -> cty2) -> LAxiom cty1 a l -> LAxiom cty2 a l
+mapCtyAx f (LAx (BF f1) cty (BF f2) l) =
+  LAx (BF (mapEbCty id id f1)) (f cty) (BF (mapEbCty id id f2)) l
 
 liftComplexity :: LFormula eb cs k c a l -> LFormula eb cs k CComplex a l
 liftComplexity (Atom x) = Atom x
@@ -170,12 +212,23 @@ deepHetCompare (Impl _ _ _ _ _) _ = GT
 --------------------------------------------------------------------------------
 
 -- | Type of labelled formulas to be used during proof search.
-data SrchFormula eb cty a l k = forall c . LF (LFormula eb cty k c a l)
+data SrchFormula eb cty a l k = forall c . Srch (LFormula eb cty k c a l)
 newtype SrchAxiom cty a l = SrchAx { unSrchAx :: LAxiom cty a l }
 type SrchNeutral eb cty a l = Neutral (SrchFormula eb cty a l)
 type SrchOpaque eb cty a l = Opaque (SrchFormula eb cty a l)
 type LGoalNSequent eb cty a l =
   GoalNSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+type LNSequent eb cty a l =
+  NSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+-- type UnaryRule term fr = DTS term fr -> Rule term fr
+type LUnaryRule term eb cty a l =
+  UnaryRule term (SrchFormula eb cty a l)
+type LDTSequent term eb cty a l =
+  DTSequent term (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+
+liftUnifun 'Srch 'frmlMapAtoms
+liftUnifun 'SrchAx 'mapCtyAx
+liftBifun 'Srch 'mapEbCty
 
 instance (Eq a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
   (==) = on (==) (label . axToFormula . unSrchAx)
@@ -185,21 +238,21 @@ instance (Ord a, Ord l, Monoid cty) => Ord (SrchAxiom cty a l) where
 instance AtomClss (SrchFormula eb cty a l) where
   type AtomPayload (SrchFormula eb cty a l) = ()
   type AtomType (SrchFormula eb cty a l) = (BioFormula a)
-  reprAtom (LF (Atom a)) = AR a ()
-  atom () a = LF (Atom a)
+  reprAtom (Srch (Atom a)) = AR a ()
+  atom () a = Srch (Atom a)
 
 instance ConjClss (SrchFormula eb cty a l) where
   type ConjPayload (SrchFormula eb cty a l) = l
-  reprConj (LF (Conj f1 f2 l)) = CR (LF f1) (LF f2) l
-  conj (LF f1) (LF f2) l = LF (Conj (liftComplexity f1) (liftComplexity f2) l)
+  reprConj (Srch (Conj f1 f2 l)) = CR (Srch f1) (Srch f2) l
+  conj (Srch f1) (Srch f2) l = Srch (Conj (liftComplexity f1) (liftComplexity f2) l)
 
 instance ImplClss (SrchFormula eb cty a l) where
   type ImplPayload (SrchFormula eb cty a l) = l
   type Eb (SrchFormula eb cty a l) = eb
   type Cty (SrchFormula eb cty a l) = cty
-  reprImpl (LF (Impl f1 eb cty f2 l)) = IR (LF f1) eb cty (LF f2) l
-  impl (LF f1) eb cty (LF f2) l =
-    LF (Impl (liftComplexity f1) eb cty (liftComplexity f2) l)
+  reprImpl (Srch (Impl f1 eb cty f2 l)) = IR (Srch f1) eb cty (Srch f2) l
+  impl (Srch f1) eb cty (Srch f2) l =
+    Srch (Impl (liftComplexity f1) eb cty (liftComplexity f2) l)
 
 instance AxiomClss (SrchAxiom cty a l) where
   type SideFrml (SrchAxiom cty a l) = BFormula a l
@@ -208,12 +261,12 @@ instance AxiomClss (SrchAxiom cty a l) where
   reprAx (SrchAx (LAx f1 cty f2 l)) = AxR f1 cty f2 l
 
 instance (Ord a, Ord l) => Formula (SrchFormula eb cty a l) where
-  type Ax (SrchFormula eb cty a l) = SrchAxiom cty a l
-  cases (LF (Atom a)) = AtomCase Dict
-  cases (LF (Conj _ _ _)) = ConjCase Dict
-  cases (LF (Impl _ _ _ _ _)) = ImplCase Dict
-  hetCompare (LF f1) (LF f2) = compare (label f1) (label f2)
+  cases (Srch (Atom a)) = AtomCase Dict
+  cases (Srch (Conj _ _ _)) = ConjCase Dict
+  cases (Srch (Impl _ _ _ _ _)) = ImplCase Dict
+  hetCompare (Srch f1) (Srch f2) = compare (label f1) (label f2)
 
 instance (Monoid eb, Monoid cty) =>
          HasAxiom (SrchFormula eb cty a l) where
-  axIsFormula ax = LF (mapEbCty (const mempty) id . axToFormula . unSrchAx $ ax)
+  type Ax (SrchFormula eb cty a l) = SrchAxiom cty a l
+  axIsFormula ax = Srch (mapEbCty (const mempty) id . axToFormula . unSrchAx $ ax)
