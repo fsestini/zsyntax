@@ -6,7 +6,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module SFormula
-  ( Sequent
+  ( Sequent(..)
   , SFormula(..)
   , LFormula(..)
   , SAxiom(..)
@@ -17,6 +17,10 @@ module SFormula
   , sImpl
   , neutralize
   , fromSrch
+  , sAx
+  , bsConj
+  , bsAtom
+  , fromBasicNS
   ) where
 
   -- ( SFormula(..)
@@ -79,8 +83,8 @@ newtype NSFormula eb cty a = NSF
   { unNSF :: (SrchNeutral eb cty a ())
   } --deriving (Show)
 
-instance Pretty (SFormula eb cty a) where
-  pretty f = error "not implemented: SFormula.pretty"
+instance Pretty a => Pretty (SFormula eb cty a) where
+  pretty (SF f) = pretty f
 
 -- sAx :: SFormula eb cs a -> SFormula eb cs a -> cs a -> SAxiom cs a
 -- sAx (SF (OLF f1)) (SF (OLF f2)) cs = SA (ImplF f1 EmptySpot cs f2 ())
@@ -140,14 +144,14 @@ fromSrch :: SrchFormula eb cty a l k -> SFormula eb cty a
 fromSrch (Srch f) = SF (fmap (const ()) f)
 
 fromBasicNS
-  :: NE.NonEmpty (BioFormula a)
+  :: NE.NonEmpty (BFormula a l)
   -> cty
   -> BFormula a l
   -> SAxiom cty a
 fromBasicNS lc cs concl = case concl of
     BF f -> sAx fromF (BF (fmap (const ()) f)) cs
   where
-    fromF = foldr1 bsConj (fmap bsAtom lc)
+    fromF = foldr1 bsConj (fmap (fmap (const ())) lc)
 
 --------------------------------------------------------------------------------
 -- Sequents.
@@ -172,12 +176,13 @@ neutralize (SQ unrestr linear (SF concl)) =
       linear
     nGoal = opaque <$> pickLabel concl
 
-pickLabel :: PickMonad m l => LFormula eb cty k c a () ->
-  m (SrchFormula eb cty a l k)
-pickLabel = undefined -- traverse (const pick) concl
+pickLabel
+  :: PickMonad m l
+  => LFormula eb cty k c a () -> m (SrchFormula eb cty a l k)
+pickLabel = fmap Srch . traverse (const pick)
 
 pickLabelAx :: PickMonad m l => SAxiom cty a -> m (SrchAxiom cty a l)
-pickLabelAx = undefined -- traverse (const picK) . unSA
+pickLabelAx = fmap SrchAx . traverse (const pick) . unSA
 
 labelSF :: (PickMonad m l) => SFormula eb cty a -> m (SrchOpaque eb cty a l)
 labelSF (SF f) = fmap (opaque . Srch) . traverse (const pick) $ f
