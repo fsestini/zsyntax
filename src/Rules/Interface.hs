@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -15,10 +17,12 @@
 module Rules.Interface where
 
 import Data.Constraint
+import Prover
 import Rel
 import LinearContext
 import UnrestrContext
 import Data.Foldable (toList, fold)
+import ForwardSequent
 
 data FKind = KAtom | KConj | KImpl
 
@@ -37,14 +41,12 @@ data AtomRepr payload at = AR at payload
 
 class (AtomClss frml, ConjClss frml, ImplClss frml) =>
       Formula (frml :: FKind -> *) where
-  type Ax frml :: *
   cases :: frml k -> FKindCase k
   hetCompare :: frml k1 -> frml k2 -> Ordering
 
 class AxiomClss (Ax frml) => HasAxiom (frml :: FKind -> *) where
+  type Ax frml :: *
   axIsFormula :: (Ax frml) -> frml KImpl
-  -- sideIsFormula :: SideFrml (Ax frml) -> Opaque frml
-  -- axCtyIsCty :: AxCty (Ax frml) -> Cty frml
 
 class ImplClss (frml :: FKind -> *) where
   type ImplPayload frml :: *
@@ -152,16 +154,10 @@ data NSequent axs frml cty =
   NS (UCtxt axs) (LCtxt frml) cty (Opaque frml)
   deriving (Eq, Ord)
 
--- | Type of derivation terms-decorated data.
-data DT term payload = DT
-  { term :: term
-  , payload :: payload
-  } deriving (Eq, Ord)
-
--- | Derivation term-decorated neutral sequents.
-type DTSequent term axs frml cty = DT term (NSequent axs frml cty)
-
-type Relation term axs frml cty b = Rel (DTSequent term axs frml cty) b
+instance (Formula frml, Ord axs, Eq cty) =>
+         ForwardSequent (NSequent axs frml cty) where
+  (NS un1 lin1 cty1 concl1) `subsumes` (NS un2 lin2 cty2 concl2) =
+    un1 <= un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
 
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
 -- elements of some type of axiomatic formulas.

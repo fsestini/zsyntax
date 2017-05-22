@@ -1,3 +1,6 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -16,7 +19,9 @@ module Rules.Frontier
   , initialSequentsAndRules
   ) where
 
+import ForwardSequent
 import Data.Constraint hiding ((***))
+import Prover
 import Data.Foldable
 import Data.Monoid
 import TypeClasses (filterOut, partitionEithers)
@@ -52,6 +57,12 @@ data GoalNSequent ax fr cty =
   GNS (UCtxt ax) (LCtxt fr) (Opaque fr)
   deriving (Eq, Ord)
 
+instance (Formula frml, Ord axs, Eq cty) =>
+         SearchPair (NSequent axs frml cty) (GoalNSequent axs frml cty) where
+  isSubsequent _ _ = True
+  subsumesGoal ns@(NS _ _ cty _) (GNS un2 lin2 concl2) =
+    ns `subsumes` NS un2 lin2 cty concl2
+
 type GNS fr = GoalNSequent (Ax fr) fr (Cty fr)
 type DecF fr = DecFormula (Ax fr) fr
 
@@ -84,7 +95,7 @@ frontier (GNS uc lc (O goal)) =
 
 frNeg :: (Formula fr, Ord ax) => Neutral fr -> S.Set (DecFormula ax fr)
 frNeg (switchN -> Left (AR _ _)) = mempty
-frNeg (switchN -> Right (IR a _ _ b _)) = undefined -- foc a <> act b
+frNeg (switchN -> Right (IR a _ _ b _)) = foc a <> act b
 
 frPos :: (Formula fr, Ord ax) => fr k -> S.Set (DecFormula ax fr)
 frPos f =

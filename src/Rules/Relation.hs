@@ -11,10 +11,14 @@
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors
   -Wno-partial-type-signatures -Wno-incomplete-patterns #-}
 
+{-# OPTIONS_GHC -fno-max-relevant-binds #-}
+
 {-| Module of derived rule relations. -}
 
 module Rules.Relation
   ( Rule
+  , DT(..)
+  , DTSequent
   , focus
   , implLeft
   , implRight
@@ -37,9 +41,17 @@ import Data.Constraint
 import UnrestrContext
 
 import Rules.Interface
+import ForwardSequent
+import Prover (SearchPair(..))
 
 --------------------------------------------------------------------------------
 
+-- | A relation is an unbounded curried function with derivation term-decorated
+-- sequents as input.
+type Relation term axs frml cty b = Rel (DTSequent term axs frml cty) b
+
+-- | A rule of the derived rule calculus is a relation that has
+-- derivation term-decorated sequents as both input and output.
 type Rule term fr =
   Relation term (Ax fr) fr (Cty fr) (DTSequent term (Ax fr) fr (Cty fr))
 
@@ -50,6 +62,25 @@ instance IsFocusable KConj where
 type FocMatchRes fr = MatchRes FullXiEmptyResult (Ax fr) fr
 type DTFocMatchRes term fr = DT term (FocMatchRes fr)
 type DTMatchRes term actcase fr = DT term (MatchRes actcase (Ax fr) fr)
+
+-- | Type of derivation terms-decorated data.
+data DT term payload = DT
+  { term :: term
+  , payload :: payload
+  } deriving (Eq, Ord)
+
+-- | Derivation term-decorated neutral sequents.
+type DTSequent term axs frml cty = DT term (NSequent axs frml cty)
+
+instance (Formula frml, Ord axs, Eq cty) =>
+         ForwardSequent (DTSequent term axs frml cty) where
+  subsumes (DT _ s1) (DT _ s2) = subsumes s1 s2
+
+-- | Lifting of SearchPair instances to derivation terms-decorated sequents.
+instance (SearchPair seqty goalty, ForwardSequent (DT term seqty)) =>
+         SearchPair (DT term seqty) goalty where
+  isSubsequent (DT _ s1) s2 = isSubsequent s1 s2
+  subsumesGoal (DT _ s) g = s `subsumesGoal` g
 
 --------------------------------------------------------------------------------
 
@@ -91,20 +122,21 @@ positiveFocalDispatch formula =
             DT (conjR d1 d2 formula) (MREmptyGoal (gamma1 <> gamma2) (delta1 <> delta2))
 
 leftActive
-  :: Formula frml => LCtxt frml
+  :: (Formula frml, DerTerm term frml)
+  => LCtxt frml
   -> [Opaque frml]
   -> ZetaXi act frml
-  -> Relation term axs frml (Cty frml) (DTMatchRes term act frml)
+  -> Relation term (Ax frml) frml (Cty frml) (DTMatchRes term act frml)
 leftActive delta omega zetaxi =
   case omega of
-    [] -> undefined
+    [] -> matchRel delta zetaxi
     (O f):rest ->
       case cases f of
         AtomCase Dict -> leftActive (add (N f) delta) rest zetaxi
         ConjCase Dict -> case reprConj f of
           CR f1 f2 _ -> do
             (DT d res) <- leftActive delta (O f2 : O f1 : rest) zetaxi
-            return (DT undefined res)
+            return (DT (conjL d f) res)
         ImplCase Dict -> leftActive (add (N f) delta) rest zetaxi
 
 matchRel
@@ -141,29 +173,34 @@ implLeft fr = case reprImpl fr of
       leftActive mempty [(O f2)] EmptyZetaXi
     guard (respects (lcBase delta2) cty)
     return $
-      DT undefined
+      DT (implL d d' fr)
          (NS (gamma1 <> gamma2)
                (add (N fr) (delta1 <> delta2))
                (cty <> cty')
                concl)
 
 copyRule
-  :: (HasBaseCtrl frml, HasAxiom frml, DerTerm term frml, Ord (Ax frml))
-  => Ax frml -> Rule term frml
+  :: forall frml term . (HasBaseCtrl frml, HasAxiom frml, DerTerm term frml, Ord (Ax frml))
+  => (Ax frml) -> Rule term frml
 copyRule ax =
-  case reprImpl (axIsFormula ax) of
-    IR f1 _ cty f2 pay -> do
-      DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch f1
-      DT d' (MRFullGoal gamma2 delta2 cty' concl) <-
-        leftActive mempty [(O f2)] EmptyZetaXi
-      guard (respects (lcBase delta2) cty)
-      return $
-        DT
-          undefined
-          (NS (add ax (gamma1 <> gamma2)) (delta1 <> delta2) (cty <> cty') concl)
+  let fr = axIsFormula ax
+  in case reprImpl (fr) of
+       IR f1 _ cty f2 pay -> do
+         DT d (MREmptyGoal gamma1 delta1) <- positiveFocalDispatch f1
+         DT d' (MRFullGoal gamma2 delta2 cty' concl) <-
+           leftActive mempty [(O f2)] EmptyZetaXi
+         guard (respects (lcBase delta2) cty)
+         return $
+           DT
+             (copy @term @frml (implL d d' fr) ax)
+             (NS
+                (add ax (gamma1 <> gamma2))
+                (delta1 <> delta2)
+                (cty <> cty')
+                concl)
 
 implRight
-  :: (Formula frml, HasBaseCtrl frml)
+  :: (Formula frml, HasBaseCtrl frml, DerTerm term frml)
   => frml KImpl -> Rule term frml
 implRight fr =
   case reprImpl fr of
@@ -171,7 +208,7 @@ implRight fr =
       DT d (MREmptyGoal gamma delta) <-
         leftActive mempty [(O f1)] (FullZetaXi cty (O f2))
       guard ((lcBase delta) == eb)
-      return $ DT undefined (NS gamma delta mempty (O fr))
+      return $ DT (implR d fr) (NS gamma delta mempty (O fr))
 
 --------------------------------------------------------------------------------
 
