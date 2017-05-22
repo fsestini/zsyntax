@@ -71,7 +71,7 @@ subCtxtOf (LC m1) (LC m2) =
     then True
     else and $ map duane (M.toList m1)
   where
-    duane (key, val) = fromMaybe False $ M.lookup key m2 >>= return . (val <)
+    duane (key, val) = fromMaybe False $ M.lookup key m2 >>= return . (val <=)
 
 instance Ord a => Monoid (LinearCtxt a) where
   mempty = LC M.empty
