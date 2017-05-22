@@ -1,11 +1,9 @@
 module GUI.Command
-  ( AxList(..)
-  , FrmlArea(..)
-  , AxArea(..)
-  , CtrlArea(..)
+  ( AxRepr(..)
+  , FrmlRepr(..)
   , BioAtoms
   , GUIElemBase
-  , GUICtrlType
+  , GUICtrlSet
   , GUIControlType
   , GUIAxiom
   , GUIFormula
@@ -14,10 +12,12 @@ module GUI.Command
   , GUICommand
   , Command(..)
   , ThrmName(..)
-  , QueriedSeq(..)
-  , Elems
   , UIF(..)
   , UI
+  , AddedAxiom(..)
+  , FEnv(..)
+  , QueriedSeq(..)
+  , Aggregate(..)
   , execCommand
   , execCommand'
   , aggregate1'
@@ -25,6 +25,7 @@ module GUI.Command
   , comma
   , neCtxt
   , axiomList
+  , prettys
   ) where
 
 import Command.Structures
@@ -32,10 +33,10 @@ import Command.Execution
 import CLI.Command
 
 type GUICommand = CLICommand
-type GUIElemBase = UIElemBase
-type GUICtrlType = UICtrlType
-type GUIAxiom = UIAxiom
-type GUIFormula = UIFormula
-type GUIControlType = ControlType
+type GUIElemBase = CLIElemBase
+type GUIAxiom = CLIAxiom
+type GUIFormula = CLIFormula
+type GUICtrlSet = CLICtrlSet
+type GUIControlType = CLIControlType
 type GUIAxEnv = CLIAxEnv
 type GUIThrmEnv = CLIThrmEnv

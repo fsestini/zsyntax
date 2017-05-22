@@ -17,9 +17,7 @@ import GUI.Command --(ThrmName(..), CtrlArea(..), FrmlArea(..), aggregate1')
 
 data AxDiaContent = ADC
   { name :: ThrmName
-  , from :: AxArea
-  , to :: AxArea
-  , ctrl :: CtrlArea
+  , repr :: AxRepr
   }
 
 parseAggregate = parse (aggregate1' <* eof) ""
@@ -83,9 +81,9 @@ axiomsDialog title content = do
   axNmE <- titledEntry upbox "Name: "
   entrySetText axNmE (maybe "" (unTN . name) content)
   axFromE <- titledEntry upbox "Start aggregate: "
-  entrySetText axFromE (maybe "" (T.pretty . from) content)
+  entrySetText axFromE (maybe "" (T.pretty . from . repr) content)
   axToE <- titledEntry upbox "Result aggregate: "
-  entrySetText axToE (maybe "" (T.pretty . to) content)
+  entrySetText axToE (maybe "" (T.pretty . to . repr) content)
   list <- ctrlListView upbox
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
@@ -109,7 +107,7 @@ axiomsDialog title content = do
               return (from, to)
         flip (either (const (return Nothing))) eee $ \(from, to) ->
           return . Just $
-          ADC (TN nmTxt) (AA from) (AA to) (CA (fromFoldableCtxts ctrls))
+          ADC (TN nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
       else return Nothing
   widgetDestroy dia
   return result
@@ -220,30 +218,38 @@ data TheoremEntryArea = TEA
 theoremEntryArea :: VBox -> IO TheoremEntryArea
 theoremEntryArea vbox = do
   packLabel vbox "Prove theorem:"
+  table <- tableNew 2 4 False
+  l1 <- labelNew (Just "Name:   ")
+  miscSetAlignment l1 1 1
   teName <- entryNew
-  set teName [entryEditable := True]
+  tableAttachDefaults table l1 0 1 0 1
+  tableAttachDefaults table teName 1 2 0 1
+  l2 <- labelNew (Just "Axioms:   ")
+  miscSetAlignment l2 1 1
   teAxioms <- entryNew
-  set teAxioms [entryEditable := True]
+  tableAttachDefaults table l2 2 3 0 1
+  tableAttachDefaults table teAxioms 3 4 0 1
+  l3 <- labelNew (Just "Start aggr.:   ")
+  miscSetAlignment l3 1 1
   teFrom <- entryNew
-  set teFrom [entryEditable := True]
+  tableAttachDefaults table l3 0 1 1 2
+  tableAttachDefaults table teFrom 1 2 1 2
+  l4 <- labelNew (Just "End aggr.:   ")
+  miscSetAlignment l4 1 1
   teTo <- entryNew
-  set teTo [entryEditable := True]
+  tableAttachDefaults table l4 2 3 1 2
+  tableAttachDefaults table teTo 3 4 1 2
+
+  hb <- hBoxNew False 0
   teBtn <- buttonNewWithLabel "Go"
   openBtn <- buttonNewWithLabel "Open file..."
   exportBtn <- buttonNewWithLabel "Export..."
-  hb <- hBoxNew False 0
-  boxPackStart vbox hb PackNatural 0
-  packLabel hb "Name:"
-  boxPackStart hb teName PackNatural 0
-  packLabel hb "Axioms:"
-  boxPackStart hb teAxioms PackGrow 5
-  packLabel hb "Start aggr.:"
-  boxPackStart hb teFrom PackGrow 5
-  packLabel hb "End aggr.:"
-  boxPackStart hb teTo PackGrow 5
   boxPackStart hb teBtn PackNatural 3
   boxPackStart hb openBtn PackNatural 3
   boxPackStart hb exportBtn PackNatural 3
+
+  boxPackStart vbox table PackNatural 0
+  boxPackStart vbox hb PackNatural 0
   return (TEA teName teAxioms teFrom teTo teBtn openBtn exportBtn)
 
 packLabel box str = do

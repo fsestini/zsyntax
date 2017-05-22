@@ -16,7 +16,7 @@ import Data.List
 
 import GUI.Elements
 import GUI.Command
-import Command.Structures
+-- import Command.Structures
 import Debug.Trace
 
 type AppState = (GUIAxEnv, GUIThrmEnv)
@@ -35,8 +35,8 @@ gui = do
   initGUI
   w <- windowNew
   set w [ windowTitle := "Zsyntax"
-        , windowDefaultWidth := 600
-        , windowDefaultHeight := 400
+        , windowDefaultWidth := 500
+        , windowDefaultHeight := 500
         , containerBorderWidth := 10 ]
 
   vbox <- vBoxNew False 0
@@ -73,8 +73,8 @@ gui = do
   on w deleteEvent $ liftIO mainQuit >> return False
   mainGUI
 
-prettyAA :: AddedAxiom AxArea ctr -> String
-prettyAA (AAx from _ to) = T.pretty from ++ " ---> " ++ T.pretty to
+prettyAA :: AddedAxiom AxRepr -> String
+prettyAA (AAx (AR from _ to)) = T.pretty from ++ " ---> " ++ T.pretty to
 
 parseThrmNames :: String -> Either String [ThrmName]
 parseThrmNames =
@@ -109,15 +109,21 @@ wireAxiomsArea gui state axioms = do
 askAddAxiom :: IO (Maybe GUICommand)
 askAddAxiom = do
   res <- axiomsDialog "Add axiom..." Nothing
-  flip (maybe (return Nothing) ) res $ \adc -> do
-    return . Just $ AddAxiom (name adc) (ctrl adc) (from adc) (to adc)
+  flip (maybe (return Nothing)) res $ \adc -> do
+    return . Just $
+      AddAxiom
+        (name adc)
+        (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
 -- TODO: pass actual data, not Nothing
 askEditAxiom :: IO (Maybe GUICommand)
 askEditAxiom = do
   res <- axiomsDialog "Change axiom..." Nothing
   flip (maybe (return Nothing)) res $ \adc -> do
-    return . Just $ ChangeAxiom (name adc) (ctrl adc) (from adc) (to adc)
+    return . Just $
+      ChangeAxiom
+        (name adc)
+        (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
 appendLog :: TextBuffer -> String -> IO ()
 appendLog b str = do
@@ -125,7 +131,7 @@ appendLog b str = do
   textBufferInsert b i (str ++ "\n")
 
 execCommandInGUI :: GUI -> IORef AppState -> GUICommand -> IO ()
-execCommandInGUI gui state c = traceShow c $ do
+execCommandInGUI gui state c = do
   (ax,th) <- readIORef state
   (newAx, newTh) <- toIO gui $ execCommand' c ax th
   writeIORef state (newAx, newTh)
@@ -145,11 +151,11 @@ thrmAreaToCommand nmE axE fromE toE = do
   toTxt <- entryGetText toE
   return $ do
     axs <- parseThrmNames axTxt
-    from <- fmap FA . bimap show id . parseAggregate $ fromTxt
-    to <- fmap FA . bimap show id . parseAggregate $ toTxt
+    from <- bimap show id . parseAggregate $ fromTxt
+    to <- bimap show id . parseAggregate $ toTxt
     if null (trim nmTxt)
-      then return $ Query (QS (AL axs) from to)
-      else return $ AddTheorem (TN nmTxt) (QS (AL axs) from to)
+      then return $ Query (QS axs (Aggr from) (Aggr to))
+      else return $ AddTheorem (TN nmTxt) (QS axs (Aggr from) (Aggr to))
 
 trim :: String -> String
 trim = dropWhileEnd isSpace . dropWhile isSpace
