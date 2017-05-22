@@ -13,6 +13,7 @@ import TypeClasses (Pretty(..))
 import Rules
 import LFormula
 import SFormula
+import qualified Command.Structures as S (TransDerTerm(..))
 
 instance (Ord a, Ord l) =>
          DerTerm (SimpleDerTerm a) (SrchFormula eb cty a l) where
