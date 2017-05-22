@@ -9,7 +9,7 @@ import SFormula
 --import Command
 --import Parser
 import Control.Monad.IO.Class
-import RelFormula
+import LFormula
 --import Checking
 import Text.Parsec
 import Data.Bifunctor
@@ -20,6 +20,8 @@ import Data.Bifunctor
 import Control.Monad.Morph
 import Control.Monad.Free
 import qualified Data.Map as M
+
+import TypeClasses (Pretty(..))
 
 import Command.Structures (UIF(..), ThrmName(..), FEnv(..), AddedAxiom(..))
 import Command.Execution (execCommand)
@@ -34,9 +36,9 @@ toIO (UILoadFile path x) = readFile path >>= return . x
 hoistApp :: StateT (CLIAxEnv, CLIThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
 
-printAxiom :: (ThrmName, AddedAxiom AxArea CtrlArea) -> String
-printAxiom (TN name, (AAx from _ to)) =
-  name ++ " : " ++ (show from) ++ " -> " ++ (show to)
+printAxiom :: (ThrmName, AddedAxiom AxRepr) -> String
+printAxiom (TN name, (AAx (AR from _ to))) =
+  name ++ " : " ++ (pretty from) ++ " -> " ++ (pretty to)
 
 printAxioms :: App ()
 printAxioms = do
@@ -50,7 +52,7 @@ printTheorems = do
   (_, thrms) <- get
   let list = fmap (second fst) . feAsList $ thrms
   mapM_ (liftIO . putStrLn) .
-    map ((\(x, y) -> x ++ " : " ++ y) . bimap show show) $
+    map ((\(x, y) -> x ++ " : " ++ y) . bimap show pretty) $
     list
   liftIO . putStrLn $ (show . length $ list) ++ " theorems in total."
 

@@ -1,7 +1,10 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+-- {-# LANGUAGE TypeSynonymInstances #-}
 
 module CLI.Command where
 
@@ -10,13 +13,17 @@ import Text.Parsec.Prim (unexpected)
 import Text.Parsec hiding (State, token)
 import Text.Parsec.String
 
+import Control.Monad.State
 import LinearContext
 import qualified Data.List.NonEmpty as NE
 import Command.Structures
 import Checking.ReactLists.RList
 import Checking.ReactLists.Sets
 import qualified SFormula as S
-import qualified RelFormula as L
+import LFormula
+       (BioFormula(..), SrchFormula, LGoalNSequent, BFormula, decideN,
+        decideOF)
+import Rules hiding (AxRepr, AR)
 import Parser
 import Control.Monad (join)
 import Data.List (intersperse)
@@ -24,62 +31,107 @@ import Data.List.Split (splitOn)
 import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
 import Data.Foldable (toList)
-import RelFormula (BioFormula)
 import Data.Bifunctor (bimap)
 import Context
 import qualified TypeClasses as T
+import qualified SimpleDerivationTerm as SDT
 
-newtype AxList = AL [ThrmName] deriving (Show)
-newtype FrmlArea = FA
-  { unFA :: NE.NonEmpty (BioFormula BioAtoms)
-  } deriving (Show)
--- TODO: probably useless to have a separate AxArea type. use FrmlArea.
-newtype AxArea = AA { unAA :: NE.NonEmpty (BioFormula BioAtoms) } deriving (Show)
-newtype CtrlArea = CA (CtrlSet BioAtoms) deriving (Show)
+newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
 
-instance T.Pretty FrmlArea where
-  pretty = concat . intersperse "," . fmap T.pretty . NE.toList . unFA
+instance T.Pretty Aggregate where
+  pretty = prettys . unAggr
 
-instance T.Pretty AxArea where
-  pretty = concat . intersperse "," . fmap T.pretty . NE.toList . unAA
+data AxRepr = AR
+  { from :: Aggregate
+  , ctrl :: CtrlSet BioAtoms
+  , to :: Aggregate
+  }
 
-instance T.Pretty AxList where
-  pretty (AL list) = concat . intersperse "," . fmap T.pretty $ list
+type FrmlRepr = Aggregate
+
+prettys :: (T.Pretty a, Foldable f) => f a -> String
+prettys = concat . intersperse "," . fmap T.pretty . toList
 
 type BioAtoms = String
-type UIElemBase = ElemBase
-type UICtrlType = CtrlSet
-type ControlType = RList UIElemBase CtrlSet
+type CLIElemBase = ElemBase BioAtoms
+type CLICtrlSet = CtrlSet BioAtoms
+type CLIControlType = RList CLIElemBase CLICtrlSet
 -- The particular fully applied type of axioms that are used in the user
 -- interface.
-type UIAxiom = S.SAxiom ControlType BioAtoms
+type CLIAxiom = S.SAxiom CLIControlType BioAtoms
 -- The particular fully applied type of formulas that are used in the user
 -- interface.
-type UIFormula = S.SFormula UIElemBase ControlType String
+type CLIFormula = S.SFormula CLIElemBase CLIControlType String
 
-type CLIAxEnv = AxEnv AxArea CtrlArea ControlType BioAtoms
-type CLIThrmEnv = ThrmEnv AxList FrmlArea UIElemBase ControlType BioAtoms
+type CLIAxEnv = AxEnv AxRepr CLIAxiom
+type CLIThrmEnv = ThrmEnv Aggregate CLIAxiom
 
-instance ReprAx AxArea CtrlArea ControlType BioAtoms where
-  reprAx (AA from) (CA ctrl) (AA to) = do
+type CLIDerTerm = SDT.SimpleDerTerm BioAtoms
+
+newtype CLITransRepr = CTR (S.SFormula () () BioAtoms, S.SFormula () () BioAtoms)
+
+type CLISrchFormula = SrchFormula CLIElemBase CLIControlType BioAtoms Int
+
+instance T.Pretty CLITransRepr where
+  pretty (CTR (f1, f2)) = T.pretty f1 ++ " --> " ++ T.pretty f2
+
+type instance DerT CLIAxiom AxRepr FrmlRepr = CLIDerTerm
+
+instance Search CLIAxiom AxRepr FrmlRepr where
+  type SrchF CLIAxiom AxRepr FrmlRepr = CLISrchFormula
+  fromNS (NS _ lc cty concl) =
+    maybe NonAxiomatic Axiomatic $ do
+      from <- mapM decideN $ asFoldable toList lc
+      to <- decideOF concl
+      case from of
+        [] -> error "unexpected empty linear context"
+        (x:xs) -> return $ S.fromBasicNS (x NE.:| xs) cty to
+  queryToGoal axs thrms (QS axlist q1 q2) = do
+    axioms <- axsFromList axs thrms axlist
+    let lc = fmap S.sAtom . unAggr $ q1
+        concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
+        sq = S.SQ (fromFoldable axioms) (fromFoldable lc) concl
+        gns = fst $ runState (unPM . neutralize $ sq) 0
+    return gns
+
+instance TransDerTerm CLIDerTerm where
+  type TransRepr CLIDerTerm = CLITransRepr
+  transitions = fmap CTR . SDT.transitions
+
+--------------------------------------------------------------------------------
+-- Auxiliary PickMonad
+
+neutralize
+  :: (Num n, Ord n)
+  => S.Sequent CLIElemBase CLIControlType BioAtoms
+  -> PickM n (LGoalNSequent CLIElemBase CLIControlType BioAtoms n)
+neutralize = S.neutralize
+
+newtype PickM n a = PM { unPM :: State n a }
+deriving instance Applicative (PickM n)
+deriving instance Functor (PickM n)
+deriving instance Monad (PickM n)
+deriving instance MonadState n (PickM n)
+instance Num n => T.PickMonad (PickM n) n where
+  pick = do
+    i <- get
+    put (i + 1)
+    return i
+
+instance CommAx AxRepr CLIAxiom where
+  reprAx (AR from ctrl to) = do
     return $
       S.sAx
-        (foldr1 S.bsConj . fmap S.bsAtom $ from)
-        (foldr1 S.bsConj . fmap S.bsAtom $ to)
+        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ from)
+        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ to)
         (RL [(mempty, ctrl)])
-
-instance ReprAxList AxList where
-  reprAxs (AL axs) = return axs
-
-instance ReprFrml FrmlArea BioAtoms where
-  reprFrml (FA area) = return area
 
 --------------------------------------------------------------------------------
 -- Command parsing
 
-type CLICommand = Command CtrlArea AxArea FrmlArea AxList
+type CLICommand = Command AxRepr FrmlRepr
 
-instance CParse CtrlArea AxArea FrmlArea AxList where
+instance CParse AxRepr FrmlRepr where
   parseCommand = bimap show id . CLI.Command.parseCommand
 
 parseCommand :: String -> Either ParseError CLICommand
@@ -88,25 +140,12 @@ parseCommand = parse command ""
 thrmName :: Parser ThrmName
 thrmName = TN <$> many1 alphaNum
 
--- aggregate1 :: Parser String
--- aggregate1 = concat . intersperse "," <$> a1
-
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
   aggr <- sepBy1 (token bioExpr) comma
   case aggr of
     [] -> unexpected "invalid empty context in control set"
     (x:xs) -> return (x NE.:| xs)
-
--- aggregate :: Parser String
--- aggregate =
---   concat . intersperse "," <$> a
-
--- a1 :: Parser [String]
--- a1 = sepBy1 (try (token (many1 (noneOf [',', '(', ')'])))) (try comma)
-
--- a :: Parser [String]
--- a = sepBy (try (token (many1 (noneOf [',', '(', ')'])))) (try comma)
 
 neCtxt :: Parser (LinearCtxt (BioFormula BioAtoms))
 neCtxt = do
@@ -132,7 +171,7 @@ parseAxiom str = token (string str) >> token (string "axiom") >> do
   to <- parens (aggregate1')
   _ <- token (string "unless")
   ctrlset <- parens ctrlSet
-  return $ AddAxiom name (CA ctrlset) (AA from) (AA to)
+  return $ AddAxiom name (AR (Aggr from) ctrlset (Aggr to))
 
 axiomList :: Parser [ThrmName]
 axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
@@ -147,7 +186,7 @@ queryTheorem =
     to <- parens (aggregate1')
     _ <- token (string "with axioms")
     axioms <- parens axiomList
-    let q = QS (AL axioms) (FA from) (FA to)
+    let q = QS axioms (Aggr from) (Aggr to)
     case maybeName of
       Just name -> return $ AddTheorem name q
       Nothing -> return $ Query q
@@ -181,84 +220,39 @@ token p = spaces >> p
 --------------------------------------------------------------------------------
 -- Export
 
-instance CPrintAx AxArea CtrlArea where
+instance CPrint AxRepr FrmlRepr where
   printAx = exportAxiom
-
-instance CPrintThrm AxList FrmlArea where
   printThrm = exportTheorem
 
--- exportAxiom :: ThrmName -> AddedAxiom AxArea CtrlArea -> String
--- exportAxiom (TN name) (SA (ImplF from _ cty to _)) =
---   "add axiom " ++ name ++ " (" ++ aux aggr1 ++ ") (" ++ aux aggr2
---   ++ ") unless (" ++ exportCtrl cty ++ ")"
---   where
---     aggr1 = bfToAtoms from
---     aggr2 = bfToAtoms to
---     aux = concat . intersperse "," . fmap ppBioFormula
-
-
-exportAxiom :: ThrmName -> AddedAxiom AxArea CtrlArea -> String
-exportAxiom (TN name) (AAx (AA from) (CA cty) (AA to)) =
-  "add axiom " ++ name ++ " (" ++ aux from ++ ") (" ++ aux to
+exportAxiom :: ThrmName -> AddedAxiom AxRepr -> String
+exportAxiom (TN name) (AAx (AR from cty to)) =
+  "add axiom " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
 ppBioFormula :: BioFormula BioAtoms -> String
-ppBioFormula (L.BioAtom x) = T.pretty x
-ppBioFormula (L.BioInter x y) = ppBioFormula x ++ " <> " ++ ppBioFormula y
+ppBioFormula (BioAtom x) = T.pretty x
+ppBioFormula (BioInter x y) = ppBioFormula x ++ " <> " ++ ppBioFormula y
 
 exportCtrl :: CtrlSet BioAtoms -> String
 exportCtrl =
   concat . fmap (\s -> "(" ++ s ++ ")") . fmap exportCtrlCtxt . toCtxtList
 
 exportCtrlCtxt :: CtrlSetCtxt BioAtoms -> String
-exportCtrlCtxt (Regular ctxt) = "regular " ++ aux list
+exportCtrlCtxt (Regular ctxt) = "regular " ++ prettys list
   where
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
-exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ aux list
+exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ prettys list
   where
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
 
-aux :: Foldable f => f (BioFormula BioAtoms) -> String
-aux = concat . intersperse "," . fmap ppBioFormula . toList
-
-exportTheorem :: ThrmName -> QueriedSeq AxList FrmlArea -> String
-exportTheorem (TN name) (QS (AL axStr) (FA fromStr) (FA toStr)) =
-  "query " ++
-  name ++
-  " (" ++ aux fromStr ++ ") (" ++ aux toStr ++ ") with axioms (" ++
-  (concat . intersperse "," . fmap unTN $ axStr) ++ ")"
+exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
+exportTheorem (TN name) (QS axs from to) =
+  "query " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++
+  ") with axioms (" ++ prettys axs ++ ")"
 
 --------------------------------------------------------------------------------
-
-  -- reprAx (AA fromStr) ctrlArea (AA toStr) = do
-  --   ctrl <- parseCtrl ctrlArea
-  --   from <- parseBioAggregate1 fromStr
-  --   to <- parseBioAggregate1 toStr
-  --   return $
-  --     S.sAx
-  --       (foldr1 S.bsConj . fmap S.bsAtom $ from)
-  --       (foldr1 S.bsConj . fmap S.bsAtom $ to)
-  --       ctrl
-
-  -- reprAxs axs thrms (AL axioms) =
-  --   mapM (parseAxiomStr axs thrms) (splitTrim axioms)
-  -- reprFrml (FA string) = parseBioAggregate1 string
-
--- parseCtrl :: CtrlArea -> Either String (ControlType BioAtoms)
--- parseCtrl = undefined
-
--- parseAxiomStr :: CLIAxEnv -> CLIThrmEnv -> ThrmName -> Either String UIAxiom
--- parseAxiomStr env thrms nm@(TN str) =
---   case feLookup nm env <|>
---        (join . fmap (join . fmap (either Just (const Nothing)) . snd) $
---         feLookup nm thrms) of
---     Nothing -> Left $ "axiom '" ++ str ++ "' not in scope"
---     Just ax -> Right ax
-
--- splitTrim :: String -> [String]
--- splitTrim str = filter (not . null) $ map trim $ splitOn "," (trim str)
 
 trim :: String -> String
 trim = dropWhileEnd isSpace . dropWhile isSpace
