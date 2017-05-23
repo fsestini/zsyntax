@@ -14,9 +14,6 @@ module Checking.ReactLists.Sets
   , CtrlSetCtxt(..)
   ) where
 
--- import qualified RelFormula as F
---        (BioFormula, ElemBase(..), ControlSet(..), BaseCtrl(..),
---         LFormula(..), ImplFormula(..))
 import SFormula (BioFormula(..))
 import LFormula (SrchFormula(..))
 import Rules
