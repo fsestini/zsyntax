@@ -85,6 +85,7 @@ axiomsDialog title content = do
   axToE <- titledEntry upbox "Result aggregate: "
   entrySetText axToE (maybe "" (T.pretty . to . repr) content)
   list <- ctrlListView upbox
+  forM_ (maybe [] (toCtxtList . ctrl . repr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
   onClicked btnAddCtrl $ do
