@@ -23,7 +23,7 @@ import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
 
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
-data AddedAxiom axr = AAx axr
+data AddedAxiom axr = AAx { unAAx :: axr }
 
 instance Pretty ThrmName where
   pretty = unTN
