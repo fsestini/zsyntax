@@ -13,6 +13,9 @@ import qualified Data.List.NonEmpty as NE
 
 import Data.Char
 import Data.List
+import qualified LinearContext as LC
+
+import Checking.ReactLists.Sets
 
 import GUI.Elements
 import GUI.Command
@@ -55,14 +58,19 @@ gui = do
 
   -- Axioms list
   axioms <- axiomsArea vbox
-    (("Name", T.pretty . fst) NE.:| [("Formula", prettyAA . fst . snd)])
+    (("Name", T.pretty . fst) NE.:|
+      [("Formula", prettyAA . fst . snd)
+      ,("Control set", pprintCtrlSet . ctrl . unAAx . fst . snd)])
 
   -- Separator
   addSep vbox
 
   -- Theorems list
   thList <- theoremArea vbox
-    (("Name", T.pretty . fst) NE.:| [("Theorem", T.pretty . fst . snd)])
+    (("Name", T.pretty . fst) NE.:|
+    [("Theorem", T.pretty . fst . snd)
+    ,("Axioms", T.prettys . qsAxioms . fst . snd)
+    ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui = GUI thList (storeAxioms axioms) b
 
@@ -72,9 +80,6 @@ gui = do
   widgetShowAll w
   on w deleteEvent $ liftIO mainQuit >> return False
   mainGUI
-
-prettyAA :: AddedAxiom AxRepr -> String
-prettyAA (AAx (AR from _ to)) = T.pretty from ++ " ---> " ++ T.pretty to
 
 parseThrmNames :: String -> Either String [ThrmName]
 parseThrmNames =
@@ -207,3 +212,18 @@ saveFileCommand = do
          _ -> return Nothing
   widgetDestroy fileD
   return c
+
+--------------------------------------------------------------------------------
+-- Pretty-printers
+
+pprintCtrlSetCtxt :: (T.Pretty a, Ord a) => CtrlSetCtxt a -> String
+pprintCtrlSetCtxt (Regular ctxt) =
+  "regular: " ++ LC.asFoldable T.prettys ctxt
+pprintCtrlSetCtxt (SupsetClosed ctxt) =
+  "supset-closed: " ++ LC.asFoldable T.prettys ctxt
+
+pprintCtrlSet :: (T.Pretty a, Ord a) => CtrlSet a -> String
+pprintCtrlSet = concat . intersperse "; " . fmap pprintCtrlSetCtxt . toCtxtList
+
+prettyAA :: AddedAxiom AxRepr -> String
+prettyAA (AAx (AR from _ to)) = T.pretty from ++ " → " ++ T.pretty to
