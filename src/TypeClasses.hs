@@ -17,6 +17,7 @@ module TypeClasses
   , Coercible(..)
   , Pretty(..)
   , filterOut
+  , prettys
   ) where
 
 import qualified Data.Set as S
@@ -25,9 +26,13 @@ import qualified Data.Either as ET (partitionEithers)
 import Prelude hiding (map)
 import Data.Foldable
 import Data.Constraint
+import Data.List (intersperse)
 
 class Pretty a where
   pretty :: a -> String
+
+prettys :: (Pretty a, Foldable f) => f a -> String
+prettys = concat . intersperse "," . fmap pretty . toList
 
 instance Pretty String where
   pretty s = s

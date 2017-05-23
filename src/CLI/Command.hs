@@ -39,7 +39,7 @@ import qualified SimpleDerivationTerm as SDT
 newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
 
 instance T.Pretty Aggregate where
-  pretty = prettys . unAggr
+  pretty = T.prettys . unAggr
 
 data AxRepr = AR
   { from :: Aggregate
@@ -48,9 +48,6 @@ data AxRepr = AR
   }
 
 type FrmlRepr = Aggregate
-
-prettys :: (T.Pretty a, Foldable f) => f a -> String
-prettys = concat . intersperse "," . fmap T.pretty . toList
 
 type BioAtoms = String
 type CLIElemBase = ElemBase BioAtoms
@@ -238,11 +235,11 @@ exportCtrl =
   concat . fmap (\s -> "(" ++ s ++ ")") . fmap exportCtrlCtxt . toCtxtList
 
 exportCtrlCtxt :: CtrlSetCtxt BioAtoms -> String
-exportCtrlCtxt (Regular ctxt) = "regular " ++ prettys list
+exportCtrlCtxt (Regular ctxt) = "regular " ++ T.prettys list
   where
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
-exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ prettys list
+exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
   where
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
@@ -250,7 +247,7 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ prettys list
 exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
 exportTheorem (TN name) (QS axs from to) =
   "query " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++
-  ") with axioms (" ++ prettys axs ++ ")"
+  ") with axioms (" ++ T.prettys axs ++ ")"
 
 --------------------------------------------------------------------------------
 

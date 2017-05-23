@@ -25,7 +25,6 @@ module GUI.Command
   , comma
   , neCtxt
   , axiomList
-  , prettys
   ) where
 
 import Command.Structures
