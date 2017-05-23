@@ -4,7 +4,8 @@ import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef (IORef, newIORef, writeIORef, readIORef)
-import Control.Monad (forM_)
+import Control.Monad
+import Control.Arrow ((>>>))
 import Control.Monad.Free (foldFree)
 import Text.Parsec
 import Data.Bifunctor
@@ -13,6 +14,7 @@ import qualified Data.List.NonEmpty as NE
 
 import Data.Char
 import Data.List
+import Safe
 import qualified LinearContext as LC
 
 import Checking.ReactLists.Sets
@@ -91,9 +93,9 @@ wireThrmEntry gui state tea = do
     thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) >>=
     either (printError gui) (execCommandInGUI gui state)
   onClicked (btnLoad tea) $
-    loadFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
+    maybeMM' loadFileCommand (execCommandInGUI gui state)
   onClicked (btnExport tea) $
-    saveFileCommand >>= maybe (return ()) (execCommandInGUI gui state)
+    maybeMM' saveFileCommand (execCommandInGUI gui state)
   return ()
 
 printError :: GUI -> String -> IO ()
@@ -102,33 +104,38 @@ printError gui str = appendLog (logBuffer gui) ("error: " ++ str)
 wireAxiomsArea :: GUI -> IORef AppState -> AxiomsArea AxItem -> IO ()
 wireAxiomsArea gui state axioms = do
   onClicked (btnAddAxiom axioms) $
-    askAddAxiom >>= maybe (return ()) (execCommandInGUI gui state)
+    maybeMM' askAddAxiom (execCommandInGUI gui state)
   onClicked (btnChangeAxiom axioms) $
-    askEditAxiom >>= maybe (return ()) (execCommandInGUI gui state)
-  onClicked (btnRemoveAxiom axioms) $ do
-    sel <- treeSelectionGetSelectedRows (treeSelAxioms axioms)
-    (name, _) <- listStoreGetValue (storeAxioms axioms) (head (head sel))
-    execCommandInGUI gui state (RemoveAxiom name)
+    maybeMM'
+      (selectedAxiom axioms)
+      (askEditAxiom . toADC >=> maybeM (execCommandInGUI gui state))
+  onClicked (btnRemoveAxiom axioms) $
+    maybeMM'
+      (selectedAxiom axioms)
+      (execCommandInGUI gui state . RemoveAxiom . fst)
   return ()
+  where
+    toADC :: AxItem -> AxDiaContent
+    toADC (name, (AAx ar, _)) = ADC name ar
+
+selectedAxiom :: AxiomsArea AxItem -> IO (Maybe AxItem)
+selectedAxiom axioms = do
+  sel <- treeSelectionGetSelectedRows (treeSelAxioms axioms)
+  maybe' (join (fmap headMay (headMay sel))) (return Nothing) $ \i -> do
+    item <- listStoreGetValue (storeAxioms axioms) i
+    return (Just item)
 
 askAddAxiom :: IO (Maybe GUICommand)
-askAddAxiom = do
-  res <- axiomsDialog "Add axiom..." Nothing
-  flip (maybe (return Nothing)) res $ \adc -> do
-    return . Just $
-      AddAxiom
-        (name adc)
-        (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+askAddAxiom =
+  maybeP (axiomsDialog "Add axiom..." Nothing) $ \adc ->
+    Just $ AddAxiom (name adc)
+      (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
--- TODO: pass actual data, not Nothing
-askEditAxiom :: IO (Maybe GUICommand)
-askEditAxiom = do
-  res <- axiomsDialog "Change axiom..." Nothing
-  flip (maybe (return Nothing)) res $ \adc -> do
-    return . Just $
-      ChangeAxiom
-        (name adc)
-        (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+askEditAxiom :: AxDiaContent -> IO (Maybe GUICommand)
+askEditAxiom content =
+  maybeP (axiomsDialog "Change axiom..." (Just content)) $ \adc ->
+    Just $ ChangeAxiom (name adc)
+      (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
 appendLog :: TextBuffer -> String -> IO ()
 appendLog b str = do
@@ -161,21 +168,9 @@ thrmAreaToCommand nmE axE fromE toE = do
     if null (trim nmTxt)
       then return $ Query (QS axs (Aggr from) (Aggr to))
       else return $ AddTheorem (TN nmTxt) (QS axs (Aggr from) (Aggr to))
-
-trim :: String -> String
-trim = dropWhileEnd isSpace . dropWhile isSpace
-
-
--- thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry
---                   -> IO (Either String GUICommand)
--- thrmAreaToCommand nmE axE fromE toE = do
---   nmTxt <- entryGetText nmE :: IO String
---   axTxt <- entryGetText axE :: IO String
---   fromTxt <- entryGetText fromE :: IO String
---   toTxt <- entryGetText toE :: IO String
---   if null (trim nmTxt)
---      then return $ Query (QS (AS axTxt) fromTxt toTxt)
---      else return $ AddTheorem (TN nmTxt) (QS (AS axTxt) fromTxt toTxt)
+  where
+    trim :: String -> String
+    trim = dropWhileEnd isSpace . dropWhile isSpace
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
@@ -192,9 +187,8 @@ loadFileCommand = do
   widgetShow fileD
   response <- dialogRun fileD
   c <- case response of
-         ResponseAccept -> do
-           fileName <- fileChooserGetFilename fileD
-           return (fmap LoadFile fileName)
+         ResponseAccept ->
+           fileChooserGetFilename fileD >>= (fmap LoadFile >>> return)
          _ -> return Nothing
   widgetDestroy fileD
   return c
@@ -207,8 +201,7 @@ saveFileCommand = do
   response <- dialogRun fileD
   c <- case response of
          ResponseAccept -> do
-           fileName <- fileChooserGetFilename fileD
-           return (fmap SaveToFile fileName)
+           fileChooserGetFilename fileD >>= (fmap SaveToFile >>> return)
          _ -> return Nothing
   widgetDestroy fileD
   return c
@@ -227,3 +220,23 @@ pprintCtrlSet = concat . intersperse "; " . fmap pprintCtrlSetCtxt . toCtxtList
 
 prettyAA :: AddedAxiom AxRepr -> String
 prettyAA (AAx (AR from _ to)) = T.pretty from ++ " → " ++ T.pretty to
+
+--------------------------------------------------------------------------------
+
+maybe' :: Maybe a -> b -> (a -> b) -> b
+maybe' x y z = maybe y z x
+
+maybeM :: Monad m => (a -> m ()) -> Maybe a -> m ()
+maybeM = maybe (return ())
+
+maybeM' :: Monad m => Maybe a -> (a -> m ()) -> m ()
+maybeM' m f = maybe' m (return ()) f
+
+maybeMM' :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
+maybeMM' mm f = mm >>= maybeM f
+
+maybeMM'' :: Monad m => m (Maybe a) -> m b -> (a -> m b) -> m b
+maybeMM'' m z s = m >>= maybe z s
+
+maybeP :: (Monad m, MonadPlus p) => m (Maybe a) -> (a -> p b) -> m (p b)
+maybeP m s = maybeMM'' m (return mzero) (return . s)
