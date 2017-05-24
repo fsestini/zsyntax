@@ -19,7 +19,6 @@ import LFormula (SrchFormula(..))
 import Rules
 import LinearContext
 import qualified Data.Set as S
-import Data.Monoid ((<>))
 import Data.Foldable (toList)
 
 {-| A control set is a set of linear contexts made up of atomic formulas, that is,
@@ -31,15 +30,15 @@ import Data.Foldable (toList)
     contexts in a control set. Actually, superset-closed contexts are the only
     way to specify infinite control sets. -}
 
-data CtrlSetCtxt a = Regular (LinearCtxt (BioFormula a))
-                   | SupsetClosed (LinearCtxt (BioFormula a))
+data CtrlSetCtxt a = Regular (NonEmptyLinearCtxt (BioFormula a))
+                   | SupsetClosed (NonEmptyLinearCtxt (BioFormula a))
                    deriving (Eq, Ord, Show)
 newtype CtrlSet a = CS
   { unCS :: S.Set (CtrlSetCtxt a)
   } deriving (Eq, Ord, Monoid, Show)
 newtype ElemBase a = EB
   { unEB :: LinearCtxt (BioFormula a)
-  } deriving (Eq, Ord, Monoid, Show)
+  } deriving (Eq, Ord, Monoid, Semigroup, Show)
 
 fromFoldableCtxts :: (Ord a, Foldable f) => f (CtrlSetCtxt a) -> CtrlSet a
 fromFoldableCtxts = CS . S.fromList . toList
@@ -51,11 +50,11 @@ respectsCtrlSet :: (Ord a, Eq a) => ElemBase a -> CtrlSet a -> Bool
 respectsCtrlSet f = and . S.map (respectsCtrlCtxt f) . unCS
 
 respectsCtrlCtxt :: (Eq a, Ord a) => ElemBase a -> CtrlSetCtxt a -> Bool
-respectsCtrlCtxt (EB base) (Regular ctxt) = not (base == ctxt)
-respectsCtrlCtxt (EB base) (SupsetClosed ctxt) = not (ctxt `subCtxtOf` base)
+respectsCtrlCtxt (EB base) (Regular ctxt) = not (base == (toLC ctxt))
+respectsCtrlCtxt (EB base) (SupsetClosed ctxt) = not ((toLC ctxt) `subCtxtOf` base)
 
 instance (Ord a, Ord l) => HasElemBase (SrchFormula (ElemBase a) cty a l) where
-  formulaBase (switchF' -> T1 (AR x _)) = EB (singletonCtxt x)
+  formulaBase (switchF' -> T1 (AR x _)) = EB (singleton x)
   formulaBase (switchF' -> T2 (CR f1 f2 _)) = formulaBase f1 <> formulaBase f2
   formulaBase (switchF' -> T3 (IR _ eb _ _ _)) = eb
 
