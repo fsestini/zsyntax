@@ -78,16 +78,14 @@ instance Search CLIAxiom AxRepr FrmlRepr where
   type SrchF CLIAxiom AxRepr FrmlRepr = CLISrchFormula
   fromNS (NS _ lc cty concl) =
     maybe NonAxiomatic Axiomatic $ do
-      from <- mapM decideN $ asFoldable toList lc
+      lc <- mapM decideN $ toNEList lc
       to <- decideOF concl
-      case from of
-        [] -> error "unexpected empty linear context"
-        (x:xs) -> return $ S.fromBasicNS (x NE.:| xs) cty to
+      return $ S.fromBasicNS lc cty to
   queryToGoal axs thrms (QS axlist q1 q2) = do
     axioms <- axsFromList axs thrms axlist
     let lc = fmap S.sAtom . unAggr $ q1
         concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
-        sq = S.SQ (fromFoldable axioms) (fromFoldable lc) concl
+        sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
 
@@ -144,10 +142,10 @@ aggregate1' = do
     [] -> unexpected "invalid empty context in control set"
     (x:xs) -> return (x NE.:| xs)
 
-neCtxt :: Parser (LinearCtxt (BioFormula BioAtoms))
+neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
 neCtxt = do
   aggr <- aggregate1'
-  let ctxt = fromFoldable aggr :: LinearCtxt (BioFormula BioAtoms)
+  let ctxt = fromNEList aggr
   return ctxt
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
