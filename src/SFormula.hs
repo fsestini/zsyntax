@@ -158,7 +158,7 @@ fromBasicNS lc cs concl = case concl of
 
 data Sequent eb cty a =
   SQ (UnrestrCtxt (SAxiom cty a))
-     (LinearCtxt (SFormula eb cty a))
+     (NonEmptyLinearCtxt (SFormula eb cty a))
      (SFormula eb cty a)
 --  deriving Show
 
@@ -172,7 +172,7 @@ neutralize (SQ unrestr linear (SF concl)) =
     unrestrLabelled =
       fmap fromFoldable . mapM pickLabelAx . asFoldable toList $ unrestr
     linearNeutral =
-      fmap (fromFoldable . join) . mapM neutralizeFormula . asFoldable toList $
+      fmap (fromNEList . join) . mapM neutralizeFormula . toNEList $
       linear
     nGoal = opaque <$> pickLabel concl
 
@@ -187,15 +187,29 @@ pickLabelAx = fmap SrchAx . traverse (const pick) . unSA
 labelSF :: (PickMonad m l) => SFormula eb cty a -> m (SrchOpaque eb cty a l)
 labelSF (SF f) = fmap (opaque . Srch) . traverse (const pick) $ f
 
+data Tri a b c = T1 a | T2 b | T3 c
+
+partitionNEEithers
+  :: NE.NonEmpty (Either a b)
+  -> Tri (NE.NonEmpty a) (NE.NonEmpty b) (NE.NonEmpty a, NE.NonEmpty b)
+partitionNEEithers ((Left a) NE.:| xs) =
+  case T.partitionEithers xs of
+    (as,[]) -> T1 (a NE.:| as)
+    (as,(b:bs)) -> T3 (a NE.:| as, b NE.:| bs)
+partitionNEEithers ((Right b) NE.:| xs) =
+  case T.partitionEithers xs of
+    ([], bs) -> T2 (b NE.:| bs)
+    ((a:as),bs) -> T3 (a NE.:| as, b NE.:| bs)
+
 neutralizeOs
   :: (Ord a, Ord l)
-  => [SrchOpaque eb cty a l] -> [SrchNeutral eb cty a l]
-neutralizeOs [] = []
-neutralizeOs list =
-  uncurry (++) . bimap id (neutralizeOs . join)
-  . T.partitionEithers . fmap maybeNeutral $ list
+  => NE.NonEmpty (SrchOpaque eb cty a l) -> NE.NonEmpty (SrchNeutral eb cty a l)
+neutralizeOs opaques = case partitionNEEithers (fmap maybeNeutral opaques) of
+  T1 neutrals -> neutrals
+  T2 opaques -> neutralizeOs (join opaques)
+  T3 (neutrals,opaques) -> neutrals <> neutralizeOs (join opaques)
 
 neutralizeFormula
   :: (PickMonad m l, Ord a, Ord l)
-  => SFormula eb cty a -> m [SrchNeutral eb cty a l]
+  => SFormula eb cty a -> m (NE.NonEmpty (SrchNeutral eb cty a l))
 neutralizeFormula = labelSF >>> fmap (return >>> neutralizeOs)
