@@ -25,7 +25,7 @@ module Rules.Relation
   , copyRule
   ) where
 
-import Data.Monoid
+import Data.Semigroup
 import Data.Foldable
 import Prelude hiding (init, fail)
 import Control.Applicative
@@ -34,7 +34,7 @@ import Control.Monad hiding (fail)
 import Rel
 -- import DerivationTerm
 -- import ForwardSequent
-import LinearContext
+import qualified LinearContext as LC
 -- import Prover (SearchPair(..))
 
 import Data.Constraint
@@ -87,8 +87,8 @@ instance (SearchPair seqty goalty, ForwardSequent (DT term seqty)) =>
 matchLinearCtxt
   :: forall m frml . (MonadFail m, Formula frml)
   => SchemaLCtxt frml -> LCtxt frml -> m (LCtxt frml)
-matchLinearCtxt (SLC slc) lc =
-  asFoldable (foldrM removeM lc) slc
+matchLinearCtxt (SLC slc) lc = maybe (fail "match failed") return $
+  join . fmap LC.fromLC $ LC.match slc lc
 
 match
   :: (MonadFail m, Formula frml)
