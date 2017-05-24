@@ -2,25 +2,35 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Context where
+module Context
+  ( module Data.Semigroup
+  , Context(..)
+  , fromFoldable
+  ) where
 
 import Control.Monad.Fail
+import Data.Constraint
+import Data.Semigroup
+import TypeClasses (CanMap)
 
 --------------------------------------------------------------------------------
 -- Context class
 
-class Monoid ctxt => Context ctxt where
+-- | Typeclass of generic contexts to be used in sequents and during
+-- proof-search.
+class Semigroup ctxt => Context ctxt where
   type Elems ctxt :: *
+  -- | Add an element to the context.
   add :: Elems ctxt -> ctxt -> ctxt
-  removeM :: MonadFail m => Elems ctxt -> ctxt -> m ctxt
-  asFoldable :: (forall f . Foldable f => f (Elems ctxt) -> b) -> ctxt -> b
-  remove :: Elems ctxt -> ctxt -> ctxt
-  remove x c = case removeM x c of
-                 Just c' -> c'
-                 Nothing -> error "element not in context"
+  singleton :: Elems ctxt -> ctxt
+  subCtxtOf :: ctxt -> ctxt -> Bool
+  asFoldable
+    :: (forall f. Foldable f =>
+                    f (Elems ctxt) -> b)
+    -> ctxt
+    -> b
 
-fromFoldable :: (Foldable f, Context ctxt) => f (Elems ctxt) -> ctxt
-fromFoldable = foldr add mempty
-
-singletonCtxt :: (Context ctxt) => Elems ctxt -> ctxt
-singletonCtxt x = add x mempty
+fromFoldable
+  :: (Monoid ctxt, Context ctxt, Foldable f)
+  => f (Elems ctxt) -> ctxt
+fromFoldable f = foldr add mempty f
