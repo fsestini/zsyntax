@@ -162,11 +162,21 @@ instance (Formula frml, Ord axs, Eq cty) =>
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
 -- elements of some type of axiomatic formulas.
 type UCtxt axs = UnrestrCtxt axs
--- | Type of linear contexts. Linear contexts are made out of neutral formulas.
-type LCtxt frml = LinearCtxt (Neutral frml)
+-- | Type of linear contexts. Linear contexts are non-empty and made out of
+-- neutral formulas.
+type LCtxt frml = NonEmptyLinearCtxt (Neutral frml)
 
 -- | Linear contexts that appear in sequent schemas.
-newtype SchemaLCtxt frml = SLC (LCtxt frml) deriving (Monoid)
+newtype SchemaLCtxt frml =
+  SLC (LinearCtxt (Neutral frml))
+  deriving (Semigroup, Monoid)
+
+instance Formula frml => Context (SchemaLCtxt frml) where
+  type Elems (SchemaLCtxt frml) = Neutral frml
+  add x (SLC lc) = SLC (add x lc)
+  singleton x = SLC (singleton x)
+  subCtxtOf (SLC lc1) (SLC lc2) = subCtxtOf lc1 lc2
+  asFoldable f (SLC lc) = f lc
 
 {-| Type indicating the possible shapes of an active relation.
     An active relation has the form
