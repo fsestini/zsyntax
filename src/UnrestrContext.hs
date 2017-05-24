@@ -10,17 +10,17 @@ module UnrestrContext
 
 import qualified Data.Set as S
 import Context
+import Data.Semigroup
 import Data.List (intersperse)
 import qualified TypeClasses as T
 
-newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid)
+newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid, Semigroup)
 
 instance Ord a => Context (UnrestrCtxt a) where
   type Elems (UnrestrCtxt a) = a
   add x (UC set) = UC (S.insert x set)
-  removeM x (UC set) = if S.member x set
-                          then return . UC $ S.delete x set
-                          else fail "element not in context"
+  singleton x = UC (S.singleton x)
+  subCtxtOf (UC s1) (UC s2) = S.isSubsetOf s1 s2
   asFoldable f (UC set) = f set
 
 instance Show a => Show (UnrestrCtxt a) where
