@@ -16,6 +16,7 @@
 
 module Rules.Interface where
 
+import qualified Data.List.NonEmpty as NE
 import Data.Constraint
 import Prover
 import Rel
@@ -131,11 +132,11 @@ data Neutral (frml :: FKind -> *) = forall k . (NeutralKind k) => N (frml k)
 opaque :: fr k -> Opaque fr
 opaque = O
 
-maybeNeutral :: Formula fr => Opaque fr -> Either (Neutral fr) [Opaque fr]
+maybeNeutral :: Formula fr => Opaque fr -> Either (Neutral fr) (NE.NonEmpty (Opaque fr))
 maybeNeutral (O f) =
   case switchF f of
     T1 (Dict, _) -> Left (N f)
-    T2 (Dict, CR f1 f2 _) -> Right [O f1, O f2]
+    T2 (Dict, CR f1 f2 _) -> Right (O f1 NE.:| [O f2])
     T3 (Dict, _) -> Left (N f)
 
 instance Formula (frml :: FKind -> *) => Eq (Opaque frml) where
