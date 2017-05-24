@@ -23,7 +23,6 @@ import ForwardSequent
 import Data.Constraint hiding ((***))
 import Prover
 import Data.Foldable
-import Data.Monoid
 import TypeClasses (filterOut, partitionEithers)
 -- import LabelledSequent
 -- import RelFormula
