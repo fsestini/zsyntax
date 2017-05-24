@@ -110,7 +110,7 @@ positiveFocalDispatch formula =
         AR a _ ->
           return $
           DT (init @_ @frml a)
-             (MREmptyGoal mempty (singletonCtxt (N formula)))
+             (MREmptyGoal mempty (singleton (N formula)))
     ImplCase Dict -> liftFun $ \inputSeq -> match schema inputSeq
       where schema = SSFullGoal mempty mempty (O formula)
     ConjCase Dict ->
@@ -123,7 +123,7 @@ positiveFocalDispatch formula =
 
 leftActive
   :: (Formula frml, DerTerm term frml)
-  => LCtxt frml
+  => SchemaLCtxt frml
   -> [Opaque frml]
   -> ZetaXi act frml
   -> Relation term (Ax frml) frml (Cty frml) (DTMatchRes term act frml)
@@ -141,15 +141,15 @@ leftActive delta omega zetaxi =
 
 matchRel
   :: Formula frml
-  => LCtxt frml
+  => SchemaLCtxt frml
   -> ZetaXi act frml
   -> Relation term (Ax frml) frml (Cty frml) (DTMatchRes term act frml)
 matchRel delta zetaxi = liftFun $ \inputSeq -> match schema inputSeq
   where
     schema =
       case zetaxi of
-        EmptyZetaXi -> SSEmptyGoal (SLC delta)
-        FullZetaXi cty g -> SSFullGoal (SLC delta) cty g
+        EmptyZetaXi -> SSEmptyGoal delta
+        FullZetaXi cty g -> SSFullGoal delta cty g
 
 focus
   :: ( IsFocusable k
@@ -176,7 +176,7 @@ implLeft fr = case reprImpl fr of
       DT (implL d d' fr)
          (NS (gamma1 <> gamma2)
                (add (N fr) (delta1 <> delta2))
-               (cty <> cty')
+               (cty `mappend` cty')
                concl)
 
 copyRule
@@ -196,7 +196,7 @@ copyRule ax =
              (NS
                 (add ax (gamma1 <> gamma2))
                 (delta1 <> delta2)
-                (cty <> cty')
+                (cty `mappend` cty')
                 concl)
 
 implRight
