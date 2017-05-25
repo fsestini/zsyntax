@@ -87,8 +87,8 @@ instance (SearchPair seqty goalty, ForwardSequent (DT term seqty)) =>
 matchLinearCtxt
   :: forall m frml . (MonadFail m, Formula frml)
   => SchemaLCtxt frml -> LCtxt frml -> m (LCtxt frml)
-matchLinearCtxt (SLC slc) lc = maybe (fail "match failed") return $
-  join . fmap LC.fromLC $ LC.match slc lc
+matchLinearCtxt (SLC slc) lc =
+  maybe (fail "match failed") return (LC.match slc lc)
 
 match
   :: (MonadFail m, Formula frml)

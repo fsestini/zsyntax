@@ -69,6 +69,32 @@ instance T.CanMap LinearCtxt where
   type Constr LinearCtxt x = Ord x
   map f (LC m) = LC (M.mapKeys f m)
 
+----------------------------------------
+
+matchMap
+  :: Ord elem
+  => M.Map elem PosInt -> M.Map elem PosInt -> Maybe (M.Map elem PosInt)
+matchMap m m' = foldM (flip (uncurry matchElem)) m' (M.toList m)
+
+matchElem
+  :: Ord elem
+  => elem -> PosInt -> M.Map elem PosInt -> Maybe (M.Map elem PosInt)
+matchElem x n m = do
+  M.lookup x m >>= guard . (n <=)
+  return (M.update (flip piMinus n) x m)
+
+{-| Match a context against another, returning the result if matching
+    is successful. In particular
+    * if c1 <= c2, then match c1 c2 = return (c2 \ c1)
+    * otherwise, match c1 c2 = fail
+-}
+match
+  :: Ord elem
+  => LinearCtxt elem
+  -> LinearCtxt elem
+  -> Maybe (LinearCtxt elem)
+match (LC m) (LC m') = fmap LC (matchMap m m')
+
 --------------------------------------------------------------------------------
 -- Non-empty linear contexts
 
@@ -127,29 +153,3 @@ merge
   -> NonEmptyLinearCtxt elem
   -> NonEmptyLinearCtxt elem
 merge (NELC m) nelc = foldr (uncurry mergeElem) nelc (M.toList . NEM.flatten $ m)
-
-----------------------------------------
-
-matchMap
-  :: Ord elem
-  => M.Map elem PosInt -> M.Map elem PosInt -> Maybe (M.Map elem PosInt)
-matchMap m m' = foldM (flip (uncurry matchElem)) m' (M.toList m)
-
-matchElem
-  :: Ord elem
-  => elem -> PosInt -> M.Map elem PosInt -> Maybe (M.Map elem PosInt)
-matchElem x n m = do
-  M.lookup x m >>= guard . (n <=)
-  return (M.update (flip piMinus n) x m)
-
-{-| Match a context against another, returning the result if matching
-    is successful. In particular
-    * if c1 <= c2, then match c1 c2 = return (c2 \ c1)
-    * otherwise, match c1 c2 = fail
--}
-match
-  :: Ord elem
-  => LinearCtxt elem
-  -> NonEmptyLinearCtxt elem
-  -> Maybe (LinearCtxt elem)
-match (LC m) (NELC m') = fmap LC (matchMap m (NEM.flatten m'))
