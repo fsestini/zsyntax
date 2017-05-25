@@ -110,7 +110,7 @@ positiveFocalDispatch formula =
         AR a _ ->
           return $
           DT (init @_ @frml a)
-             (MREmptyGoal mempty (singletonCtxt (N formula)))
+             (MREmptyGoal mempty (singleton (N formula)))
     ImplCase Dict -> liftFun $ \inputSeq -> match schema inputSeq
       where schema = SSFullGoal mempty mempty (O formula)
     ConjCase Dict ->
