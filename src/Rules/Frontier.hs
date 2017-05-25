@@ -32,7 +32,7 @@ import Rel (unRel)
 import Control.Arrow ((***), (>>>))
 -- import DerivationTerm
 -- import SFormula (fromLFormula)
-import Context
+import LinearContext
 
 import Rules.Relation
 import Rules.Interface
@@ -52,15 +52,18 @@ data DecFormula :: * -> (FKind -> *) -> * where
 deriving instance (Eq ax, Formula frml) => Eq (DecFormula ax frml)
 deriving instance (Ord ax, Formula frml) => Ord (DecFormula ax frml)
 
+-- | Linear contexts in goal neutral sequents.
+type GLCtxt fr = NonEmptyLinearCtxt (Neutral fr)
+
 data GoalNSequent ax fr cty =
-  GNS (UCtxt ax) (LCtxt fr) (Opaque fr)
+  GNS (UCtxt ax) (GLCtxt fr) (Opaque fr)
   deriving (Eq, Ord)
 
 instance (Formula frml, Ord axs, Eq cty) =>
          SearchPair (NSequent axs frml cty) (GoalNSequent axs frml cty) where
   isSubsequent _ _ = True
   subsumesGoal ns@(NS _ _ cty _) (GNS un2 lin2 concl2) =
-    ns `subsumes` NS un2 lin2 cty concl2
+    ns `subsumes` NS un2 (toLC lin2) cty concl2
 
 type GNS fr = GoalNSequent (Ax fr) fr (Cty fr)
 type DecF fr = DecFormula (Ax fr) fr
