@@ -50,23 +50,28 @@ class MonadPlus m => SearchMonad m where
   failSaturated :: m a
   failThresholdBreak :: m a
 
-type SearchConstraint m mf seqty =
+type SearchConstraint m mf seqty proof =
   (Monad m, SearchMonad mf, HasProverState seqty m
-   , HasProverEnvironment seqty m, Ord seqty, Eq seqty)
+   , HasProverEnvironment seqty proof m, Ord seqty, Eq seqty)
 
 doSearch
-  :: SearchConstraint m mf seqty
-  => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (mf seqty)
+  :: forall m mf seqty proof.
+     (SearchConstraint m mf seqty proof)
+  => S.Set (SearchSequent 'Initial seqty) -> [Rule seqty] -> m (mf proof)
 doSearch initialSequents initialRules = do
   addInactives (fmap initialIsBSChecked initialList)
   addRules initialRules
-  liftM2 mplus (haveGoal (fmap initialIsFSChecked initialList)) otterLoop
+  liftM2 mplus (haveGoal (fmap initialIsFSChecked initialList))
+    (otterLoop @_ @_ @seqty @_)
   where
     initialList = S.toList initialSequents
 
-otterLoop :: SearchConstraint m mf seqty => m (mf seqty)
+otterLoop
+  :: forall m mf seqty proof.
+     (SearchConstraint m mf seqty proof)
+  => m (mf proof)
 otterLoop = do
-  inactive <- popInactive
+  inactive <- (popInactive @seqty @_)
   case inactive of
     Left Saturated -> return $ failSaturated
     Left ThresholdBreak -> return $ failThresholdBreak
@@ -78,7 +83,7 @@ otterLoop = do
         unsubSeqs' <- removeSubsumedByAll unsubSeqs
         addInactives unsubSeqs'
         addRules (resRules res)
-        liftM2 mplus (haveGoal unsubSeqs) otterLoop
+        liftM2 mplus (haveGoal unsubSeqs) (otterLoop @_ @_ @seqty @_)
 
 processNewActive
   :: (Monad m, HasProverState seqty m, Ord seqty)
