@@ -39,7 +39,6 @@ module Prover.Structures
   , emptyActives
   , emptyInactives
   , emptyGlobalIndex
-  , isSubsequentOp
   , toProverRules
   , InactivesResult
   , NoInactivesReason(..)
@@ -69,7 +68,6 @@ data Stage
   | Concl      -- | Conclusion sequent
   | FSChecked  -- | Forward subsumption-checked
   | BSChecked  -- | Backward subsumption-checked
-  | SSChecked  -- | Subsequent of goal-checked
   | GlIndex    -- | Global index sequent
   | Goal       -- | Goal sequent
 
@@ -80,7 +78,6 @@ data SearchSequent :: Stage -> * -> * where
   ConclSS :: seq -> SearchSequent Concl seq
   FSCheckedSS :: seq -> SearchSequent FSChecked seq
   BSCheckedSS :: seq -> SearchSequent BSChecked seq
-  SSCheckedSS :: seq -> SearchSequent SSChecked seq
   GoalSS :: seq -> SearchSequent Goal seq
 
 instance Show b => Show (SearchSequent a b) where
@@ -90,7 +87,6 @@ instance Show b => Show (SearchSequent a b) where
   show (ConclSS s) = show s
   show (BSCheckedSS s) = show s
   show (FSCheckedSS s) = show s
-  show (SSCheckedSS s) = show s
   show (GoalSS s) = show s
 
 extractSequent :: SearchSequent s seq -> seq
@@ -100,7 +96,6 @@ extractSequent (InactiveSS s) = s
 extractSequent (ConclSS s) = s
 extractSequent (BSCheckedSS s) = s
 extractSequent (FSCheckedSS s) = s
-extractSequent (SSCheckedSS s) = s
 extractSequent (GoalSS s) = s
 
 instance Eq seq => Eq (SearchSequent s seq) where
@@ -216,22 +211,12 @@ addToInactives (IS r ins) (GI n gi) (BSCheckedSS s) =
      then (IS r (D.pushBack ins (InactiveSS s)), (GI (n + 1) (s : gi)))
      else (IS ThresholdBreak ins, GI n gi)
 
-isSubsequentOp
-  :: (SearchPair seqty goalty, MonadPlus mf)
-  => SearchSequent Concl seqty
-  -> SearchSequent Goal goalty
-  -> mf (SearchSequent SSChecked seqty)
-isSubsequentOp (ConclSS s) (GoalSS goal) =
-  if isSubsequent s goal
-    then return $ SSCheckedSS s
-    else mzero
-
 fwdSubsumes
   :: (ForwardSequent seqty, Ord seqty)
   => GlobalIndex seqty
-  -> SearchSequent SSChecked seqty
+  -> SearchSequent Concl seqty
   -> Maybe (SearchSequent FSChecked seqty)
-fwdSubsumes (GI _ globalIndex) (SSCheckedSS s) =
+fwdSubsumes (GI _ globalIndex) (ConclSS s) =
   if or . map (\gi -> gi `subsumes` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)

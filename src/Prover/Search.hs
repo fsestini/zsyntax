@@ -78,8 +78,7 @@ otterLoop = do
     Right sequent ->
       do
         res <- processNewActive sequent
-        subRes <- filterSubsequents (S.toList $ resSequents res)
-        unsubSeqs <- filterUnsubsumed subRes
+        unsubSeqs <- filterUnsubsumed (resSequents res)
         unsubSeqs' <- removeSubsumedByAll unsubSeqs
         addInactives unsubSeqs'
         addRules (resRules res)
