@@ -224,7 +224,7 @@ type LNSequent eb cty a l =
 type LUnaryRule term eb cty a l =
   UnaryRule term (SrchFormula eb cty a l)
 type LDTSequent term eb cty a l =
-  DTSequent term (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+  DT term (NSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty)
 
 liftUnifun 'Srch 'frmlMapAtoms
 liftUnifun 'SrchAx 'mapCtyAx

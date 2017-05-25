@@ -2,7 +2,6 @@ module Rules
   ( module Rules.Interface
   , module Rules.Frontier
   , DT(..)
-  , DTSequent(..)
   ) where
 
 import Rules.Interface

@@ -139,7 +139,8 @@ generateRule f =
 -- Main function
 
 type UnaryRule term fr = DTS term fr -> Rule term fr
-type DTS term fr = DTSequent term (Ax fr) fr (Cty fr)
+type DTS term fr =
+  DT term (NSequent (Ax fr) fr (Cty fr))
 
 initialSequentsAndRules
   :: (HasBaseCtrl fr, DerTerm term fr, Ord term, HasAxiom fr, Ord (Ax fr))

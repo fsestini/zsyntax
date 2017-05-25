@@ -19,7 +19,6 @@
 module Rules.Relation
   ( Rule
   , DT(..)
-  , DTSequent
   , focus
   , implLeft
   , implRight
