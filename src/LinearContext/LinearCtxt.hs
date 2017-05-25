@@ -5,7 +5,6 @@ module LinearContext.LinearCtxt
   ( LinearCtxt
   , NonEmptyLinearCtxt
   , module Context
-  , subCtxtOf
   , neSubCtxtOf
   , toLC
   , fromLC
