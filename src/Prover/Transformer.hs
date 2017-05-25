@@ -41,10 +41,10 @@ proverSearch'
   :: ( Ord seqty
      , Monad m
      , SearchMonad mf
-     , SearchPair seqty goalty
+     , SearchTriple seqty goalty proof
      , Foldable f
      )
-  => f seqty -> [seqty -> Rel seqty seqty] -> ProverT seqty goalty m (mf seqty)
+  => f seqty -> [seqty -> Rel seqty seqty] -> ProverT seqty goalty m (mf proof)
 proverSearch' seqs rules =
   doSearch
     (S.fromList . fmap initialize . toList $ seqs)
@@ -118,11 +118,8 @@ instance (Monad m, Ord seqty, ForwardSequent seqty) =>
     put (PS r as newIs gi)
     return bschecked
 
-instance (Monad m, SearchPair seqty goalty) =>
-         HasProverEnvironment seqty (ProverT seqty goalty m) where
-  isSubsequent concl = do
-    gs <- goalSequent <$> ask
-    return $ isSubsequentOp concl gs
+instance (Monad m, SearchTriple seqty goalty proof) =>
+         HasProverEnvironment seqty proof (ProverT seqty goalty m) where
   subsumesGoal s = do
-    gs <- goalSequent <$> ask
-    return $ s `Prover.Structures.subsumesGoalOp` gs
+    (e :: ProverEnvironment goalty) <- ask
+    return $ s `Prover.Structures.subsumesGoalOp` (goalSequent e)
