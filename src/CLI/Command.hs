@@ -76,7 +76,7 @@ type instance DerT CLIAxiom AxRepr FrmlRepr = CLIDerTerm
 
 instance Search CLIAxiom AxRepr FrmlRepr where
   type SrchF CLIAxiom AxRepr FrmlRepr = CLISrchFormula
-  fromNS (NS _ lc cty concl) =
+  fromRNS (RNS _ lc cty concl) =
     maybe NonAxiomatic Axiomatic $ do
       lc <- mapM decideN $ toNEList lc
       to <- decideOF concl

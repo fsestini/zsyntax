@@ -65,11 +65,11 @@ type family DerT ax axr frepr :: *
 
 class Search ax axr frepr where
   type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
-  fromNS
-    :: NSequent
-        (Ax (SrchF ax axr frepr))
-            (SrchF ax axr frepr)
-            (Cty (SrchF ax axr frepr))
+  fromRNS
+    :: ResultNSequent
+              (Ax (SrchF ax axr frepr))
+                  (SrchF ax axr frepr)
+                  (Cty (SrchF ax axr frepr))
     -> ThrmShape ax
   queryToGoal
     :: AxEnv axr ax
@@ -78,8 +78,7 @@ class Search ax axr frepr where
     -> Either String
         (GoalNSequent
           (Ax (SrchF ax axr frepr))
-          (SrchF ax axr frepr)
-          (Cty (SrchF ax axr frepr)))
+          (SrchF ax axr frepr))
 
 -- class Search ax axr frepr | ax -> frml where
 --   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax

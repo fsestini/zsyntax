@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,6 +9,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
 
 {-# OPTIONS_GHC -Wall #-}
 
@@ -97,7 +99,7 @@ addTheorem env thrms nm q =
       res = do
         (DT dt ns) <-
           liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
-        newThrms <- tryInsertTheorem nm (q, fromNS ns) thrms
+        newThrms <- tryInsertTheorem nm (q, fromRNS ns) thrms
         return (transitions dt, newThrms)
 
 query
@@ -170,14 +172,17 @@ processTheorems axioms = processThrms doer
     doer' env thrms q = do
       actualSequent <- liftParse (queryToGoal env thrms q)
       (DT _ ns) <- liftSR (runSearch actualSequent)
-      return (fromNS ns)
+      return (fromRNS ns)
 
 type SrchPr term srchfr =
-  (SearchPair (DTSequent term (Ax srchfr) srchfr (Cty srchfr))
-              (GoalNSequent (Ax srchfr) srchfr (Cty srchfr)))
+  (SearchTriple ((NSequent (Ax srchfr) srchfr (Cty srchfr)))
+                (GoalNSequent (Ax srchfr) srchfr)
+                (ResultNSequent (Ax srchfr) srchfr (Cty srchfr)))
 
 type SrchConstr ax axr frepr =
-  ( SrchPr (DerT ax axr frepr) (SrchF ax axr frepr), Formula (SrchF ax axr frepr)
+  (
+  SrchPr (DerT ax axr frepr) (SrchF ax axr frepr),
+  Formula (SrchF ax axr frepr)
   , HasElemBase (SrchF ax axr frepr), HasControlType (SrchF ax axr frepr)
   , BaseCtrl (Eb (SrchF ax axr frepr)) (Cty (SrchF ax axr frepr))
   , DerTerm (DerT ax axr frepr) (SrchF ax axr frepr)
@@ -187,15 +192,16 @@ type SrchConstr ax axr frepr =
 type MyGNS ax axr frepr =
   GoalNSequent (Ax (SrchF ax axr frepr))
                (SrchF ax axr frepr)
-               (Cty (SrchF ax axr frepr))
+
 type MySrchRes ax axr frepr =
-  SearchRes (DTSequent (DerT ax axr frepr)
-                       (Ax (SrchF ax axr frepr))
-                       (SrchF ax axr frepr)
-                       (Cty (SrchF ax axr frepr)))
+  SearchRes (DT (DerT ax axr frepr)
+    (ResultNSequent (Ax (SrchF ax axr frepr))
+                    (SrchF ax axr frepr)
+                    (Cty (SrchF ax axr frepr))))
 
 runSearch
-  :: (SrchConstr ax axr frepr) => MyGNS ax axr frepr -> MySrchRes ax axr frepr
+  :: (SrchConstr ax axr frepr)
+  => MyGNS ax axr frepr -> MySrchRes ax axr frepr
 runSearch neutral = (runIdentity . proverSearch initS initR) neutral
   where
     (initS, initR) = initialSequentsAndRules neutral
