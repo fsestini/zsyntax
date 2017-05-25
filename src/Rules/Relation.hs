@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -42,7 +43,7 @@ import UnrestrContext
 
 import Rules.Interface
 import ForwardSequent
-import Prover (SearchPair(..))
+import Prover (SearchTriple(..))
 
 --------------------------------------------------------------------------------
 
@@ -76,11 +77,12 @@ instance (Formula frml, Ord axs, Eq cty) =>
          ForwardSequent (DTSequent term axs frml cty) where
   subsumes (DT _ s1) (DT _ s2) = subsumes s1 s2
 
--- | Lifting of SearchPair instances to derivation terms-decorated sequents.
-instance (SearchPair seqty goalty, ForwardSequent (DT term seqty)) =>
-         SearchPair (DT term seqty) goalty where
-  isSubsequent (DT _ s1) s2 = isSubsequent s1 s2
-  subsumesGoal (DT _ s) g = s `subsumesGoal` g
+-- | Lifting of SearchTriple instances to derivation terms-decorated sequents.
+instance (SearchTriple seqty goalty proof, ForwardSequent (DT term seqty)) =>
+         SearchTriple (DT term seqty) goalty (DT term proof) where
+  subsumesGoal (DT term s) g = do
+    res <- s `subsumesGoal` g
+    return (DT term res)
 
 --------------------------------------------------------------------------------
 
