@@ -23,6 +23,7 @@ module LFormula
   , SrchOpaque
   , SrchAxiom(..)
   , LGoalNSequent
+  , LResultNSequent
   , LNSequent
   , LUnaryRule
   , LDTSequent
@@ -217,7 +218,9 @@ newtype SrchAxiom cty a l = SrchAx { unSrchAx :: LAxiom cty a l }
 type SrchNeutral eb cty a l = Neutral (SrchFormula eb cty a l)
 type SrchOpaque eb cty a l = Opaque (SrchFormula eb cty a l)
 type LGoalNSequent eb cty a l =
-  GoalNSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
+  GoalNSequent (SrchAxiom cty a l) (SrchFormula eb cty a l)
+type LResultNSequent eb cty a l =
+  ResultNSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
 type LNSequent eb cty a l =
   NSequent (SrchAxiom cty a l) (SrchFormula eb cty a l) cty
 -- type UnaryRule term fr = DTS term fr -> Rule term fr
