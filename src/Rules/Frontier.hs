@@ -13,8 +13,8 @@
 
 module Rules.Frontier
   ( GoalNSequent(..)
+  , ResultNSequent(..)
   , GNS
-  , DTS
   , UnaryRule
   , initialSequentsAndRules
   ) where
@@ -30,6 +30,7 @@ import qualified Data.Set as S
 -- import Relation
 import Rel (unRel)
 import Control.Arrow ((***), (>>>))
+import Control.Monad (guard)
 -- import DerivationTerm
 -- import SFormula (fromLFormula)
 import LinearContext
@@ -52,20 +53,45 @@ data DecFormula :: * -> (FKind -> *) -> * where
 deriving instance (Eq ax, Formula frml) => Eq (DecFormula ax frml)
 deriving instance (Ord ax, Formula frml) => Ord (DecFormula ax frml)
 
+--------------------------------------------------------------------------------
+-- Goal and result sequents.
+
 -- | Linear contexts in goal neutral sequents.
 type GLCtxt fr = NonEmptyLinearCtxt (Neutral fr)
 
-data GoalNSequent ax fr cty =
+data GoalNSequent ax fr =
   GNS (UCtxt ax) (GLCtxt fr) (Opaque fr)
   deriving (Eq, Ord)
 
-instance (Formula frml, Ord axs, Eq cty) =>
-         SearchPair (NSequent axs frml cty) (GoalNSequent axs frml cty) where
-  isSubsequent _ _ = True
-  subsumesGoal ns@(NS _ _ cty _) (GNS un2 lin2 concl2) =
-    ns `subsumes` NS un2 (toLC lin2) cty concl2
+data ResultNSequent ax fr cty =
+  RNS (UCtxt ax) (GLCtxt fr) cty (Opaque fr)
 
-type GNS fr = GoalNSequent (Ax fr) fr (Cty fr)
+toGNSequent
+  :: Formula fr
+  => NSequent ax fr cty -> Maybe (GoalNSequent ax fr)
+toGNSequent (NS uc lc cty f) = do
+  nelc <- fromLC lc
+  return (GNS uc nelc f)
+
+toRNSequent :: cty -> GoalNSequent ax fr -> ResultNSequent ax fr cty
+toRNSequent cty (GNS uc lc c) = RNS uc lc cty c
+
+toNSequent :: Formula fr => GoalNSequent ax fr -> NSequent ax fr ()
+toNSequent (GNS uc lc c) = NS uc (toLC lc) () c
+
+instance (Formula fr, Ord ax) =>
+         ForwardSequent (GoalNSequent ax fr) where
+  subsumes gns1 gns2 = toNSequent gns1 `subsumes` toNSequent gns2
+
+instance (Formula frml, Ord axs, Eq cty) =>
+         SearchTriple (NSequent axs frml cty)
+                      (GoalNSequent axs frml)
+                      (ResultNSequent axs frml cty) where
+  subsumesGoal ns@ (NS _ _ cty _) gns = do
+    goaled <- toGNSequent ns
+    guard (goaled `subsumes` gns) >> return (toRNSequent cty goaled)
+
+type GNS fr = GoalNSequent (Ax fr) fr
 type DecF fr = DecFormula (Ax fr) fr
 
 --------------------------------------------------------------------------------
