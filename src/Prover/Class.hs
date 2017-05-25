@@ -25,26 +25,24 @@ class HasProverState seqty m where
   addInactive :: SearchSequent BSChecked seqty -> m ()
   popInactive :: m (InactivesResult (ActiveSequent seqty))
   getActives :: m (ActiveSequents seqty)
-  isNotFwdSubsumed :: SearchSequent SSChecked seqty
+  isNotFwdSubsumed :: ConclSequent seqty
                    -> m (Maybe (SearchSequent FSChecked seqty))
   removeSubsumedBy :: SearchSequent FSChecked seqty
                    -> m (SearchSequent BSChecked seqty)
 
-class HasProverEnvironment seqty m where
-  isSubsequent
-    :: MonadPlus mf
-    => ConclSequent seqty -> m (mf (SearchSequent SSChecked seqty))
+class HasProverEnvironment seqty proof m where
   subsumesGoal
-    :: MonadPlus mf
-    => SearchSequent FSChecked seqty -> m (mf seqty)
+    :: (MonadPlus mf)
+    => SearchSequent FSChecked seqty -> m (mf proof)
 
 haveGoal
   :: ( Monad m
      , MonadPlus mf
-     , HasProverEnvironment seqty m
+     , HasProverEnvironment seqty proof m
      , Foldable f
+     -- , SearchTriple seqty goalty proof
      )
-  => f (SearchSequent FSChecked seqty) -> m (mf seqty)
+  => f (SearchSequent FSChecked seqty) -> m (mf proof)
 haveGoal = fmap (foldr (<|>) mzero) . mapM subsumesGoal . toList
 
 addInactives
@@ -64,15 +62,15 @@ removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
   :: (HasProverState seqty m, Monad m, Foldable t)
-  => t (SearchSequent SSChecked seqty) -> m [SearchSequent FSChecked seqty]
+  => t (ConclSequent seqty) -> m [SearchSequent FSChecked seqty]
 filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed . toList
 
-filterSubsequents
-  :: ( HasProverEnvironment seqty m
-     , Monad m
-     , Traversable t
-     , Foldable t
-     , CanPartitionEithers t
-     )
-  => t (ConclSequent seqty) -> m [SearchSequent SSChecked seqty]
-filterSubsequents = fmap filterOut . mapM isSubsequent
+-- filterSubsequents
+--   :: ( HasProverEnvironment seqty goalty m
+--      , Monad m
+--      , Traversable t
+--      , Foldable t
+--      , CanPartitionEithers t
+--      )
+--   => t (ConclSequent seqty) -> m [SearchSequent SSChecked seqty]
+-- filterSubsequents = fmap filterOut . mapM isSubsequent
