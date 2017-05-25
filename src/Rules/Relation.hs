@@ -176,7 +176,7 @@ implLeft fr = case reprImpl fr of
       DT (implL d d' fr)
          (NS (gamma1 <> gamma2)
                (add (N fr) (delta1 <> delta2))
-               (cty <> cty')
+               (cty `mappend` cty')
                concl)
 
 copyRule
@@ -196,7 +196,7 @@ copyRule ax =
              (NS
                 (add ax (gamma1 <> gamma2))
                 (delta1 <> delta2)
-                (cty <> cty')
+                (cty `mappend` cty')
                 concl)
 
 implRight
