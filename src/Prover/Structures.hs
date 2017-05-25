@@ -1,3 +1,4 @@
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -20,7 +21,7 @@ module Prover.Structures
   , GlobalIndex
   , Rule
   , RuleRes
-  , SearchPair(..)
+  , SearchTriple(..)
   , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
@@ -54,9 +55,9 @@ import Data.Foldable
 
 --------------------------------------------------------------------------------
 
-class ForwardSequent seqty => SearchPair seqty goalty where
-  isSubsequent :: seqty -> goalty -> Bool
-  subsumesGoal :: seqty -> goalty -> Bool
+class ForwardSequent seqty =>
+      SearchTriple seqty goalty proof | seqty -> proof where
+  subsumesGoal :: seqty -> goalty -> Maybe proof
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -246,12 +247,10 @@ removeSubsumedByOp (FSCheckedSS s) (IS r is) =
     filterer = \iseq -> not (s `subsumes` (extractSequent iseq))
 
 subsumesGoalOp
-  :: (MonadPlus mf, SearchPair seqty goalty)
-  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf seqty
+  :: (MonadPlus mf, SearchTriple seqty goalty proof)
+  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf proof
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  if s1 `subsumesGoal` s2
-    then return s1
-    else mzero
+  maybe mzero return (s1 `subsumesGoal` s2)
 
 toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
 toProverRules = dimap extractSequent (dimap extractSequent ConclSS)

@@ -3,7 +3,7 @@
 
 module Prover
   ( proverSearch
-  , SearchPair(..)
+  , SearchTriple(..)
   , SearchMonad(..)
   ) where
 
