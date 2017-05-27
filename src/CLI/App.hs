@@ -32,6 +32,7 @@ type App a = StateT (CLIAxEnv, CLIThrmEnv) IO a
 toIO :: UIF a -> IO a
 toIO (UILog str x) = (putStrLn $ "log: " ++ str) >> return x
 toIO (UILoadFile path x) = readFile path >>= return . x
+toIO (UISaveFile path content x) = writeFile path content >> return x
 
 hoistApp :: StateT (CLIAxEnv, CLIThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
