@@ -151,8 +151,7 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
   \]
 \end{example}
 
-
-\subsection{Search procedure}
+\subsection{Search procedure}\label{srch-procedure}
 
 % From 4.1.6
 
@@ -256,6 +255,85 @@ set and the inactive set is exhausted (in which case the search saturates).
     $s_1, \dots, s_{n+1}$ during such iteration.
   \end{itemize}
 \end{proof}
+
+\subsection{Theorem prover}
+
+The following sections describe how the logical calculus described so far has
+been implemented in an automated theorem proving software for Zsyntax.
+
+The software has been written in the Haskell programming language.
+Haskell is a non-strict, purely functional strongly typed programming language
+\cite{a-history-of-haskell}
+with an advanced, state-of-the-art type system that allowed the production of
+software with high levels of correctness guarantees.
+The abstraction facilities typical of polymorphic functional programming allowed
+the program to be developed in a modular way, and the advanced type system
+(\cite{gadts}, \cite{dependent-haskell})
+made possible to encode several properties and invariants of the search
+procedure and the logical calculus in the types, making most of their
+implementation correct by costruction.
+
+\subsubsection{Implemented features}
+
+The implemented logical calculus is the full calculus of forward derived rules.
+The search procedure has been implemented as described in
+Section~\ref{srch-procedure}, with no significant modification.
+As already said, the possibility of adding axioms to the proof \emph{ad libitum}
+may lead to combinatorial explosion in some particularly bad cases.
+The theorem prover employs a simple counter measure, which consists of enforcing
+an upper bound to the search space, that is limiting the number of sequents that
+can be generated during proof search for a particular goal sequent.
+It is our opinion that this simple counter measure should be enough, given that
+
+\begin{enumerate}
+\item the search procedure operates in a breadth-first way. This means that if a
+  sequent is provable and there is also the potential to generate too many
+  sequents, the search procedure is very likely to find its proof before reaching
+  the upper bound;
+\item combinatorial explosion is caused by the presence of axioms that can be
+  repeatedly applied. Most axioms are not of this kind, so reaching the upper
+  bound is not a problem for most goal sequents. In case proving a goal sequent
+  fails for this reason, it is always possible to reformulate the query to avoid
+  looping axioms, or break the goal into separate lemmas that do not individualy
+  cause problems, and then assembling the whole theorem from them.
+\end{enumerate}
+
+The proving features that are offered by the software can be summarized as
+follows. The user starts from the system in the empty state, from which the
+following actions are allowed:
+
+\begin{itemize}
+\item Insertion, modification and removal of biological axioms;
+\item Querying about validity (theoremhood) of a goal sequent.
+  Theorems can be named and saved for future use.
+\item Saving the state of the system in a file, and restoring a previous session
+  from a file.
+\end{itemize}
+
+Axioms must be specified as named transitions from an initial aggregate to a
+final aggregate, both made out of atomic formulas (formulas of the bonding
+language). Axioms can be specified with a control set, which is composed of zero
+or more elementary contexts, as defined in the previous sections and in
+\cite{adding-logic}. Contexts can be of two kinds: regular and superset-closed.
+Regular contexts are as usual, whereas superset-closed context are such that if
+one of them, say $\Delta$, is specified for some control set $\ctrlset{}$, then
+$\ctrlset{}$ is assumed to contain also all supersets of $\Delta$.
+
+Queries are analogously specified as an initial elementary aggregate and a final
+elementary aggregate.
+
+\subsubsection{Higher-order conditionals}
+
+
+
+
+\subsubsection{Rel monad}
+
+
+
+
+
+
 
 %%% Local Variables:
 %%% mode: latex
