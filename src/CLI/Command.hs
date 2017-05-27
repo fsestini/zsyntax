@@ -188,11 +188,12 @@ queryTheorem =
 
 parseLoadFile :: Parser CLICommand
 parseLoadFile =
-  token (string "load file") >> LoadFile <$> token (many1 (noneOf [' ']))
+  token (string "load file") >> spaces >>
+  LoadFile <$> token (many1 (noneOf [' ']))
 
 parseSaveToFile :: Parser CLICommand
 parseSaveToFile =
-  token (string "save to file") >> SaveToFile <$> many1 (noneOf [' '])
+  token (string "save to file") >> spaces >> SaveToFile <$> many1 (noneOf [' '])
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
