@@ -54,7 +54,26 @@ data FComp = CBasic | CComplex
     It is parameterized over the type of biological atoms. -}
 data BioFormula a  =  BioAtom a
                    |  BioInter (BioFormula a) (BioFormula a)
-                   deriving (Eq, Ord, Functor, Foldable, Show)
+                   deriving (Functor, Foldable, Show)
+
+-- | Custom equality instance for biological atoms.
+-- It witnesses commutativity of the biological interaction operator.
+instance Ord a => Eq (BioFormula a) where
+  bf1 == bf2 = compare bf1 bf2 == EQ
+
+instance Ord a =>
+         Ord (BioFormula a) where
+  compare (BioAtom a1) (BioAtom a2) = compare a1 a2
+  compare (BioInter bf1 bf2) (BioInter bf1' bf2') =
+    if (bf1 == bf1' && bf2 == bf2') || (bf1 == bf2' && bf2 == bf1')
+      then EQ
+      else compare bf1 bf1' `comb` compare bf2 bf2'
+    where
+      comb :: Ordering -> Ordering -> Ordering
+      comb EQ x = x
+      comb x _ = x
+  compare (BioAtom _) (BioInter _ _) = LT
+  compare (BioInter _ _) (BioAtom _) = GT
 
 instance T.Pretty a => T.Pretty (BioFormula a) where
   pretty (BioAtom x) = T.pretty x
@@ -233,7 +252,7 @@ liftUnifun 'Srch 'frmlMapAtoms
 liftUnifun 'SrchAx 'mapCtyAx
 liftBifun 'Srch 'mapEbCty
 
-instance (Eq a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
+instance (Ord a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
   (==) = on (==) (label . axToFormula . unSrchAx)
 instance (Ord a, Ord l, Monoid cty) => Ord (SrchAxiom cty a l) where
   compare = on compare (label . axToFormula . unSrchAx)
