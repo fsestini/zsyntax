@@ -77,7 +77,7 @@ instance Ord a =>
 
 instance T.Pretty a => T.Pretty (BioFormula a) where
   pretty (BioAtom x) = T.pretty x
-  pretty (BioInter x y) = T.pretty x ++ "<>" ++ T.pretty y
+  pretty (BioInter x y) = "(" ++ T.pretty x ++ "<>" ++ T.pretty y ++ ")"
 
 data LFormula :: * -> * -> FKind -> FComp -> * -> * -> * where
   Atom :: BioFormula a -> LFormula eb cty KAtom c a l
