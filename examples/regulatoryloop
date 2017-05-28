@@ -5,4 +5,4 @@ add axiom ax18 (((MDM2<>TP53)<>U)) (MDM2,(TP53<>U)) unless ()
 add axiom ax22 ((TP53<>U),P) (((TP53<>U)<>P)) unless ()
 add axiom ax24 (((TP53<>U)<>P)) (dTP53,U,P) unless ()
 add axiom ax8 (TP53,MDM2) ((TP53<>MDM2)) unless ()
-
+query pathway (TP53,TP53,MDM2,U,P) (MDM2,dTP53,U,P) with axioms (ax10,ax13,ax16,ax18,ax22,ax24,ax8)
