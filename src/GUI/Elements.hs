@@ -254,7 +254,7 @@ theoremEntryArea vbox = do
   boxPackStart hb exportBtn PackNatural 3
 
   boxPackStart vbox table PackNatural 0
-  boxPackStart vbox hb PackNatural 0
+  boxPackStart vbox hb PackNatural 7
   return (TEA teName teAxioms teFrom teTo teBtn openBtn exportBtn)
 
 packLabel box str = do
