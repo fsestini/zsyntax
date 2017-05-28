@@ -64,11 +64,11 @@ tryInsertAxiom name@(TN nm) axiom env =
 
 addAxiom
   :: CommAx axr ax
-  => (AxEnv axr ax)
-  -> ThrmName
+  => ThrmName
   -> axr
+  -> (AxEnv axr ax)
   -> UI (AxEnv axr ax)
-addAxiom env name@(TN nm) axrepr =
+addAxiom name@(TN nm) axrepr env =
   case (reprAx axrepr) of
     Left err -> (logUI $ "parse error: " ++ (show err)) >> return env
     Right axiom ->
@@ -83,12 +83,12 @@ addTheorem
      , Search ax axr frepr
      , SrchConstr ax axr frepr
      )
-  => (AxEnv axr ax)
-  -> ThrmEnv frepr ax
-  -> ThrmName
+  => ThrmName
   -> (QueriedSeq frepr)
+  -> (AxEnv axr ax)
+  -> ThrmEnv frepr ax
   -> Free UIF (ThrmEnv frepr ax)
-addTheorem env thrms nm q =
+addTheorem nm q env thrms =
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
     logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
     forM_ impls (logUI . shower)
@@ -108,8 +108,8 @@ query
      , Search ax axr frepr
      , SrchConstr ax axr frepr
      )
-  => (AxEnv axr ax) -> (ThrmEnv frepr ax) -> (QueriedSeq frepr) -> UI ()
-query env thrms q = flip (toUI' logUI) implsM $ \impls -> do
+  => QueriedSeq frepr -> AxEnv axr ax -> ThrmEnv frepr ax -> UI ()
+query q env thrms = flip (toUI' logUI) implsM $ \impls -> do
   logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
   forM_ impls (logUI . shower)
   where
@@ -154,11 +154,19 @@ instance SearchMonad SearchRes where
 liftParse :: Either String a -> EUI a
 liftParse = ExceptT . return . (first ("parse error: " ++))
 
-processTheorems
+refreshTheorems
+  :: (Search ax axr frepr, SrchConstr ax axr frepr)
+  => StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
+refreshTheorems = do
+  (axioms, thrms) <- get
+  newThrms <- lift $ refreshTheorems' axioms thrms
+  put (axioms, newThrms)
+
+refreshTheorems'
   :: forall frepr axr ax.
      (Search ax axr frepr, SrchConstr ax axr frepr)
   => (AxEnv axr ax) -> (ThrmEnv frepr ax) -> UI (ThrmEnv frepr ax)
-processTheorems axioms = processThrms doer
+refreshTheorems' axioms = processThrms doer
   where
     doer
       :: ThrmName
@@ -208,28 +216,23 @@ runSearch neutral = (runIdentity . proverSearch initS initR) neutral
     (initS, initR) = initialSequentsAndRules neutral
 
 changeAxiom
-  :: (CommAx axr ax, Search ax axr frepr, SrchConstr ax axr frepr)
-  => (AxEnv axr ax)
-  -> ThrmName
+  :: (CommAx axr ax)
+  => ThrmName
   -> axr
-  -> (ThrmEnv frepr ax)
-  -> UI (AxEnv axr ax, ThrmEnv frepr ax)
-changeAxiom axEnv axName axrepr thrms = toUI (axEnv, thrms) $ do
+  -> (AxEnv axr ax)
+  -> UI (AxEnv axr ax)
+changeAxiom axName axrepr axEnv = toUI axEnv $ do
   axiom <- liftParse (reprAx axrepr)
   let newAxEnv = feReplace axName (AAx axrepr, axiom) axEnv
-  newThrms <- ExceptT (fmap Right (processTheorems newAxEnv thrms))
-  return (newAxEnv, newThrms)
+  return newAxEnv
 
 removeAxiom
-  :: (Search ax axr frepr, SrchConstr ax axr frepr)
-  => (AxEnv axr ax)
-  -> ThrmName
-  -> (ThrmEnv frepr ax)
-  -> UI (AxEnv axr ax, ThrmEnv frepr ax)
-removeAxiom axEnv axName thrms = do
+  :: ThrmName
+  -> (AxEnv axr ax)
+  -> UI (AxEnv axr ax)
+removeAxiom axName axEnv = do
   let newAxioms = feRemove axName axEnv
-  newThrms <- processTheorems newAxioms thrms
-  return (newAxioms, newThrms)
+  return newAxioms
 
 loadFile
   :: (MegaConstr axr ax frepr)
@@ -244,8 +247,8 @@ loadFile path = do
 
 saveToFile
   :: (CPrint axr frepr)
-  => (AxEnv axr ax) -> (ThrmEnv frepr ax) -> FilePath -> UI ()
-saveToFile axEnv thrms path =
+  => FilePath -> AxEnv axr ax -> ThrmEnv frepr ax -> UI ()
+saveToFile path axEnv thrms =
   uiSaveFile path . concat $ aux axStrs ++ aux thrmStrs
   where
     axStrs = printAxAll axEnv
@@ -260,6 +263,17 @@ type MegaConstr axr ax frepr =
   CommAx axr ax, Search ax axr frepr,
   SrchConstr ax axr frepr, CPrint axr frepr)
 
+liftUITrans
+  :: (AxEnv axr ax -> ThrmEnv frepr ax -> UI (AxEnv axr ax, ThrmEnv frepr ax))
+  -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
+liftUITrans f = do
+  (axs,thrms) <- get
+  (newAxs, newThrms) <- lift $ f axs thrms
+  put (newAxs, newThrms)
+
+traversePair :: Applicative m => (m a, m b) -> m (a, b)
+traversePair (x,y) = (,) <$> x <*> y
+
 execCommand'
   :: (MegaConstr axr ax frepr) => Command axr frepr
   -> AxEnv axr ax
@@ -271,26 +285,19 @@ execCommand
   :: (MegaConstr axr ax frepr)
   => Command axr frepr
   -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
-execCommand (AddAxiom name axrepr) = do
-  (env, thrms) <- get
-  newEnv <- lift $ addAxiom env name axrepr
-  put (newEnv, thrms)
-execCommand (ChangeAxiom name axrepr) = do
-  (env, thrms) <- get
-  (newEnv, newThrms) <- lift $ changeAxiom env name axrepr thrms
-  put (newEnv, newThrms)
-execCommand (RemoveAxiom name) = do
-  (env, thrms) <- get
-  (newEnv, newThrms) <- lift $ removeAxiom env name thrms
-  put (newEnv, newThrms)
-execCommand (AddTheorem name q) = do
-  (env, thrms) <- get
-  newThrms <- lift $ addTheorem env thrms name q
-  put (env, newThrms)
-execCommand (Query q) = do
-  (env, thrms) <- get
-  lift (query env thrms q)
-execCommand (LoadFile path) = loadFile path
-execCommand (SaveToFile path) = do
-  (env, thrms) <- get
-  lift $ saveToFile env thrms path
+execCommand (AddAxiom name axrepr) =
+  liftUITrans (axToTrans $ addAxiom name axrepr) >> refreshTheorems
+execCommand (ChangeAxiom name axrepr) =
+  liftUITrans (axToTrans $ changeAxiom name axrepr) >> refreshTheorems
+execCommand (RemoveAxiom name) =
+  liftUITrans (axToTrans $ removeAxiom name) >> refreshTheorems
+execCommand (AddTheorem name q) =
+  liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
+execCommand (Query q) = get >>= lift . uncurry (query q)
+execCommand (LoadFile path) = loadFile path >> refreshTheorems
+execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
+
+axToTrans :: Monad m => (a1 -> m a) -> a1 -> b -> m (a, b)
+axToTrans f = curry (traversePair . bimap f return)
+thrmToTrans :: Functor f => (t -> a -> f b) -> t -> a -> f (t, b)
+thrmToTrans f ax = fmap ((,) ax) . f ax
