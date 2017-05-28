@@ -73,7 +73,7 @@ gui = do
   thList <- theoremArea vbox
     (("Name", T.pretty . fst) NE.:|
     [("Theorem", T.pretty . fst . snd)
-    ,("Axioms", T.prettys . qsAxioms . fst . snd)
+    ,("Axioms", prettyQAxs . qsAxioms . fst . snd)
     ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui = GUI thList (storeAxioms axioms) b
@@ -91,9 +91,10 @@ parseThrmNames =
 
 wireThrmEntry :: GUI -> IORef AppState -> TheoremEntryArea -> IO ()
 wireThrmEntry gui state tea = do
-  onClicked (btnGo tea) $
-    thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) >>=
-    either (printError gui) (execCommandInGUI gui state)
+  onClicked (btnGo tea) $ do
+    useList <- toggleButtonGetActive (rbSome tea)
+    thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) useList >>=
+      either (printError gui) (execCommandInGUI gui state)
   onClicked (btnLoad tea) $
     maybeMM' loadFileCommand (execCommandInGUI gui state)
   onClicked (btnExport tea) $
@@ -158,15 +159,15 @@ resetStore :: ListStore a -> [a] -> IO ()
 resetStore store list =
   listStoreClear store >> forM_ list (listStoreAppend store)
 
-thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry
+thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry -> Bool
                   -> IO (Either String GUICommand)
-thrmAreaToCommand nmE axE fromE toE = do
+thrmAreaToCommand nmE axE fromE toE useList = do
   nmTxt <- entryGetText nmE
   axTxt <- entryGetText axE
   fromTxt <- entryGetText fromE
   toTxt <- entryGetText toE
   return $ do
-    axs <- parseThrmNames axTxt
+    axs <- if useList then Some <$> parseThrmNames axTxt else return AllOfEm
     from <- bimap show id . parseAggregate $ fromTxt
     to <- bimap show id . parseAggregate $ toTxt
     if null (trim nmTxt)
@@ -221,6 +222,10 @@ pprintCtrlSet = concat . intersperse "; " . fmap pprintCtrlSetCtxt . toCtxtList
 
 prettyAA :: AddedAxiom AxRepr -> String
 prettyAA (AAx (AR from _ to)) = T.pretty from ++ " → " ++ T.pretty to
+
+prettyQAxs :: QueryAxioms -> String
+prettyQAxs AllOfEm = "all"
+prettyQAxs (Some list) = T.prettys list
 
 --------------------------------------------------------------------------------
 
