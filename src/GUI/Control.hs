@@ -12,6 +12,8 @@ import Data.Bifunctor
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
+import Utils (trim)
+
 import Data.Char
 import Data.List
 import Safe
@@ -168,9 +170,6 @@ thrmAreaToCommand nmE axE fromE toE = do
     if null (trim nmTxt)
       then return $ Query (QS axs (Aggr from) (Aggr to))
       else return $ AddTheorem (TN nmTxt) (QS axs (Aggr from) (Aggr to))
-  where
-    trim :: String -> String
-    trim = dropWhileEnd isSpace . dropWhile isSpace
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
