@@ -83,7 +83,10 @@ instance Search CLIAxiom AxRepr FrmlRepr where
       to <- decideOF concl
       return $ S.fromBasicNS lc cty to
   queryToGoal axs thrms (QS axlist q1 q2) = do
-    axioms <- axsFromList axs thrms axlist
+    axioms <-
+      case axlist of
+        Some list -> axsFromList axs thrms list
+        AllOfEm -> return (fmap snd (legitAxioms axs thrms))
     let lc = fmap S.sAtom . unAggr $ q1
         concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
         sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
