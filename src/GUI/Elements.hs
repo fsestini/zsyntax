@@ -139,6 +139,10 @@ buildListView vbox cols packing = do
 
   list <- listStoreNew []
   tree <- treeViewNewWithModel list
+
+  sel <- treeViewGetSelection tree
+  treeSelectionSetMode sel SelectionMultiple
+
   treeViewSetHeadersVisible tree True
   forM_ cols $ \(title, render) -> do
     col <- treeViewColumnNew
@@ -194,7 +198,6 @@ axiomsArea vbox cols = do
   axHb <- hBoxNew False 10
   (tree, list) <- buildListView axHb cols PackGrow
   treeSel <- treeViewGetSelection tree
-  treeSelectionSetMode treeSel SelectionSingle
 
   axBtnsVb <- vBoxNew False 0
   addAxBtn <- buttonNewWithLabel "Add axiom"

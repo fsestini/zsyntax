@@ -12,7 +12,7 @@ import Data.Bifunctor
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
-import Utils (trim)
+import Utils (trim, maySingleton)
 import Data.Time
 import Data.Char
 import Data.List
@@ -114,8 +114,8 @@ wireAxiomsArea gui state axioms = do
       (askEditAxiom . toADC >=> maybeM (execCommandInGUI gui state))
   onClicked (btnRemoveAxiom axioms) $
     maybeMM'
-      (selectedAxiom axioms)
-      (execCommandInGUI gui state . RemoveAxiom . fst)
+      (selectedAxioms axioms)
+      (mapM_ (execCommandInGUI gui state . RemoveAxiom . fst))
   return ()
   where
     toADC :: AxItem -> AxDiaContent
@@ -124,9 +124,14 @@ wireAxiomsArea gui state axioms = do
 selectedAxiom :: AxiomsArea AxItem -> IO (Maybe AxItem)
 selectedAxiom axioms = do
   sel <- treeSelectionGetSelectedRows (treeSelAxioms axioms)
-  maybe' (join (fmap headMay (headMay sel))) (return Nothing) $ \i -> do
+  maybe' (join (fmap headMay (maySingleton sel))) (return Nothing) $ \i -> do
     item <- listStoreGetValue (storeAxioms axioms) i
     return (Just item)
+
+selectedAxioms :: AxiomsArea AxItem -> IO (Maybe [AxItem])
+selectedAxioms axioms =
+  treeSelectionGetSelectedRows (treeSelAxioms axioms) >>=
+    mapM (mapM (listStoreGetValue (storeAxioms axioms))) . mapM headMay
 
 askAddAxiom :: IO (Maybe GUICommand)
 askAddAxiom =
