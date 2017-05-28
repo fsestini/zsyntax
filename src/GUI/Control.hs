@@ -169,17 +169,19 @@ resetStore store list =
 thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry -> Bool
                   -> IO (Either String GUICommand)
 thrmAreaToCommand nmE axE fromE toE useList = do
-  nmTxt <- entryGetText nmE
+  nmTxt <- entryGetText nmE :: IO String
   axTxt <- entryGetText axE
   fromTxt <- entryGetText fromE
   toTxt <- entryGetText toE
   return $ do
+    realName <-
+      bimap show id (parse (spaces *> many alphaNum <* spaces <* eof) "" nmTxt)
     axs <- if useList then Some <$> parseThrmNames axTxt else return AllOfEm
     from <- bimap show id . parseAggregate $ fromTxt
     to <- bimap show id . parseAggregate $ toTxt
-    if null (trim nmTxt)
+    if null (trim realName)
       then return $ Query (QS axs (Aggr from) (Aggr to))
-      else return $ AddTheorem (TN nmTxt) (QS axs (Aggr from) (Aggr to))
+      else return $ AddTheorem (TN realName) (QS axs (Aggr from) (Aggr to))
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
