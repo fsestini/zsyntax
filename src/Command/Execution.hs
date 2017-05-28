@@ -292,6 +292,7 @@ execCommand (AddTheorem name q) =
   liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
 execCommand (LoadFile path) = loadFile path >> refreshTheorems
+execCommand (OpenFile path) = put (feEmpty, feEmpty) >> loadFile path
 execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
 
 axToTrans :: Monad m => (a1 -> m a) -> a1 -> b -> m (a, b)
