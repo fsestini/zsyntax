@@ -58,7 +58,7 @@ class CPrint axr frepr | axr -> frepr, frepr -> axr where
 data Command axr frepr
   = AddAxiom ThrmName axr
   | ChangeAxiom ThrmName axr
-  | RemoveAxiom ThrmName
+  | RemoveAxioms [ThrmName]
   | AddTheorem ThrmName (QueriedSeq frepr)
   | Query (QueriedSeq frepr)
   | LoadFile FilePath

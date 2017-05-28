@@ -209,7 +209,7 @@ parseSaveToFile =
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
-  RemoveAxiom <$> (token (string "remove axiom") >> (token thrmName))
+  RemoveAxioms . return <$> (token (string "remove axiom") >> (token thrmName))
 
 command :: Parser CLICommand
 command =

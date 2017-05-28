@@ -115,7 +115,7 @@ wireAxiomsArea gui state axioms = do
   onClicked (btnRemoveAxiom axioms) $
     maybeMM'
       (selectedAxioms axioms)
-      (mapM_ (execCommandInGUI gui state . RemoveAxiom . fst))
+      ((execCommandInGUI gui state . RemoveAxioms) . fmap fst)
   return ()
   where
     toADC :: AxItem -> AxDiaContent

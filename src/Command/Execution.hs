@@ -217,22 +217,19 @@ runSearch neutral = (runIdentity . proverSearch initS initR) neutral
 
 changeAxiom
   :: (CommAx axr ax)
-  => ThrmName
-  -> axr
-  -> (AxEnv axr ax)
-  -> UI (AxEnv axr ax)
+  => ThrmName -> axr -> (AxEnv axr ax) -> UI (AxEnv axr ax)
 changeAxiom axName axrepr axEnv = toUI axEnv $ do
   axiom <- liftParse (reprAx axrepr)
   let newAxEnv = feReplace axName (AAx axrepr, axiom) axEnv
   return newAxEnv
 
-removeAxiom
-  :: ThrmName
-  -> (AxEnv axr ax)
-  -> UI (AxEnv axr ax)
+removeAxiom :: ThrmName -> (AxEnv axr ax) -> UI (AxEnv axr ax)
 removeAxiom axName axEnv = do
   let newAxioms = feRemove axName axEnv
   return newAxioms
+
+removeAxioms :: [ThrmName] -> AxEnv axr ax -> UI (AxEnv axr ax)
+removeAxioms = flip (foldM (flip removeAxiom))
 
 loadFile
   :: (MegaConstr axr ax frepr)
@@ -289,8 +286,8 @@ execCommand (AddAxiom name axrepr) =
   liftUITrans (axToTrans $ addAxiom name axrepr) >> refreshTheorems
 execCommand (ChangeAxiom name axrepr) =
   liftUITrans (axToTrans $ changeAxiom name axrepr) >> refreshTheorems
-execCommand (RemoveAxiom name) =
-  liftUITrans (axToTrans $ removeAxiom name) >> refreshTheorems
+execCommand (RemoveAxioms names) =
+  liftUITrans (axToTrans $ removeAxioms names) >> refreshTheorems
 execCommand (AddTheorem name q) =
   liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
