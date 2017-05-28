@@ -135,6 +135,8 @@ buildListView
   -> Packing
   -> IO (TreeView, ListStore t)
 buildListView vbox cols packing = do
+  scroll <- scrolledWindowNew Nothing Nothing
+
   list <- listStoreNew []
   tree <- treeViewNewWithModel list
   treeViewSetHeadersVisible tree True
@@ -146,7 +148,9 @@ buildListView vbox cols packing = do
       \row -> [cellText := (render row)]
     _ <- treeViewAppendColumn tree col
     treeViewColumnSetTitle col title
-  boxPackStart vbox tree packing 0
+
+  scrolledWindowAddWithViewport scroll tree
+  boxPackStart vbox scroll packing 0
   return (tree, list)
 
 --------------------------------------------------------------------------------
