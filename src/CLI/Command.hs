@@ -175,6 +175,14 @@ parseAxiom str = token (string str) >> token (string "axiom") >> do
 axiomList :: Parser [ThrmName]
 axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
 
+queryAxioms :: Parser QueryAxioms
+queryAxioms = try allParser <|> try someParser
+  where
+    allParser :: Parser QueryAxioms
+    allParser = string "all" >> spaces >> string "axioms" >> return AllOfEm
+    someParser :: Parser QueryAxioms
+    someParser = string "axioms" >> spaces >> (Some <$> parens axiomList)
+
 -- query name (aggr...) (aggr...) with axioms (...)
 queryTheorem :: Parser CLICommand
 queryTheorem =
@@ -183,9 +191,9 @@ queryTheorem =
     from <- parens (aggregate1')
     spaces
     to <- parens (aggregate1')
-    _ <- token (string "with axioms")
-    axioms <- parens axiomList
-    let q = QS axioms (Aggr from) (Aggr to)
+    _ <- token (string "with")
+    qAxs <- spaces >> queryAxioms
+    let q = QS qAxs (Aggr from) (Aggr to)
     case maybeName of
       Just name -> return $ AddTheorem name q
       Nothing -> return $ Query q
@@ -249,8 +257,13 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
 
 exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
 exportTheorem (TN name) (QS axs from to) =
-  "query " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++
-  ") with axioms (" ++ T.prettys axs ++ ")"
+  "query " ++
+  name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++ ") with " ++ qAxs
+  where
+    qAxs =
+      case axs of
+        AllOfEm -> "all axioms"
+        Some list -> "axioms (" ++ T.prettys list ++ ")"
 
 --------------------------------------------------------------------------------
 
