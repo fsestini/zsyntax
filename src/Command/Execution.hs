@@ -16,6 +16,7 @@
 module Command.Execution where
 
 import TypeClasses (Pretty(..))
+import Utils (trim)
 
 import Command.Structures
 
@@ -235,7 +236,8 @@ loadFile
   => FilePath -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
 loadFile path = do
   contents <- lift $ uiLoadFile path
-  let commandsE = mapM parseCommand (lines contents)
+  let commandsE =
+        mapM parseCommand (filter (not . null . trim) . lines $ contents)
   case commandsE of
     Left err -> lift . logUI $ "error parsing the file: " ++ (show err)
     Right commands -> mapM_ execCommand commands
