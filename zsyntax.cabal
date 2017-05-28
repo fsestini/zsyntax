@@ -26,6 +26,7 @@ library
                      , Checking.ReactLists.RList, Checking.ReactLists.Sets
                      , GUI.Elements , GUI.Control, GUI.Command
                      , Rules.Relation, Rules.Interface, Rules.Frontier, Rules
+                     , Utils
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
                      , dequeue, gtk, template-haskell, safe, non-empty
