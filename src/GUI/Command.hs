@@ -18,6 +18,7 @@ module GUI.Command
   , FEnv(..)
   , QueriedSeq(..)
   , Aggregate(..)
+  , QueryAxioms(..)
   , execCommand
   , execCommand'
   , aggregate1'
