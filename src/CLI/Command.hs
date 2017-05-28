@@ -64,12 +64,9 @@ type CLIThrmEnv = ThrmEnv Aggregate CLIAxiom
 
 type CLIDerTerm = SDT.SimpleDerTerm BioAtoms
 
-newtype CLITransRepr = CTR (S.SFormula () () BioAtoms, S.SFormula () () BioAtoms)
+newtype CLITransRepr = SimpleTransRepr BioAtoms
 
 type CLISrchFormula = SrchFormula CLIElemBase CLIControlType BioAtoms Int
-
-instance T.Pretty CLITransRepr where
-  pretty (CTR (f1, f2)) = T.pretty f1 ++ " --> " ++ T.pretty f2
 
 type instance DerT CLIAxiom AxRepr FrmlRepr = CLIDerTerm
 
@@ -90,10 +87,6 @@ instance Search CLIAxiom AxRepr FrmlRepr where
         sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
-
-instance TransDerTerm CLIDerTerm where
-  type TransRepr CLIDerTerm = CLITransRepr
-  transitions = fmap CTR . SDT.transitions
 
 --------------------------------------------------------------------------------
 -- Auxiliary PickMonad

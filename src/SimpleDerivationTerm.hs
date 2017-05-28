@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -80,3 +81,12 @@ transitions (ConjL d _ _) = transitions d
 transitions (ImplR d _) = transitions d
 transitions (ImplL d1 d2 b) =
   transitions d1 ++ [(conclusion d1, b)] ++ transitions d2
+
+newtype SimpleTransRepr a = STR (SFormula () () a, SFormula () () a)
+
+instance Pretty a => Pretty (SimpleTransRepr a) where
+  pretty (STR (from,to)) = pretty from ++ " --> " ++ pretty to
+
+instance Pretty a => S.TransDerTerm (SimpleDerTerm a) where
+  type TransRepr (SimpleDerTerm a) = SimpleTransRepr a
+  transitions = fmap STR . SimpleDerivationTerm.transitions
