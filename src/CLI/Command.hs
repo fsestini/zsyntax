@@ -37,6 +37,7 @@ import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
 
 newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
+  deriving (Eq, Ord, Show)
 
 instance T.Pretty Aggregate where
   pretty = T.prettys . unAggr
@@ -45,7 +46,7 @@ data AxRepr = AR
   { from :: Aggregate
   , ctrl :: CtrlSet BioAtoms
   , to :: Aggregate
-  }
+  } deriving (Eq, Ord, Show)
 
 type FrmlRepr = Aggregate
 
