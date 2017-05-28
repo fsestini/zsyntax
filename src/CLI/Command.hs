@@ -194,6 +194,11 @@ parseLoadFile =
   token (string "load file") >> spaces >>
   LoadFile <$> token (many1 (noneOf [' ']))
 
+parseOpenFile :: Parser CLICommand
+parseOpenFile =
+  token (string "open file") >> spaces >>
+  OpenFile <$> token (many1 (noneOf [' ']))
+
 parseSaveToFile :: Parser CLICommand
 parseSaveToFile =
   token (string "save to file") >> spaces >> SaveToFile <$> many1 (noneOf [' '])
@@ -205,7 +210,7 @@ parseRemoveAxiom =
 command :: Parser CLICommand
 command =
   parseAxiom "add" <|> parseAxiom "edit" <|> queryTheorem
-  <|> parseLoadFile <|> parseSaveToFile <|> parseRemoveAxiom
+  <|> parseLoadFile <|> parseOpenFile <|> parseSaveToFile <|> parseRemoveAxiom
 
 comma :: Parser Char
 comma = token (char ',')
