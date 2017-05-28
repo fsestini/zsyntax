@@ -28,8 +28,13 @@ data AddedAxiom axr = AAx { unAAx :: axr }
 instance Pretty ThrmName where
   pretty = unTN
 
+data QueryAxioms
+  = Some [ThrmName]
+  | AllOfEm
+  deriving (Eq, Ord, Show)
+
 data QueriedSeq frepr = QS
-  { qsAxioms :: [ThrmName]
+  { qsAxioms :: QueryAxioms
   , qsFrom :: frepr
   , qsTo :: frepr
   } deriving (Eq, Ord, Show)
