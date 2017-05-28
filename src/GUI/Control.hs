@@ -13,7 +13,7 @@ import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
 import Utils (trim)
-
+import Data.Time
 import Data.Char
 import Data.List
 import Safe
@@ -142,7 +142,9 @@ askEditAxiom content =
 appendLog :: TextBuffer -> String -> IO ()
 appendLog b str = do
   i <- textBufferGetEndIter b
-  textBufferInsert b i (str ++ "\n")
+  time <- getCurrentTime
+  textBufferInsert b i
+    (formatTime defaultTimeLocale "%F %T" time ++ ": " ++ str ++ "\n")
 
 execCommandInGUI :: GUI -> IORef AppState -> GUICommand -> IO ()
 execCommandInGUI gui state c = do
