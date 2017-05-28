@@ -158,7 +158,7 @@ data NSequent axs frml cty =
 instance (Formula frml, Ord axs, Eq cty) =>
          ForwardSequent (NSequent axs frml cty) where
   (NS un1 lin1 cty1 concl1) `subsumes` (NS un2 lin2 cty2 concl2) =
-    un1 <= un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
+    un1 `subCtxtOf` un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
 
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
 -- elements of some type of axiomatic formulas.
