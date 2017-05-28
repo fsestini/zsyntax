@@ -62,6 +62,11 @@ data Command axr frepr
   | AddTheorem ThrmName (QueriedSeq frepr)
   | Query (QueriedSeq frepr)
   | LoadFile FilePath
+  -- ^ Loading a file executes all commands in it, so that their effects act on
+  -- the state of the system at the moment the file is loaded.
+  | OpenFile FilePath
+  -- ^ Opening a file executes all commands in it, after having reset the system
+  -- to an initial, empty state.
   | SaveToFile FilePath
   deriving (Eq, Show)
 
