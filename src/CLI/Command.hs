@@ -6,6 +6,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 -- {-# LANGUAGE TypeSynonymInstances #-}
 
+{-# OPTIONS_GHC -Wall #-}
+
 module CLI.Command where
 
 import Text.Parsec.Char
@@ -21,18 +23,14 @@ import Checking.ReactLists.RList
 import Checking.ReactLists.Sets
 import qualified SFormula as S
 import LFormula
-       (BioFormula(..), SrchFormula, LGoalNSequent, BFormula, decideN,
+       (BioFormula(..), SrchFormula, LGoalNSequent, decideN,
         decideOF)
 import Rules hiding (AxRepr, AR)
 import Parser
-import Control.Monad (join)
-import Data.List (intersperse)
-import Data.List.Split (splitOn)
 import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
 import Data.Foldable (toList)
 import Data.Bifunctor (bimap)
-import Context
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
 
@@ -79,9 +77,9 @@ instance Search CLIAxiom AxRepr FrmlRepr where
   type SrchF CLIAxiom AxRepr FrmlRepr = CLISrchFormula
   fromRNS (RNS _ lc cty concl) =
     maybe NonAxiomatic Axiomatic $ do
-      lc <- mapM decideN $ toNEList lc
-      to <- decideOF concl
-      return $ S.fromBasicNS lc cty to
+      nelc <- mapM decideN $ toNEList lc
+      toFrml <- decideOF concl
+      return $ S.fromBasicNS nelc cty toFrml
   queryToGoal axs thrms (QS axlist q1 q2) = do
     axioms <-
       case axlist of
@@ -118,12 +116,12 @@ instance Num n => T.PickMonad (PickM n) n where
     return i
 
 instance CommAx AxRepr CLIAxiom where
-  reprAx (AR from ctrl to) = do
+  reprAx (AR fromAggr ctrl' toAggr) = do
     return $
       S.sAx
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ from)
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ to)
-        (RL [(mempty, ctrl)])
+        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ fromAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ toAggr)
+        (RL [(mempty, ctrl')])
 
 --------------------------------------------------------------------------------
 -- Command parsing
@@ -165,12 +163,12 @@ ctrlSet = do
 parseAxiom :: String -> Parser CLICommand
 parseAxiom str = token (string str) >> token (string "axiom") >> do
   name <- token thrmName
-  from <- parens (aggregate1')
+  fromAggr <- parens (aggregate1')
   spaces
-  to <- parens (aggregate1')
+  toAggr <- parens (aggregate1')
   _ <- token (string "unless")
   ctrlset <- parens ctrlSet
-  return $ AddAxiom name (AR (Aggr from) ctrlset (Aggr to))
+  return $ AddAxiom name (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
 axiomList :: Parser [ThrmName]
 axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
@@ -188,12 +186,12 @@ queryTheorem :: Parser CLICommand
 queryTheorem =
   token (string "query") >> do
     maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
-    from <- parens (aggregate1')
+    fromAggr <- parens (aggregate1')
     spaces
-    to <- parens (aggregate1')
+    toAggr <- parens (aggregate1')
     _ <- token (string "with")
     qAxs <- spaces >> queryAxioms
-    let q = QS qAxs (Aggr from) (Aggr to)
+    let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
       Just name -> return $ AddTheorem name q
       Nothing -> return $ Query q
@@ -233,8 +231,8 @@ instance CPrint AxRepr FrmlRepr where
   printThrm = exportTheorem
 
 exportAxiom :: ThrmName -> AddedAxiom AxRepr -> String
-exportAxiom (TN name) (AAx (AR from cty to)) =
-  "add axiom " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to
+exportAxiom (TN name) (AAx (AR fromAggr cty toAggr)) =
+  "add axiom " ++ name ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
 ppBioFormula :: BioFormula BioAtoms -> String
@@ -256,9 +254,9 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
     list = asFoldable toList ctxt
 
 exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
-exportTheorem (TN name) (QS axs from to) =
-  "query " ++
-  name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++ ") with " ++ qAxs
+exportTheorem (TN name) (QS axs fromAggr toAggr) =
+  "query " ++ name ++
+  " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ") with " ++ qAxs
   where
     qAxs =
       case axs of
