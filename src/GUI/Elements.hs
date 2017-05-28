@@ -222,6 +222,7 @@ data TheoremEntryArea = TEA
   , eTo :: Entry
   , btnGo :: Button
   , btnLoad :: Button
+  , btnOpen :: Button
   , btnExport :: Button
   }
 
@@ -237,9 +238,11 @@ theoremEntryArea vbox = do
 
   hb <- hBoxNew False 0
   teBtn <- buttonNewWithLabel "Go"
+  loadBtn <- buttonNewWithLabel "Load file..."
   openBtn <- buttonNewWithLabel "Open file..."
   exportBtn <- buttonNewWithLabel "Export..."
   boxPackStart hb teBtn PackNatural 3
+  boxPackStart hb loadBtn PackNatural 3
   boxPackStart hb openBtn PackNatural 3
   boxPackStart hb exportBtn PackNatural 3
 
@@ -267,7 +270,7 @@ theoremEntryArea vbox = do
   boxPackStart vbox testhb PackNatural 3
 
   boxPackStart vbox hb PackNatural 7
-  return (TEA teName teAxioms testrbAx testrbAll teFrom teTo teBtn openBtn exportBtn)
+  return (TEA teName teAxioms testrbAx testrbAll teFrom teTo teBtn loadBtn openBtn exportBtn)
 
 packLabel box str = do
   l <- labelNew (Just str)

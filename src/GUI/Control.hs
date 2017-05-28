@@ -95,6 +95,8 @@ wireThrmEntry gui state tea = do
     useList <- toggleButtonGetActive (rbSome tea)
     thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) useList >>=
       either (printError gui) (execCommandInGUI gui state)
+  onClicked (btnOpen tea) $
+    maybeMM' openFileCommand (execCommandInGUI gui state)
   onClicked (btnLoad tea) $
     maybeMM' loadFileCommand (execCommandInGUI gui state)
   onClicked (btnExport tea) $
@@ -186,6 +188,19 @@ interpret _ (UISaveFile path content x) = writeFile path content >> return x
 
 toIO :: GUI -> UI a -> IO a
 toIO gui = foldFree (interpret gui)
+
+openFileCommand :: IO (Maybe GUICommand)
+openFileCommand = do
+  fileD <- fileChooserDialogNew (Just "Open file...") Nothing
+    FileChooserActionOpen [("Cancel", ResponseCancel), ("Open", ResponseAccept)]
+  widgetShow fileD
+  response <- dialogRun fileD
+  c <- case response of
+         ResponseAccept ->
+           fileChooserGetFilename fileD >>= (fmap OpenFile >>> return)
+         _ -> return Nothing
+  widgetDestroy fileD
+  return c
 
 loadFileCommand :: IO (Maybe GUICommand)
 loadFileCommand = do
