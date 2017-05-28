@@ -213,6 +213,8 @@ axiomsArea vbox cols = do
 data TheoremEntryArea = TEA
   { eName :: Entry
   , eAxioms :: Entry
+  , rbSome :: RadioButton
+  , rbAll :: RadioButton
   , eFrom :: Entry
   , eTo :: Entry
   , btnGo :: Button
@@ -222,28 +224,13 @@ data TheoremEntryArea = TEA
 
 theoremEntryArea :: VBox -> IO TheoremEntryArea
 theoremEntryArea vbox = do
-  packLabel vbox "Prove theorem:"
-  table <- tableNew 2 4 False
+  nameHb <- hBoxNew False 0
   l1 <- labelNew (Just "Name:   ")
-  miscSetAlignment l1 1 1
   teName <- entryNew
-  tableAttachDefaults table l1 0 1 0 1
-  tableAttachDefaults table teName 1 2 0 1
-  l2 <- labelNew (Just "Axioms:   ")
-  miscSetAlignment l2 1 1
-  teAxioms <- entryNew
-  tableAttachDefaults table l2 2 3 0 1
-  tableAttachDefaults table teAxioms 3 4 0 1
-  l3 <- labelNew (Just "Start aggr.:   ")
-  miscSetAlignment l3 1 1
-  teFrom <- entryNew
-  tableAttachDefaults table l3 0 1 1 2
-  tableAttachDefaults table teFrom 1 2 1 2
-  l4 <- labelNew (Just "End aggr.:   ")
-  miscSetAlignment l4 1 1
-  teTo <- entryNew
-  tableAttachDefaults table l4 2 3 1 2
-  tableAttachDefaults table teTo 3 4 1 2
+  boxPackStart nameHb l1 PackNatural 0
+  boxPackStart nameHb teName PackGrow 0
+  boxPackStart vbox nameHb PackNatural 3
+  -- miscSetAlignment l1 1 1
 
   hb <- hBoxNew False 0
   teBtn <- buttonNewWithLabel "Go"
@@ -253,9 +240,31 @@ theoremEntryArea vbox = do
   boxPackStart hb openBtn PackNatural 3
   boxPackStart hb exportBtn PackNatural 3
 
-  boxPackStart vbox table PackNatural 0
+  testAxHb <- hBoxNew False 0
+  testrbAx <- radioButtonNewWithLabel "Axioms: "
+  boxPackStart testAxHb testrbAx PackNatural 3
+  teAxioms <- entryNew
+  boxPackStart testAxHb teAxioms PackGrow 3
+  spaceL <- labelNew (Just "    ")
+  boxPackStart testAxHb spaceL PackNatural 3
+  testrbAll <- radioButtonNewWithLabelFromWidget testrbAx "Use all"
+  boxPackStart testAxHb testrbAll PackNatural 3
+  boxPackStart vbox testAxHb PackNatural 3
+
+  testhb <- hBoxNew False 0
+  testl1 <- labelNew (Just "Start aggr.: ")
+  testl2 <- labelNew (Just "End aggr.: ")
+  teFrom <- entryNew
+  teTo <- entryNew
+  boxPackStart testhb testl1 PackNatural 5
+  boxPackStart testhb teFrom PackGrow 5
+  boxPackStart testhb testl2 PackNatural 5
+  boxPackStart testhb teTo PackGrow 5
+
+  boxPackStart vbox testhb PackNatural 3
+
   boxPackStart vbox hb PackNatural 7
-  return (TEA teName teAxioms teFrom teTo teBtn openBtn exportBtn)
+  return (TEA teName teAxioms testrbAx testrbAll teFrom teTo teBtn openBtn exportBtn)
 
 packLabel box str = do
   l <- labelNew (Just str)
