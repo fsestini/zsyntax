@@ -94,11 +94,36 @@ or less easily) exploit already existing automated deduction
 procedures. Annotations could then be used as a way to tune, or restrict, the
 inference engine to account for the biological constraints.
 
-\subsection{Related work}
+\subsection{Main references and related work}
 
-[mention cmu thesis]
+The automated deduction parts of what follows are almost entirely based on the
+work of K. Chaudhuri (\cite{chaudhuri-paper}, \cite{chaudhuri-thesis}). With his
+work, collected in his PhD thesis, he shows how to exploit two well-known
+automated reasoning techniques for linear logic, namely focusing and the inverse
+method, in the same logical calculus, thus establishing a so called
+\emph{focused inverse method} for linear logic.
 
-[mention other articles by D'Agostino et al on controlled monotonicity]
+Chaudhuri's work is targeted to the full intuitionistic linear logic, so it was
+possible to adapt most of the material in \cite{chaudhuri-thesis}
+straightforwardly, since the logic described here and implemented in the proof
+assistant can be seen as a small (and much simpler) fragment of propositional
+intuitionistic linear logic. The original parts presented here concern the
+addition of control set-based facilities to the calculi of
+\cite{chaudhuri-thesis}, and the modification of parts of them to limit the
+amount of focusing, thus accounting for the order-sensitiveness of Zsyntax
+deductions.
+
+As already mentioned, the whole work was an attempt to implement (a suitable
+part of) the logic presented in \cite{adding-logic}.
+Other articles by the same authors were used as reference, in particular
+\cite{non-mono} is where the idea of adding annotations to sequents comes from,
+as well as the formalism used for control sets.
+Contrary to \cite{adding-logic}, and therefore the work presented here,
+\cite{non-mono} does not consider implication operators, but instead represents
+empirical knowledge as additional axioms to be added to the formal system.
+It also presents a more powerful conjunction operator, capable of expressing
+when two aggregates are in the same linear context but do not interact with each
+other.
 
 \subsection{Outline}
 

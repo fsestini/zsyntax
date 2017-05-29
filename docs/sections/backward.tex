@@ -2,18 +2,17 @@
 
 The objective of this section is to obtain a sequent calculus for \eznd{}, that
 is amenable to efficient proof search while being sound and complete with
-\eznd{} itself. This basically means that we are going to need some sort of
-subformula property and cut admissibility. Given the obvious similarities
-between a Zsyntax proof and a proof in intuitionistic linear logic, it seems
-reasonable to aim for a slightly modified version of the sequent calculus for
-intuitionistic linear logic in our search for such a calculus. The rest of this
-section does exactly that.
+respect to \eznd{} itself. Given the obvious similarities between a Zsyntax
+proof and a proof in intuitionistic linear logic, it seems reasonable to aim for
+a slightly modified version of the sequent calculus for intuitionistic linear
+logic in our search for such a calculus. The rest of this section does exactly
+this.
 
-In what follows, we try to mold our sequent calculus rules into shape by
-starting from what would be a direct translation of the rules of \eznd{} and
-refining them by cut, until we reach a form that allows us to easily prove the
+In what follows, we try to build the rules of our sequent calculus by starting
+from what would be a direct translation of the rules of \eznd{}, and then
+refining them by cut until we reach a form that allows us to easily prove the
 subformula property and cut elimination. As premises and conclusions we have
-annotated sequents of the following form
+annotated sequents of the form
 
 \[
   \zsyseq{\Gamma}{\Delta}{l}{C}
@@ -64,7 +63,7 @@ says that there exists a reaction from $\Delta_2, A$ to $B$ with a series of
 intermediate reactions described by $\reactlist{2}$.
 Moreover, we know that $\Delta_2$ respects the reaction list $\reactlist{1}$, so
 that it can be added to $\Delta_1$ without interfering with its reactions.
-This allows us to assert that there exists a reaction from $\Delta_1, \Delta_2$
+This entitles us to assert that there exists a reaction from $\Delta_1, \Delta_2$
 to $B$, as it sufficies to make $\Delta_1$ react to $A$, and then finally make
 $\Delta_2,A$ react to $B$.
 Notice that the reaction list describing this overall reaction is not simply the
@@ -85,8 +84,8 @@ The trivial reaction is the one that does nothing:
   \end{prooftree}
 \]
 
-It can be proved that we can rescrict $A$ to the atomic case while retaining
-completeness.
+It will be proved later that we can rescrict $A$ to the atomic case while
+retaining completeness.
 
 \paragraph{Biological axioms}
 
@@ -103,7 +102,7 @@ context. Formulas in the unrestricted context can of course be used ad libitum:
   \end{prooftree}
 \]
 
-\paragraph{$\otimes$ elimination}
+\paragraph{$\otimes$ left}
 
 A direct translation from Zsyntax yields a rule that is already in an acceptable
 form for a left rule.
@@ -116,7 +115,7 @@ form for a left rule.
   \end{prooftree}
 \]
 
-\paragraph{$\otimes$ introduction}
+\paragraph{$\otimes$ right}
 
 The $\otimes$ introduction rule of the original calculus is the exact inverse of
 the elimination rule, so a direct translation from Zsyntax to sequent calculus
@@ -183,6 +182,11 @@ thus yielding the following rule
   \end{prooftree}
 \]
 
+which is also a bit more general, since it does not only says that $A \otimes B$
+is entailed by $A,B$, but also by any pair of aggregates that can be transformed
+into $A,B$ in a straightforward (i.e., not involving control set-constrained
+reactions) way.
+
 \paragraph{$\rightarrow$ introduction}
 
 A direct translation to our single-succedent sequent calculus would be the
@@ -200,8 +204,8 @@ following:
 
 However, this rule again has the drawback that it increases the complexity of
 the sequent backwards. Worse so, it introduces a conditional that does not occur
-in the conclusion, to that we have to guess it out of thin air.
-A better behaved rule can be obtained as a special case of the one above:
+in the conclusion, to that we would have to guess it out of thin air when doing
+proof search. A better rule can be obtained as a special case of the one above:
 
 \[
   \begin{prooftree}
@@ -265,7 +269,8 @@ $\reactlist{}'$, then we can do so if we do not have $B$ right away, but we can
 get one by eliminating some conditional $A \rightarrow B$, provided of course
 that the side aggregate $\Delta$ respects all transitions that are involved in
 the reaction. The overall reaction list must then include the ones of the
-conditional, in this case $\reactlist{}$, extended with $\Delta$.
+conditional (in this case $\reactlist{}$) extended with $\Delta$, as we
+explained when introducing the cut rule.
 
 We can get to a better left rule that has only the implication as principal
 formula with cut:
@@ -304,7 +309,9 @@ thus yielding the following rule:
   \end{prooftree}
 \]
 
-The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
+The resulting sequent calculus is given in its entirety in
+Figure~\ref{bkwseqcalc}, where the formula in the $\init$ axiom is assumed to be
+logically atomic.
 
 \begin{figure}[ht]
   \begin{mdframed}
@@ -373,8 +380,10 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
   formulas.
 \end{lemma}
 \begin{proof}
-  By induction on the derivations. There are as many cases as there are
-  connectives to consider.
+  We show by structural induction on the involved formula that if
+  $\zsyseq{\Gamma}{A \otimes B}{[]}{A \otimes B}$, then the same sequent can be
+  derived with only atoms at the $\init$ axiom instances. There are as many
+  cases as there are connectives to consider.
 
   \begin{enumerate}
   \item Case $\zsyseq{\Gamma}{A \otimes B}{[]}{A \otimes B}$. Then,
@@ -417,6 +426,9 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
   \end{enumerate}
 \end{proof}
 
+The next theorem establishes that the cut rule introduced above is redundant, as
+one would expect.
+
 \begin{theorem}\label{backwardcutelim}[Cut admissibility]
   The following cut rule
 
@@ -437,6 +449,12 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 \begin{proof}
   See Appendix.
 \end{proof}
+
+We now prove soundness and completeness of the sequent calculus with respect to
+$\eznd{}$. On a side note, since the theorem prover is an implementation of the
+sequent calculus just presented, these two results mean that any difference
+between the prover's underlying logic and Zsyntax can be assessed by looking at
+\eznd{} alone.
 
 \begin{theorem}[Soundness]
   If $\zsyseq{\Gamma}{\Delta}{\reactlist{}}{A}$, then
@@ -554,8 +572,8 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 \end{proof}
 
 \begin{lemma}
-  For all set of axioms $\Gamma$ and contexts $\Delta$,
-  $\zsyseq{\Gamma}{\Delta}{[]}{\Delta^{\otimes}}$.
+  For all set of axioms $\Gamma$ and contexts $\Delta$, the sequent
+  $\zsyseq{\Gamma}{\Delta}{[]}{\Delta^{\otimes}}$ is derivable.
 \end{lemma}
 \begin{proof}
   Immediate. Just decompose the right-hand side with $\otimes R$ until either an
@@ -578,7 +596,7 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
   By induction on the \eznd{} proof.
 
   \begin{enumerate}
-  \item The reflaxive case is immediate.
+  \item The reflexive case is immediate.
   \item
 
     \[
@@ -699,6 +717,29 @@ The resulting sequent calculus is given in full in Figure~\ref{bkwseqcalc}.
 
   \end{enumerate}
 \end{proof}
+
+\subsection{Remarks}
+\label{sec:sequentcalculus-remarks}
+
+In the previous section we defined the logical calculus that we intended to
+implement in the theorem prover. The calculus has been defined to allow a
+comparison with the original calculus of Zsyntax in \cite{adding-logic} to be as
+easy as possible, but such formulation is for many reasons not very suitable for
+automatic proof search and machine implementation.
+
+A sequent calculus formulation is instead more convenient to study the
+proof-theoretic properties of the logic and the automated deduction techniques
+that can be applied. This is the reason why this section gives a sequent
+translation of the material of the previous one.
+
+The calculus we just defined will be used as the reference in both the
+subsequent proof-theoretic studies and in the implementation. The next step will
+be to find an automatic search procedure for such calculus, by adapting some
+well-known techniques for linear logic to our case.  Linear logic is known to be
+particularly tricky to mechanize in an efficient way, given its multiple sources
+of non-determinism. We will therefore draw from \cite{haudhuri-thesis} and
+incrementally modify our sequent calculus to allow more efficient proof search
+techniques to be employed.
 
 %%% Local Variables:
 %%% mode: latex
