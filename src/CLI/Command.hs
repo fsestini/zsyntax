@@ -87,6 +87,7 @@ instance Search CLIAxiom AxRepr FrmlRepr where
         sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
+  toAx = S.srchAxToSax
 
 --------------------------------------------------------------------------------
 -- Auxiliary PickMonad
