@@ -73,7 +73,7 @@ gui = do
   thList <- theoremArea vbox
     (("Name", T.pretty . fst) NE.:|
     [("Theorem", T.pretty . fst . snd)
-    ,("Axioms", prettyQAxs . qsAxioms . fst . snd)
+    ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
     ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui = GUI thList (storeAxioms axioms) b
@@ -93,7 +93,12 @@ wireThrmEntry :: GUI -> IORef AppState -> TheoremEntryArea -> IO ()
 wireThrmEntry gui state tea = do
   onClicked (btnGo tea) $ do
     useList <- toggleButtonGetActive (rbSome tea)
-    thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) useList >>=
+    m <-
+      toggleButtonGetActive (chkRefine tea) >>= \b ->
+        if b
+          then return Refine
+          else return Normal
+    thrmAreaToCommand (eName tea) (eAxioms tea) (eFrom tea) (eTo tea) useList m >>=
       either (printError gui) (execCommandInGUI gui state)
   onClicked (btnOpen tea) $
     maybeMM' openFileCommand (execCommandInGUI gui state)
@@ -166,9 +171,9 @@ resetStore :: ListStore a -> [a] -> IO ()
 resetStore store list =
   listStoreClear store >> forM_ list (listStoreAppend store)
 
-thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry -> Bool
+thrmAreaToCommand :: Entry -> Entry -> Entry -> Entry -> Bool -> AxMode
                   -> IO (Either String GUICommand)
-thrmAreaToCommand nmE axE fromE toE useList = do
+thrmAreaToCommand nmE axE fromE toE useList m = do
   nmTxt <- entryGetText nmE :: IO String
   axTxt <- entryGetText axE
   fromTxt <- entryGetText fromE
@@ -180,8 +185,10 @@ thrmAreaToCommand nmE axE fromE toE useList = do
     from <- bimap show id . parseAggregate $ fromTxt
     to <- bimap show id . parseAggregate $ toTxt
     if null (trim realName)
-      then return $ Query (QS axs (Aggr from) (Aggr to))
-      else return $ AddTheorem (TN realName) (QS axs (Aggr from) (Aggr to))
+      then return $
+        Query (QS (QA axs m) (Aggr from) (Aggr to))
+      else return $
+        AddTheorem (TN realName) (QS (QA axs m) (Aggr from) (Aggr to))
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
@@ -245,9 +252,9 @@ pprintCtrlSet = concat . intersperse "; " . fmap pprintCtrlSetCtxt . toCtxtList
 prettyAA :: AddedAxiom AxRepr -> String
 prettyAA (AAx (AR from _ to)) = T.pretty from ++ " → " ++ T.pretty to
 
-prettyQAxs :: QueryAxioms -> String
-prettyQAxs AllOfEm = "all"
-prettyQAxs (Some list) = T.prettys list
+prettyAxNames :: AxNames -> String
+prettyAxNames AllOfEm = "all"
+prettyAxNames (Some list) = T.prettys list
 
 --------------------------------------------------------------------------------
 

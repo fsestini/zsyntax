@@ -218,6 +218,7 @@ data TheoremEntryArea = TEA
   , eAxioms :: Entry
   , rbSome :: RadioButton
   , rbAll :: RadioButton
+  , chkRefine :: CheckButton
   , eFrom :: Entry
   , eTo :: Entry
   , btnGo :: Button
@@ -255,6 +256,8 @@ theoremEntryArea vbox = do
   boxPackStart testAxHb spaceL PackNatural 3
   testrbAll <- radioButtonNewWithLabelFromWidget testrbAx "Use all"
   boxPackStart testAxHb testrbAll PackNatural 3
+  chkRefine <- checkButtonNewWithLabel "Refine"
+  boxPackStart testAxHb chkRefine PackNatural 3
   boxPackStart vbox testAxHb PackNatural 3
 
   testhb <- hBoxNew False 0
@@ -270,7 +273,9 @@ theoremEntryArea vbox = do
   boxPackStart vbox testhb PackNatural 3
 
   boxPackStart vbox hb PackNatural 7
-  return (TEA teName teAxioms testrbAx testrbAll teFrom teTo teBtn loadBtn openBtn exportBtn)
+  return $
+    TEA teName teAxioms testrbAx testrbAll chkRefine teFrom teTo teBtn
+        loadBtn openBtn exportBtn
 
 packLabel box str = do
   l <- labelNew (Just str)
