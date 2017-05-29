@@ -15,11 +15,12 @@
 
 module Command.Execution where
 
-import TypeClasses (Pretty(..))
+import TypeClasses (Pretty(..), prettys)
 import Utils (trim)
 
 import Command.Structures
 
+import Data.Foldable
 import Control.Monad.Free
 import Rules hiding (reprAx, AxRepr)
 import Data.List
@@ -82,6 +83,7 @@ addTheorem
      ( TransDerTerm (DerT ax axr frepr)
      , Search ax axr frepr
      , SrchConstr ax axr frepr
+     , Eq ax
      )
   => ThrmName
   -> (QueriedSeq frepr)
@@ -91,17 +93,22 @@ addTheorem
 addTheorem nm q env thrms =
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
     logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
-    forM_ impls (logUI . shower)
+    forM_ impls (logUI . pretty)
     return newThrms
   where
-      -- shower :: TransRepr ax axr frepr -> String
-      shower = pretty
-      res :: EUI ([TransRepr (DerT ax axr frepr)], ThrmEnv frepr ax)
-      res = do
-        (DT dt ns) <-
-          liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
-        newThrms <- tryInsertTheorem nm (q, fromRNS ns) thrms
-        return (transitions dt, newThrms)
+    res :: EUI ([TransRepr (DerT ax axr frepr)], ThrmEnv frepr ax)
+    res = do
+      (DT dt ns) <- liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
+      let usedAxNames = toNames env thrms . fmap toAx . toList . rnsUc $ ns
+          m = mode . qsAxioms $ q
+      q' <-
+        case m of
+          Normal -> return q
+          Refine -> do
+            lift $ logUI ("refined to axioms: " ++ prettys usedAxNames)
+            return $ QS (QA (Some usedAxNames) m) (qsFrom q) (qsTo q)
+      newThrms <- tryInsertTheorem nm (q', fromRNS ns) thrms
+      return (transitions dt, newThrms)
 
 query
   :: ( TransDerTerm (DerT ax axr frepr)
@@ -258,7 +265,7 @@ saveToFile path axEnv thrms =
 type MegaConstr axr ax frepr =
   (CParse axr frepr, TransDerTerm (DerT ax axr frepr),
   CommAx axr ax, Search ax axr frepr,
-  SrchConstr ax axr frepr, CPrint axr frepr)
+  SrchConstr ax axr frepr, CPrint axr frepr, Eq ax)
 
 liftUITrans
   :: (AxEnv axr ax -> ThrmEnv frepr ax -> UI (AxEnv axr ax, ThrmEnv frepr ax))
@@ -286,8 +293,8 @@ execCommand (AddAxiom name axrepr) =
   liftUITrans (axToTrans $ addAxiom name axrepr) >> refreshTheorems
 execCommand (ChangeAxiom name axrepr) =
   liftUITrans (axToTrans $ changeAxiom name axrepr) >> refreshTheorems
-execCommand (RemoveAxioms names) =
-  liftUITrans (axToTrans $ removeAxioms names) >> refreshTheorems
+execCommand (RemoveAxioms axNames) =
+  liftUITrans (axToTrans $ removeAxioms axNames) >> refreshTheorems
 execCommand (AddTheorem name q) =
   liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
