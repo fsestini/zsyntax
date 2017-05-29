@@ -63,8 +63,12 @@ data GoalNSequent ax fr =
   GNS (UCtxt ax) (GLCtxt fr) (Opaque fr)
   deriving (Eq, Ord)
 
-data ResultNSequent ax fr cty =
-  RNS (UCtxt ax) (GLCtxt fr) cty (Opaque fr)
+data ResultNSequent ax fr cty = RNS
+  { rnsUc :: UCtxt ax
+  , rnsLc :: GLCtxt fr
+  , rnsCty :: cty
+  , rnsConcl :: Opaque fr
+  }
 
 toGNSequent
   :: Formula fr
