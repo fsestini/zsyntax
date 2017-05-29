@@ -19,6 +19,8 @@ module GUI.Command
   , QueriedSeq(..)
   , Aggregate(..)
   , QueryAxioms(..)
+  , AxNames(..)
+  , AxMode(..)
   , execCommand
   , execCommand'
   , aggregate1'
