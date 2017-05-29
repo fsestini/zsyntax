@@ -73,7 +73,7 @@ data Command axr frepr
 type family DerT ax axr frepr :: *
 -- type family SrchF (frml :: *) :: FKind -> *
 
-class Search ax axr frepr where
+class Search ax axr frepr | ax -> axr frepr where
   type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
   fromRNS
     :: ResultNSequent
@@ -89,6 +89,7 @@ class Search ax axr frepr where
         (GoalNSequent
           (Ax (SrchF ax axr frepr))
           (SrchF ax axr frepr))
+  toAx :: Ax (SrchF ax axr frepr) -> ax
 
 -- class Search ax axr frepr | ax -> frml where
 --   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax
