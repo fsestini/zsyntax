@@ -16,6 +16,9 @@ import qualified TypeClasses as T
 
 newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid, Semigroup)
 
+instance Foldable UnrestrCtxt where
+  foldr f z (UC set) = foldr f z set
+
 instance Ord a => Context (UnrestrCtxt a) where
   type Elems (UnrestrCtxt a) = a
   add x (UC set) = UC (S.insert x set)
