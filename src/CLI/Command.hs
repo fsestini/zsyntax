@@ -79,7 +79,7 @@ instance Search CLIAxiom AxRepr FrmlRepr where
       return $ S.fromBasicNS nelc cty toFrml
   queryToGoal axs thrms (QS axlist q1 q2) = do
     axioms <-
-      case axlist of
+      case names axlist of
         Some list -> axsFromList axs thrms list
         AllOfEm -> return (fmap snd (legitAxioms axs thrms))
     let lc = fmap S.sAtom . unAggr $ q1
