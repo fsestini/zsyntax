@@ -167,15 +167,20 @@ parseAxiom str = token (string str) >> token (string "axiom") >> do
 axiomList :: Parser [ThrmName]
 axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
 
-queryAxioms :: Parser QueryAxioms
-queryAxioms = try allParser <|> try someParser
+queryAxioms :: AxMode -> Parser QueryAxioms
+queryAxioms m = try allParser <|> try someParser
   where
     allParser :: Parser QueryAxioms
-    allParser = string "all" >> spaces >> string "axioms" >> return AllOfEm
+    allParser =
+      string "all" >> spaces >> string "axioms" >> return (QA AllOfEm m)
     someParser :: Parser QueryAxioms
-    someParser = string "axioms" >> spaces >> (Some <$> parens axiomList)
+    someParser =
+      string "axioms" >> spaces >> (flip QA m . Some <$> parens axiomList)
 
--- query name (aggr...) (aggr...) with axioms (...)
+queryAxMode :: Parser AxMode
+queryAxMode = try (string "refine" >> return Refine) <|> return Normal
+
+-- query name (aggr...) (aggr...) [refine] with axioms (...)
 queryTheorem :: Parser CLICommand
 queryTheorem =
   token (string "query") >> do
@@ -183,8 +188,9 @@ queryTheorem =
     fromAggr <- parens (aggregate1')
     spaces
     toAggr <- parens (aggregate1')
+    m <- token queryAxMode
     _ <- token (string "with")
-    qAxs <- spaces >> queryAxioms
+    qAxs <- spaces >> queryAxioms m
     let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
       Just name -> return $ AddTheorem name q
@@ -254,11 +260,15 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
 
 exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
 exportTheorem (TN name) (QS axs fromAggr toAggr) =
-  "query " ++ name ++
-  " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ") with " ++ qAxs
+  "query " ++ name ++ " (" ++
+  T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ") with " ++ (qMode ++ qAxs)
   where
+    qMode =
+      case mode axs of
+        Refine -> "refine "
+        Normal -> ""
     qAxs =
-      case axs of
+      case names axs of
         AllOfEm -> "all axioms"
         Some list -> "axioms (" ++ T.prettys list ++ ")"
 
