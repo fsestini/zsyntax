@@ -7,17 +7,16 @@ issue in the implementation of the inverse method is to enumerate the formulas
 for which we need to derive inference rules. As the calculus of derived rules
 has only neutral sequents as premises and conclusions, we only need to generate
 rules for formulas that occur in neutral sequents; we call those \emph{frontier
-  formulas} as in [cmu thesis]. To find the frontier formulas in a goal sequent,
-we abstractly replay the focusing and active phases to identify the phase
-transitions: each transition produces a frontier formula.
+  formulas} as in \cite{chaudhuri-thesis}. To find the frontier formulas in a
+goal sequent, we abstractly replay the focusing and active phases to identify
+the phase transitions: each transition produces a frontier formula.
 
 To generate the frontier, we use \emph{decorated formulas} to keep track of the
-polarity as well as linearity of the formula. A positive polarity marks formulas
-that will occur on the right of the sequent symbol, whereas a negarive polarity
-marks those that will occur on the left. Moreover, formulas marked with a dot
-are linear, that is they must be used exactly once, whereas those marked with an
-exclamation mark are unrestricted, that is they can be used freely zero or more
-times.
+polarity as well as the linearity of the formula. A positive polarity marks
+formulas that will occur on the right of the sequent symbol, whereas a negarive
+polarity marks those that will occur on the left. Moreover, formulas marked with
+a dot are linear, whereas those marked with an exclamation mark are part of the
+unrestricted context.
 
 \[
   \textsf{DecFormula} ::= \decplus{\declinear{A}} \, | \,
@@ -44,18 +43,18 @@ unrestricted formulas, as they are all negative.
 
       \textsf{act}(A \otimes B) = \textsf{act}(A) \cup \textsf{act}(B) \\
 
-      \decminus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} =
-      \textsf{foc}(A) \cup \textsf{act}(B) \qquad
-      \decplus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} =
+      \decminus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} =
+      \textsf{foc}(A) \cup \textsf{act}(B) \\
+      \decplus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} =
       \textsf{act}(A) \cup \{ \decplus{\declinear{B}} \} \cup \textsf{fr}(B) \\
 
-      \textsf{foc}(A \rightarrow_{\ctrlset{}}^S B) =
-      \decplus{\declinear{(A \rightarrow_{\ctrlset{}}^S B)}} \cup
-      \decplus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)} \\
+      \textsf{foc}(A \rightarrow_{\reactlist{}}^S B) =
+      \decplus{\declinear{(A \rightarrow_{\reactlist{}}^S B)}} \cup
+      \decplus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} \\
 
-      \textsf{act}(A \rightarrow_{\ctrlset{}}^S B) =
-      \decminus{\declinear{(A \rightarrow_{\ctrlset{}}^S B)}} \cup
-      \decminus{\textsf{fr}(A \rightarrow_{\ctrlset{}}^S B)}
+      \textsf{act}(A \rightarrow_{\reactlist{}}^S B) =
+      \decminus{\declinear{(A \rightarrow_{\reactlist{}}^S B)}} \cup
+      \decminus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)}
     \end{array}
   \]
 \end{definition}
@@ -85,8 +84,8 @@ unrestricted formulas, as they are all negative.
 % \]
 
 \begin{definition}[Frontier]
-  Given a goal $\Gamma;\Delta \Longrightarrow Q$, its frontier is the set union
-  of the following:
+  Given a goal sequent $\Gamma;\Delta \Longrightarrow Q$, its frontier is the
+  set union of the following:
 
   \begin{enumerate}
   \item All top-level formulas in $\decunrestr{\Gamma},
@@ -116,9 +115,9 @@ The generation proceeds as follows: for each formula $A$ in the frontier
 \end{itemize}
 
 \begin{example}
-  Consider the goal sequent $\zsyseq{A_1, A_2}{q,n}{\reactlist{}}{d \otimes d
-    \otimes d}$, where $\reactlist{}$ is to be determined, and $A_1, A_2$ are
-  axioms defined as follows:
+  Consider the goal sequent
+  $\zsyseq{A_1, A_2}{q,n}{ [(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}$,
+  and $A_1, A_2$ are axioms defined as follows:
 
   \begin{align*}
     A_1 & \equiv q \rightarrow_{[]}^{\emptyset} d \otimes d \otimes n \\
@@ -383,7 +382,7 @@ method with the use of big-step derived rules from the focused calculus.  The
 good proof-theoretical properties of our original sequent calculus allow us to
 derive many properties and do a lot of automatic work in the phase preliminary
 to proof-search, from the structure of the goal sequent only. This has the
-effect that many redundant or inessential steps are eliminated from the actual
+effect that many redundant and inessential steps are eliminated from the actual
 proof-search phase, where they would otherwise badly affect its computational
 complexity.
 

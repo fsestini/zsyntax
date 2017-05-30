@@ -1,26 +1,27 @@
-\section{Search strategy}
+\section{Implementation details}
 
 \subsection{Sequent representation}
 
-During the preliminary rule generation, as well as during proof search, we need
-to refer to subformulas of the goal sequent. It is important to remark that we
-need to differentiate between two syntactically identical subformulas of
-different formulas. For example
+During the preliminary rule generation phase, as well as during proof search, we
+need to refer to subformulas of the goal sequent. It is important to remark that
+we need to differentiate between two syntactically identical subformulas of
+different formulas. Consider the following forward neutral sequen:
 
 \[
   \zfneuseq{\cdot}{(p \otimes q) \otimes (p \otimes q),
-    r \rightarrow (p \otimes q)}{\ctrlset{}}{p}
+    r \rightarrow (p \otimes q)}{\reactlist{}}{p}
 \]
 
 Here, the \emph{same} formula $p \otimes q$ occurs three times as three
 \emph{different} subformulas. To make this distinction clear during proof
-search, as well as to have a way to easily refer and compare subformulas of the
-goal sequent, we \emph{label} every subformula with a unique label.
+search, as well as to have a way to easily refer and efficiently compare
+subformulas of the goal sequent, we follow \cite{chaudhuri-thesis} and
+\emph{label} every subformula with a unique label.
 
-We write $l \# A$ to denote that $l$ is the label for the formula $A$. Given a
-goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we label every \emph{non-atomic}
-subformula of it sequent using a unique label (we consider atoms to be their own
-labels). During proof search, we refer to labels only. In particular, all
+% We write $l \# A$ to denote that $l$ is the label for the formula $A$.
+Given a goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we label every
+\emph{non-atomic} subformula using a unique label (we consider atoms to be their
+own labels). During proof search, we refer to labels only. In particular, all
 derived rules refer to labelled sequents only.
 
 \begin{definition}[Labelled sequents]
@@ -37,12 +38,13 @@ derived rules refer to labelled sequents only.
 
 \subsection{Rules and rule application}
 
-Derived rules are precomputed to specific frontier subformulas, or rather, to
-the labels associated to frontier subformulas. Derived rules can be applied to
-input sequents in different ways, as long as the input sequents satisfy the
-sufficient requirements in order to be used with that rule. That is, to apply a
-rule to an input sequent, we have to first \emph{match} a premise of the rule to
-the input sequent. We formalize this in a notion of \emph{sequent schema}.
+Derived rules are precomputed to the frontier formulas of the goal sequent , or
+rather, to the labels associated to the frontier subformulas. Given that our
+derived inference rules are actually rule schemas, they can be applied to input
+sequents in different ways, as long as the input sequents satisfy the sufficient
+requirements in order to be used with that rule. That is, to apply a rule to an
+input sequent, we have to first \emph{match} a premise of the rule to the input
+sequent. We formalize this with the notion of \emph{sequent schema}.
 
 \begin{definition}[Sequent schema]
   A sequent schema is of the form
@@ -52,18 +54,18 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
   \]
 
   where $\gamma$ is either a label $r$ or $\cdot$, and $\zeta$ is either a
-  control set $\ctrlset{}$ or $\cdot$.
+  reaction list $\reactlist{}$ or $\cdot$.
 \end{definition}
 
 \begin{definition}[Matching]
   We say that a schema $\sigma = \zfneuseq{\Gamma_s}{\Delta_s}{\zeta}{\gamma_s}$ matches
-  an input sequent $s = \zfneuseq{\Gamma}{\Delta}{\ctrlset{}}{r}$ if
+  an input sequent $s = \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{r}$ if
 
   \begin{enumerate}
   \item $\Gamma_s \subseteq \Gamma$;
   \item $\Delta_s \subseteq \Delta$;
   \item $\gamma_s = \cdot$ or $\gamma_s = r$;
-  \item $\zeta = \cdot$ or $\zeta = \ctrlset{}$.
+  \item $\zeta = \cdot$ or $\zeta = \reactlist{}$.
   \end{enumerate}
 \end{definition}
 \begin{definition}[Match result]
@@ -81,7 +83,7 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
   \item $\zeta_r =
     \begin{cases}
       \cdot, & \text{if } \zeta = r \\
-      \ctrlset{},     & \text{if } \zeta = \cdot
+      \reactlist{},     & \text{if } \zeta = \cdot
     \end{cases}$
     % \item Like this in the thesis: $\gamma_r = \gamma$.
   \end{enumerate}
@@ -153,10 +155,9 @@ the input sequent. We formalize this in a notion of \emph{sequent schema}.
 
 \subsection{Search procedure}\label{srch-procedure}
 
-% From 4.1.6
-
-The search procedure for an input goal sequent
-$\zsyseq{\Gamma}{\Delta}{\ctrlset{}}{C}$ is summarized as follows:
+We can now outline the search procedure that, given a goal sequent, tries to
+determine its theoremhood. The steps for an input goal sequent
+$\zsyseq{\Gamma}{\Delta}{\reactlist{}}{C}$ are summarized below:
 
 \begin{enumerate}
 \item All subformulas of the goal sequent are labelled with unique label
@@ -167,7 +168,7 @@ $\zsyseq{\Gamma}{\Delta}{\ctrlset{}}{C}$ is summarized as follows:
   applied in any order that is guaranteed to saturate the search
   space. Conclusion sequents that are generated during these applications are
   stored and used as premises during the next iterations;
-\item If a conclusion sequent $\zfneuseq{\Gamma'}{\Delta}{\ctrlset{}}{C}$ is
+\item If a conclusion sequent $\zfneuseq{\Gamma'}{\Delta}{\reactlist{}}{C}$ is
   found that subsumes the goal, that is $\Gamma' \subseteq \Gamma$, exit with
   success.
 \item If the search space is saturated before finding a sequent that subsumes
@@ -184,12 +185,12 @@ The procedure maintains two continually updated sequent databases:
   should be considered for rule applications.
 \end{enumerate}
 
-we follow the approach of [cmu thesis] and ``currify'' inference rules with
-multiple premises. More precisely, we treat all rules as essentially unary rules
-that produce either a conclusion sequent or a new, partially instantiated
-rule. At the end of each iteration, all rules that have been partially but not
-fully applied are added to the database of available rules for the next
-iterations, which is therefore dynamically growing.
+we follow the approach of \cite{chaudhuri-thesis} and ``currify'' inference
+rules with multiple premises. More precisely, we treat all rules as essentially
+unary rules that produce either a conclusion sequent or a new, partially
+instantiated rule. At the end of each iteration, all rules that have been
+partially but not fully applied are added to the database of available rules for
+the next iterations, which is therefore dynamically growing.
 
 The loop of the search procedure repeats the following \emph{activation}
 step until either the goal sequent is subsumed (in which case the search is
@@ -220,6 +221,10 @@ set and the inactive set is exhausted (in which case the search saturates).
     sequents are then added to the inactive set.
   \end{enumerate}
 \end{definition}
+
+This search loop procedure is not new, and comes from the Otter theorem prover
+\cite{otter}. Its completeness is a known result, but we nevertheless give a
+proof below.
 
 \begin{theorem}[Completeness of the search loop]
   Let $S_a, S_i$ be the active and inactive sets and $R$ the collection of rules
@@ -255,6 +260,46 @@ set and the inactive set is exhausted (in which case the search saturates).
     $s_1, \dots, s_{n+1}$ during such iteration.
   \end{itemize}
 \end{proof}
+
+\subsubsection{Caveat: diverging search spaces}
+
+As noted before, the presence of axioms renders our logic not easily decidable
+\cite{mell-dec}. In particular, there are some cases of goal sequents where the
+search loop described above, if used on such sequents, may continue generating
+new conclusion sequents and neither stop successfully nor saturate the search
+space and stop with a negative answer. To avoid such cases, our particular
+implementation uses a simple countermeasure: limit the number of sequents that
+can be generated during a single search, and stop with failure if such limit is
+reached.
+
+Stopping when the size limit is reached is an obvious and natural thing to do
+when the diverging goal sequent is \emph{not provable}.
+There are, however, cases where the goal sequent is both provable \emph{and}
+a potential source for divergence of the search space. In other words, unlimited
+search on such sequents may generate an infinite number of sequents, including
+one that subsumes it and that would make the search successful if found by the
+search procedure.
+
+It is therefore important that our search procedure is not only complete for
+finite search spaces, but that is also guaranteed to stop with a successful
+answer if a sequent is provable, but may potentially generate an infinite search
+space. In the general setting of search algorithms, this property is usually
+enjoyed by algorithms operating in a depth-first way. Depth-first search may not
+be always space-efficient, but it is guaranteed to find a solution in finite
+time over an infinite search space (if one exists, of course).
+
+It is easy to see that the Otter loop described above operates in a depth-first
+way, as it is guaranteed to eventually apply all available rules to every
+sequent that is inserted in the inactive set. It follows that our technique of
+imposing a limit of the number of sequents actually corresponds to employing a
+depth-first search with a fixed, maximum limit to the height of the search
+space. All solutions that can be reached within that limit are thus guaranteed
+to be found in finite time. We conjecture that a limit can be found so that
+search is always guaranteed to end with success for valid (but potentially
+diverging) sequents, and fail within a reasonable amount of time for invalid
+diverging sequents.
+\footnote{Our current implementation uses a limit of 2000 sequents, which turned
+  our to be more than enough for all our tests.}
 
 \subsection{Theorem prover}
 
@@ -320,20 +365,15 @@ one of them, say $\Delta$, is specified for some control set $\ctrlset{}$, then
 $\ctrlset{}$ is assumed to contain also all supersets of $\Delta$.
 
 Queries are analogously specified as an initial elementary aggregate and a final
-elementary aggregate.
-
-\subsubsection{Higher-order conditionals}
-
-
-
-
-\subsubsection{Rel monad}
-
-
-
-
-
-
+elementary aggregate, together with a set of axiom that should be used during
+proof search. The user does not specify any reaction list for the goal
+sequent: any sequent that is found to logically subsume the goal is returned,
+regardless of its reaction list.
+Moreover, the set of axioms specified by the user is just an indication of the
+axioms that \emph{can} be used during search, not that \emph{should} be used. In
+particular, proof search ends successfully even if the goal is found using less
+axioms than those initially specified. In contrast, the prover does not attempt
+to use more axioms than indicated.
 
 %%% Local Variables:
 %%% mode: latex

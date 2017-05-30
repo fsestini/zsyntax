@@ -1,12 +1,10 @@
 \section{The Inverse Method}
 
-\subsection{Rationale}
-
 Backwards proof search for linear logic suffers from a resource management
 problem, which stems from the lack of structural rules that makes even the
-propositional fragment undecidable. One of such problems is given by
-multiplicative connectives, characterized by rules which suffer from a so called
-multiplicative non-determinism. Consider, for example, the $\otimes R$ rule
+propositional fragment undecidable. One such problem is given by multiplicative
+connectives, that exibit rules characterized by \emph{multiplicative
+  non-determinism}. Consider, for example, the $\otimes R$ rule
 
 \[
   \begin{prooftree}
@@ -18,22 +16,20 @@ multiplicative non-determinism. Consider, for example, the $\otimes R$ rule
   \end{prooftree}
 \]
 
-Suppose the rule above is used for backwards proof search, that is, by starting
-with a goal sequent and refining the search by applying the rules backwards,
-thus moving from the goal sequent to the subgoals, given by the premises of the
-rules. Without weakening, these non-deterministic rules must infer a division of
-the linear resources of the conclusion in order to distribute it among the
-premises. To guarantee completeness, a backwards proof search procedure must
-either backtrack, or implement resource management in other ways.
+Suppose the rule above is used for backwards proof search. Without weakening,
+these the search procedure must infer a division of the linear resources of the
+conclusion in order to distribute it among the premises. To guarantee
+completeness, a backwards proof search procedure must either backtrack, or
+implement resource management in other ways.
 
 Suppose now that the inference rules are read in the forward direction, that is
 by using them to derive new sequents from previously established ones.
 Multiplicative non-determinism does not exist in a forward reading, as we simply
 conjoin the resources of the premises to construct the conclusion.  Proof search
 in the forward direction thus starts from some initially known facts (usually,
-the axioms), and then repeatedly applies the rules of the calculus to accumulate
-new sequents until one of such sequents is found to subsume the goal (that is,
-validity of such sequents entails validity of the goal).
+some instantiation of the axioms), and then repeatedly applies the rules of the
+calculus to accumulate new sequents until one of them is found to subsume the
+goal (that is, validity of such sequents entails validity of the goal).
 
 Given that in our case the main source of computational complexity is
 multiplicative non-determinism, forward proof search seems to be the ideal
@@ -66,29 +62,30 @@ found to be unprovable.
 
 The fundamental idea behing the inverse method is therefore to specialize the
 entire logical calculus to the particular goal sequent, so that the only
-sequents that get generated during forward proof search are necessarily
-subsequents on the goal. This is sufficient to guarantee completeness in calculi
-with the subformula property, and it also provides an efficient decision
-procedure for calculi such as multiplicative linear logic, where the set of
-subsequents of any goal sequent (and thus the search space) is finite.
+sequents that get generated during forward proof search are subsequents of the
+goal. This is sufficient to guarantee completeness in calculi with the
+subformula property, and it also provides an efficient decision procedure for
+calculi such as multiplicative linear logic, where the set of subsequents of any
+goal sequent (and thus the search space) is finite.
 
 In our calculus \zss{}, the possibility of introducing axioms in the proof
-\emph{ad libitum} represented by the unrestricted context and the $\copyrule$
-rule ruins the properties that make plain multiplicative intuitionistic linear
-logic decidable. In particular, in any derivation there is no limit to the
-number of uses of the biological axioms, and since each use may generate a
-sequent that is structurally different from all the others, derivations in
-\zss{} can have unbounded height.  It follows that it is not true in general
-that a naive application of the inverse method would terminate for every goal
-sequent. Another interpretation of the reason of such proble is to be found in
-the fact that the unrestricted context in our sequents basically corresponds to
-a form of ! (``of course'') exponentiation. The decidability of MELL
-(multiplicative exponential linear logic) was an open problem until recently,
-and it has been shown to be decidable using ideas that go back to Curry and
-Kleene to construct a sequent calculus which absorbes contraction for
-exponentiated formulas in the rules of the other logical connectives. Of course,
-the adaptation of those ideas to a forward focused calculus is outside the scope
-of this work.
+\emph{ad libitum} represented by the presence of the unrestricted context and
+the $\copyrule$ rule ruins the properties that make plain multiplicative
+intuitionistic linear logic decidable. In particular, in any derivation there is
+no limit to the number of uses of the biological axioms, and since each use may
+generate a sequent that is structurally different from all the others, there is
+no way to easily deduce a height bound for all the derivations of a goal sequent
+from the sequent alone, as it is the case for multiplicative linear logic. It
+follows that it is not true, in general, that a naive application of the inverse
+method would terminate for every goal sequent. Another interpretation of the
+problem is to be found in the fact that the unrestricted context in our sequents
+basically corresponds to a form of linear logic ! (``of course'')
+exponentiation. Decidability of MELL (multiplicative exponential linear logic)
+was an open problem until recently, and has been proved decidable using ideas
+that go back to Curry and Kleene by constructing a sequent calculus which
+absorbes contraction for exponentiated formulas in the rules of the other
+logical connectives \cite{mell-dec}. Of course, the adaptation of those ideas to
+a forward focused calculus is outside the scope of this work.
 
 Nevertheless, even in the presence of our unrestricted contexts, the search
 space is in most cases finite, exception made for some particularly bad
@@ -134,170 +131,27 @@ problem is identical in the forward direction) may lead to a loop
   \end{prooftree}
 \]
 
-We conjecture that these bad cases are the exception rather than the norm, so
-that it may not be necessary, at least in its early stages, to complicate the
+We conjecture that these bad cases are not as frequent as it might seem, so
+that it should not be necessary, at least in its early stages, to complicate the
 development of a theorem prover to avoid as many such cases as possible. For our
 implementation, we just decided to fix an upper bound to the dimension of the
 search space. If the derivation fails due to a violation of this upper
 bound, the error can be reported to the user who may then decide to retry with a
 bigger upper bound.
 
-% \subsection{Forward sequent calculus}
-
-% Since weakening and contraction are admissible for the unrestricted
-% zone, we can treat $\Gamma$ as a set.
-
-% \begin{figure}[h]
-%   \begin{mdframed}
-%     \[
-%       \begin{prooftree}
-%         \justifies
-%         \zfwdseq{\cdot}{P}{\emptyset}{P}
-%         \using{\init}
-%       \end{prooftree}
-%       \qquad \qquad
-%       \begin{prooftree}
-%         \zfwdseq{\Gamma}{\Delta, A}{\ctrlset{}}{C}
-%         \justifies
-%         \zfwdseq{\Gamma \cup \{A\}}{\Delta}{\ctrlset{}}{C}
-%         \using{\copyrule}
-%       \end{prooftree}
-%     \]
-
-%     \[
-%       \begin{prooftree}
-%         \Gamma; \Delta \longrightarrow A
-%         \qquad
-%         \Gamma'; \Delta' \longrightarrow B
-%         \justifies
-%         \Gamma\cup \Gamma'; \Delta, \Delta' \longrightarrow A \otimes B
-%         \using{\otimes R}
-%       \end{prooftree}
-%       \qquad \qquad
-%       \begin{prooftree}
-%         \Gamma; \Delta, A, B \longrightarrow C
-%         \justifies
-%         \Gamma; \Delta, A \otimes B \longrightarrow C
-%         \using{\otimes L}
-%       \end{prooftree}
-%     \]
-
-%     \[
-%       \begin{prooftree}
-%         \Gamma; \Delta \longrightarrow A
-%         \qquad
-%         \Gamma'; \Delta', B \longrightarrow C
-%         \justifies
-%         \Gamma \cup \Gamma'; \Delta, \Delta', A \limp B \longrightarrow C
-%         \using{\limp L}
-%       \end{prooftree}
-%       \qquad \qquad
-%       \begin{prooftree}
-%         \Gamma; \Delta, A \longrightarrow B
-%         \justifies
-%         \Gamma; \Delta \longrightarrow A \limp B
-%         \using{\limp R}
-%       \end{prooftree}
-%     \]
-%   \end{mdframed}
-%   \caption{Forward sequent calculus}
-% \end{figure}
-
-% \begin{theorem}[Soundness]
-%   If $\Gamma ; \Delta \longrightarrow C$, then
-%   $\Gamma ; \Delta \Longrightarrow C$.
-% \end{theorem}
-% \begin{proof}
-%   Just notice that every forward derivation is also a backward derivation, with
-%   the difference that in the latter unrestricted contexts are copied in all
-%   the premises. The details are a straightforward induction on the height of a
-%   forward derivation, plus weakening for the backward calculus.
-% \end{proof}
-
-% \begin{theorem}[Completeness]
-%   If $\Gamma ; \Delta \Longrightarrow C$, then
-%   $\Gamma' ; \Delta \longrightarrow C$ for some $\Gamma' \subseteq \Gamma$.
-% \end{theorem}
-% \begin{proof}
-%   Straightforward induction on the backward derivation.
-% \end{proof}
-
-% \begin{example}
-%   The following is an example derivation of
-
-%   $$\frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}$$
-
-%   where $R_1 \equiv n \otimes n \limp d$ and
-%   $R_3 \equiv q \limp d \otimes d \otimes n$.
-
-%   \[
-%     \begin{prooftree}
-%       \[
-%         \[
-%           \[
-%             \frwdseq{\cdot}{q}{q}
-%             \[
-%               \[
-%                 \[
-%                   \frwdseq{}{d}{d}
-%                   \quad
-%                   \frwdseq{}{d}{d}
-%                   \justifies
-%                   \frwdseq{}{d, d}{d \otimes d}
-%                 \]
-%                 \quad
-%                 \[
-%                   \[
-%                     \frwdseq{}{d}{d}
-%                     \quad
-%                     \[
-%                       \frwdseq{}{n}{n}
-%                       \quad
-%                       \frwdseq{}{n}{n}
-%                       \justifies
-%                       \frwdseq{}{n, n}{n \otimes n}
-%                     \]
-%                     \justifies
-%                     \frwdseq{}{n, n, n \otimes n \limp d}{d}
-%                   \]
-%                   \justifies
-%                   \frwdseq{R_1}{n, n}{d}
-%                 \]
-%                 \justifies
-%                 \frwdseq{R_1}{n, d, d, n}{d \otimes d \otimes d}
-%               \]
-%               \justifies
-%               \frwdseq{R_1}{n, d \otimes d \otimes n}{d \otimes d \otimes d}
-%             \]
-%             \justifies
-%             \frwdseq{R_1}{q, n, q \limp d \otimes d \otimes n}{d \otimes d \otimes d}
-%           \]
-%           \justifies
-%           \frwdseq{R_1, R_3}{q, n}{d \otimes d \otimes d}
-%         \]
-%         \justifies
-%         \frwdseq{R_1, R_3}{q \otimes n}{d \otimes d \otimes d}
-%       \]
-%       \justifies
-%       \frwdseq{R_1, R_3}{\cdot}{q \otimes n \limp d \otimes d \otimes d}
-%     \end{prooftree}
-%   \]
-% \end{example}
-
-% ...
-
 \subsection{Forward calculus}
 
 \subsubsection{Focusing}
 
-The key insight of [cmu thesis] is to use focusing \emph{and} the inverse method
-together, by developing a focused forward calculus from which to extract an
-efficient proof search procedure.  We again follow [cmu thesis] as a model and
-build a forward calculus for \zss{}. Since the idea is to implement focusing
-(and the derived rules) in the forward direction, we do not develop a plain
-forward calculus and then focus it, but instead directly modify the backward
-focused calculus of derived rules of the previous section and adapt it for
-forward reasoning.
+The key insight of \cite{chaudhuri-thesis} is to use focusing \emph{and} the
+inverse method together, by developing a focused forward calculus from which to
+extract an efficient proof search procedure.  We again follow Chaudhuri's work
+as a model and build a forward calculus for \zss{}. Since the idea is to
+implement focusing (and the derived rules) in the forward direction, we do not
+develop a forward calculus and then apply focusing techniques to it, but instead
+directly modify the backward focused calculus of derived rules defined in the
+previous section and adapt it for forward reasoning. The result will be the
+forward focused calculus of derived rules that we want.
 
 \subsubsection{Subformula property}
 
@@ -307,11 +161,13 @@ such that derivations only contain subformulas of the conclusion formula. This
 means, in our case, that we only need to consider sequents composed of
 subformulas of the goal sequent when searching for a cut-free proof.
 
-We do not show directly that such property holds for our forward calculus of
-derived rules, but we limit ourselves to observe that every derivation in our
-calculus corresponds to a structurally identical derivation of the calculus in
-[cmu thesis]. It is then easy to convince ourselves that our calculus has the
-subformula property.
+When we derived the rules of the sequent calculus, we paid particular attention
+in putting them in a form that allowed us to have a calculus with subformula
+property. We do not show directly that such property holds for our forward
+calculus of derived rules, but we limit ourselves to observe that every
+derivation in our calculus corresponds to a structurally identical derivation of
+the calculus in \cite{chaudhuri-thesis}. It is then easy to convince ourselves
+that our calculus has the subformula property.
 
 \subsection{Forward derived rules}
 
@@ -324,7 +180,7 @@ forward direction to eliminate multiplicative non-determinism. As the final
 objective is to use forward search and the inverse method in conjunction with
 (lightweight) focusing for Zsyntax, we need to adapt the backward calculus of
 derived rules of the previous section to the forward direction. Again, we follow
-[cmu thesis] as a model.
+\cite{chaudhuri-thesis} as a model.
 
 \begin{definition}[Forward pre-sequent]
   A forward presequent is a term of the form
@@ -354,10 +210,12 @@ derived rules of the previous section to the forward direction. Again, we follow
 \end{definition}
 
 Figure~\ref{fig:fwdderrulecalculus} show the calculus to derived forward
-relations as judgements. As now we consider the forward direction, the intuitive
-interpretation of a forward relation is now to go from a list of known premise
-sequents $\Sigma$ to the conclusion $s$ that follows from them according to how
-the relation has been derived.
+relations as judgements. the intuitive interpretation of a forward relation is
+the same as the backwards case, with the only difference that now we consider
+the forward direction, hence we go from a list of known premise sequents
+$\Sigma$ to the conclusion $s$ that follows from them with a single pair of
+phases composed (top-down) of an active phase starting from the premises
+followed by a focused phase ending in the conclusion sequent.
 
 \begin{figure}[h]
   \begin{mdframed}
@@ -446,8 +304,7 @@ the relation has been derived.
 
 As in the backward case, we use the forward relations to build a calculus of
 derived rules that has neutral (forward) sequents as premises and
-conclusions. Rules are again generated from focusable formulas, implications and
-axioms. The full calculus is shown in Figure~\ref{fig:fwdderrulecalculus}.
+conclusions. The full calculus is shown in Figure~\ref{fig:fwdderrulecalculus}.
 
 \begin{figure}[h]
   \begin{mdframed}
