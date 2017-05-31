@@ -37,8 +37,8 @@ $\bioformulas$), combined by some linear logic-inspired operators:
   unit)
 \end{enumerate}
 
-Given the meaning of the Zsyntax operators (thoroughly described in
-\cite{adding-logic}), the formulas in the resulting Zsyntax language correspond
+Given the meaning of Zsyntax operators (thoroughly described in
+\cite{adding-logic}), formulas in the resulting Zsyntax language correspond
 to suitable types of molecular aggregates. A proof of $\Gamma \models \Delta$
 then represents the biochemical pathway from the aggregate $\Gamma$ to the
 aggregate $\Delta$, where $\models$ is defined in \cite{adding-logic} as the
@@ -48,13 +48,13 @@ logical calculus formulated in natural deduction style.
 The main difference between Zsyntax and linear logic lies in the
 non-monotonicity of the logical consequence relation (and therefore of the
 linear implication operator, here called Z-conditional). To clarify,
-monotonicity means that the validity of a formula $A \rightarrow B$ implies the
-validity of $A \otimes C \rightarrow B \otimes C$ for any $C$. This is at odds
-with the fact that many imiportant state transitions of interest in molecular
-biology are context-sensitive: a reaction may not take place depending on the
-molecular context in which it occurs.
+monotonicity means that validity of a formula $A \rightarrow B$ implies validity
+of $A \otimes C \rightarrow B \otimes C$ for any $C$. This is at odds with the
+fact that many important state transitions of interest in molecular biology are
+context-sensitive: a reaction may not take place depending on the molecular
+context in which it occurs.
 
-The logical system described by the authors in therefore one that considers
+The logical system described by the authors is therefore one that considers
 context-sensitive state transitions: a transition may take place in every
 molecular context that satisfies its control condition, which is a device used
 to describe all contexts that instead inhibit such transition.
@@ -62,17 +62,18 @@ Control conditions are expressed in the formalism of Zsyntax as
 \emph{control sets}, which are intended to be empirically determined (i.e., they
 result from empirical knowledge obtained in the laboratory). The immediate
 consequence is that their content typically changes over time, resulting in a
-logical system that is \emph{open}: theorems may loose their status depending on
+logical system that is \emph{open}: theorems may lose their status depending on
 modification of the empirical knowledge.
 
 \subsection{Automated deduction}
 
-The objective of this report is to present the development of an automated
-theorem prover for (a suitable fragment of) the calculus of Zsyntax presented in
-\cite{adding-logic}. The work required a study of the proof-theoretic properties
-of the logic, a survey of the already existing body of knowledge concerning
-automated deduction for similar logics (and in particular linear logic), and the
-adaptation of procedures from the literature to the specific case at hand.
+The objective of the work presented in this report is the development of an
+automated theorem prover for (a suitable fragment of) the calculus of Zsyntax
+presented in \cite{adding-logic}. The work required a study of the
+proof-theoretic properties of the logic, a survey of the already existing body
+of knowledge concerning automated deduction for similar logics (and in
+particular linear logic), and the adaptation of procedures from the literature
+to this specific case.
 
 The logic that has been implemented does not correspond to the full calculus
 presented in \cite{adding-logic}, but it is a fragment that has been selected to
@@ -81,62 +82,62 @@ of the cornerstone concepts of Zsyntax (namely, controlled monotonicity and
 openness of the system), and enough compact to be manageable in the short time
 available. In retrospective, this choice proved to be quite appropriate, as the
 sole study and implementation of the aforementioned fragment already took
-several weeks to its completion.
+several weeks to be completed.
 
-The development presented here proceeded with a simple yet effective approach. A
-new logical calculus for Zsyntax based on intuitionistic linear logic was
-defined, with proof search in mind. In particular, this new logic was obtained
-by first studying the properties that differentiate Zsyntax from plain linear
-logic, and then adding them to a linear logic sequent calculus in the form of
-annotations.  This yielded a calculus with derivations that are structurally
-identical (modulo annotations) to the ones of linear logic, allowing us to (more
-or less easily) exploit already existing automated deduction
-procedures. Annotations could then be used as a way to tune, or restrict, the
-inference engine to account for the biological constraints.
+The development presented here followed a simple approach. A new logical
+calculus for Zsyntax based on intuitionistic linear logic was defined,
+specifically with proof search in mind. In particular, this new logic was
+obtained by first studying the properties that differentiate Zsyntax from plain
+linear logic, and then adding them to a linear logic sequent calculus in the
+form of annotations.  This yielded a calculus with derivations that are
+structurally identical (modulo annotations) to the ones of linear logic,
+allowing us to (more or less easily) exploit already existing automated
+deduction procedures. Annotations could then be used as a way to tune, or
+restrict, the inference engine to account for the biological constraints.
 
 \subsection{Main references and related work}
 
-The automated deduction parts of what follows are almost entirely based on the
-work of K. Chaudhuri (\cite{chaudhuri-paper}, \cite{chaudhuri-thesis}). With his
-work, collected in his PhD thesis, he shows how to exploit two well-known
-automated reasoning techniques for linear logic, namely focusing and the inverse
-method, in the same logical calculus, thus establishing a so called
-\emph{focused inverse method} for linear logic.
+The main original controbution is to be found in the analysis of Zsyntax of
+Section 2, and the definition of the logical foundation of the theorem prover in
+the form of a sequent calculus given in Section 3.  The remaining sections deal
+with the efficient implementation of an automated deduction procedure for the
+calculus of Section 3, and are almost entirely based on the work of K. Chaudhuri
+(\cite{chaudhuri-paper}, \cite{chaudhuri-thesis}). With his work, collected in
+his PhD thesis, he shows how to combime two well-known automated reasoning
+techniques for linear logic, namely focusing \cite{andreoli92} and the inverse
+method \cite{inverse}, into a \emph{focused inverse method} for linear logic.
 
 Chaudhuri's work is targeted to the full intuitionistic linear logic, so it was
 possible to adapt most of the material in \cite{chaudhuri-thesis}
 straightforwardly, since the logic described here and implemented in the proof
 assistant can be seen as a small (and much simpler) fragment of propositional
 intuitionistic linear logic. The original parts presented here concern the
-addition of control set-based facilities to the calculi of
-\cite{chaudhuri-thesis}, and the modification of parts of them to limit the
-amount of focusing, thus accounting for the order-sensitiveness of Zsyntax
-deductions.
+addition of control set-based facilities to a standard backward sequent calculus
+and the other calculi of \cite{chaudhuri-thesis}, and the modification of parts
+of to correctly account for the order-sensitiveness of Zsyntax deductions.
 
 As already mentioned, the whole work was an attempt to implement (a suitable
-part of) the logic presented in \cite{adding-logic}.
-Other articles by the same authors were used as reference, in particular
-\cite{non-mono} is where the idea of adding annotations to sequents comes from,
-as well as the formalism used for control sets.
-Contrary to \cite{adding-logic}, and therefore the work presented here,
-\cite{non-mono} does not consider implication operators, but instead represents
-empirical knowledge as additional axioms to be added to the formal system.
-It also presents a more powerful conjunction operator, capable of expressing
-when two aggregates are in the same linear context but do not interact with each
-other.
+part of) the logic presented in \cite{adding-logic}.  Other articles by the same
+authors provided useful reference, in particular \cite{non-mono} is where the
+idea of adding annotations to sequents comes from, as well as the formalism used
+for control sets.  Contrary to \cite{adding-logic}, and therefore the work
+presented here, \cite{non-mono} does not consider implication operators, but
+instead represents empirical knowledge as additional axioms to be added to the
+formal system. It also presents a more powerful conjunction, capable of
+expressing when two aggregates are in the same linear context but do not
+interact with each other.
 
 \subsection{Outline}
 
-Section 2 gives the reasons why plain Zsyntax as given in \cite{adding-logic} is
-not entirely satisfactory when it comes to machine implementation, and then
-proceeds by defining an alternative calculus that is very much related but
-subtly different, and that sets the foundation for the rest of the work, as well
-as the implemented software.
+Section 2 gives some reasons why Zsyntax, as given in \cite{adding-logic}, is
+not entirely satisfactory when it comes to machine implementation. It then
+proceeds by defining an alternative formulation that is very much related but
+subtly different, settting the foundation for the rest of the work.
 
-Section 3 gives a cut-free sequent calculus translation of the logic of the
-previous section, and establishes soundness and completeness with respect to
-it. A proof of cut admissibility is also given, which is required for the
-completeness proof to go through.
+Section 3 gives a cut-free sequent calculus translation of the logic of Section
+2, and establishes soundness and completeness with respect to it. A proof of cut
+admissibility is also given, which is required for the completeness proof to go
+through.
 
 Section 4 presents the idea of focusing as a way to improve proof search and
 make it more computationally feasible by removing inessential
@@ -147,33 +148,22 @@ Section 5 presents the idea of forward reasoning as an alternative to the
 more-frequently-used backward reasoning, and draws from the literature to show
 how such alternative approach can be very effective to speed up inference for
 linear logic and related formalisms, like the one used here.  It then again
-takes [cmu thesis] as a model to represent the focused calculus of the preceding
-section in a forward-oriented direction.
+takes \cite{chaudhuri-thesis} as a reference to represent the focused calculus
+of the preceding section in the forward direction.
 
 Section 6 explains the benefits of the forward focused calculus developed in the
 previous sections, and gives some details on how to go from the definition of
 the calculus to an implementation of it.
 
 Section 7 gives some implementation details on the search procedure, based on
-the forward focused calculus.
+the forward focused calculus, and on the implemented theorem prover.
 
-Section 8 ...
+Section 8 presents a notion of derivation terms borrowed from
+\cite{chaudhuri-thesis}, which can be useful as an alternative internal
+representation of derivations as first class objects.
 
-Section 9 gives a notion of derivation terms, that is first class objects that
-can be used to represent derivations in the sequent calculus in a compact way
-that is particularly useful in implementations.
-
-Section 10 concludes with some remarks on various ways in which the work
+Section 9 concludes with some remarks on various ways in which the work
 presented here could be extended in the future.
-
-
-
-
-
-
-
-
-
 
 %%% Local Variables:
 %%% mode: latex

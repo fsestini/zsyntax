@@ -299,7 +299,7 @@ search is always guaranteed to end with success for valid (but potentially
 diverging) sequents, and fail within a reasonable amount of time for invalid
 diverging sequents.
 \footnote{Our current implementation uses a limit of 2000 sequents, which turned
-  our to be more than enough for all our tests.}
+  our to be more than enough in all our tests.}
 
 \subsection{Theorem prover}
 
@@ -320,15 +320,15 @@ implementation correct by costruction.
 
 \subsubsection{Implemented features}
 
-The implemented logical calculus is the full calculus of forward derived rules.
-The search procedure has been implemented as described in
-Section~\ref{srch-procedure}, with no significant modification.
-As already said, the possibility of adding axioms to the proof \emph{ad libitum}
-may lead to combinatorial explosion in some particularly bad cases.
-The theorem prover employs a simple counter measure, which consists of enforcing
-an upper bound to the search space, that is limiting the number of sequents that
-can be generated during proof search for a particular goal sequent.
-It is our opinion that this simple counter measure should be enough, given that
+The logical calculus that has been implemented is the full calculus of forward
+derived rules. The search procedure is the one described in
+Section~\ref{srch-procedure}, with no significant differences.  As already
+said, the possibility of adding axioms to the proof \emph{ad libitum} may lead
+to combinatorial explosion in some particularly bad cases.  The theorem prover
+employs a simple counter measure, which consists of enforcing an upper bound to
+the search space, that is limiting the number of sequents that can be generated
+during proof search for a particular goal sequent.  It is our opinion that this
+simple counter measure should be enough, given that
 
 \begin{enumerate}
 \item the search procedure operates in a breadth-first way. This means that if a
@@ -344,13 +344,14 @@ It is our opinion that this simple counter measure should be enough, given that
 \end{enumerate}
 
 The proving features that are offered by the software can be summarized as
-follows. The user starts from the system in the empty state, from which the
-following actions are allowed:
+follows. The session starts with the system in an initial, empty state, from
+which the following actions are allowed:
 
 \begin{itemize}
-\item Insertion, modification and removal of biological axioms;
+\item Insertion of biological axioms, and modification and/or removal of
+  already existing ones;
 \item Querying about validity (theoremhood) of a goal sequent.
-  Theorems can be named and saved for future use.
+  Theorems can be named and saved for future use as additional axioms.
 \item Saving the state of the system in a file, and restoring a previous session
   from a file.
 \end{itemize}
@@ -364,16 +365,25 @@ Regular contexts are as usual, whereas superset-closed context are such that if
 one of them, say $\Delta$, is specified for some control set $\ctrlset{}$, then
 $\ctrlset{}$ is assumed to contain also all supersets of $\Delta$.
 
-Queries are analogously specified as an initial elementary aggregate and a final
-elementary aggregate, together with a set of axiom that should be used during
-proof search. The user does not specify any reaction list for the goal
+Queries are analogously specified by giving an initial elementary aggregate and
+a final elementary aggregate, together with a set of axioms that should be used
+during proof search. The user does not specify any reaction list for the goal
 sequent: any sequent that is found to logically subsume the goal is returned,
-regardless of its reaction list.
-Moreover, the set of axioms specified by the user is just an indication of the
-axioms that \emph{can} be used during search, not that \emph{should} be used. In
-particular, proof search ends successfully even if the goal is found using less
-axioms than those initially specified. In contrast, the prover does not attempt
-to use more axioms than indicated.
+regardless of its reaction list. Moreover, the set of axioms specified by the
+user is just an indication of the axioms that \emph{can} be used during search,
+not that \emph{should} be used. In particular, proof search ends successfully
+even if the goal is found using less axioms than those initially specified. In
+contrast, the prover does not attempt to use more axioms than indicated.
+
+Theorems that turn up to be valid can be named and stored for future use. As an
+example, suppose the user queries about the validity of the goal sequent
+$\Delta \Longrightarrow \nabla$, and the system discovers the existence of a
+derivation $\Gamma ; \Delta \Longrightarrow_l \Delta$ for some group of axioms
+$\Gamma$ and reaction list $l$.  It clearly follows that
+$\Gamma ; \cdot \Longrightarrow \Delta \rightarrow^{\emptyset}_l \Delta$ is
+valid, so this fact can be added to the current ``knowledge'' of the system as
+a new axiom $\Delta^{\otimes} \rightarrow_l^{\emptyset} \nabla^{\otimes}$, which can
+then used in subsequent queries.
 
 %%% Local Variables:
 %%% mode: latex

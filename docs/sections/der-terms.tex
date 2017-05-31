@@ -88,15 +88,16 @@ be able to restore all details of a derivation from the term alone.
 \end{figure}
 
 The backward calculus given in Figure~\ref{fig:bkwdderterm} serves as a full
-definition of our derivation terms. However, every derivation (in particular,
-during automated proof search) is going to be performed in the forward derived
-rule calculus in Figure~\ref{fig:fwdderrulecalculus}. We therefore need a way to
-extract a backward derivation term from a derivation of the forward derived rule
-calculus. This is no difficult task to achieve, as one would expect.
+inductive definition of the derivation terms. However, derivations (in
+particular, during automated proof search) are going to be performed in the
+forward derived rule calculus in Figure~\ref{fig:fwdderrulecalculus}. We
+therefore need a way to extract a backward derivation term from a derivation of
+the forward derived rule calculus. This is no difficult task, as one would
+expect.
 
 For this purpose, we now extend the relations and rules of the forward derived
 rule calculus to produce derivation terms for the calculus in
-Figure~\ref{fig:bkwdderterm}, as well as neutral sequents.
+Figure~\ref{fig:bkwdderterm} along the usual presequents.
 
 \begin{figure}[h]
   \begin{mdframed}

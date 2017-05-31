@@ -1,8 +1,7 @@
 \section{Further work}
 
 The following sections point out multiple directions towards which the work
-presented here could be extended. Our opinion is that most of them involve
-technical rather than conceptual difficulties in their realization.
+presented here could be extended.
 
 \subsection{Restoring the original Z-conditional operator}
 
@@ -12,261 +11,21 @@ introduction of a $A \rightarrow B$ formula witnesses the fact that \emph{there
   exists some} transition from $A$ to $B$, with certain characteristics, whereas
 the elimination rule allows one to use a conditional formula $A \rightarrow B$
 provided the surrounding context respects \emph{all known instances} of the
-biological transition represented by such formula. The logic presented
-here takes a different approach, in the sense that the conditional operator with
-implicit quantification is dropped in favor of one that is equipped with
-explicit information about the deduction that was used to establish it.
+biological transition represented by such formula.
 
-As already explained, this alternative conditional is slightly more powerful
-than the one in \cite{adding-logic}, an obvious consequence of the fact that it
-carries more information. To restore the original Z-conditional, and thus the
-possibility of expressing formulas and proofs in the original language of
-Zsyntax, it is sufficient to restore what our conditional removed: the
-existential quantification. That is, the original Z-conditional can be obtained
-from ours by just existentially quantifying over the additional data regarding
-elementary bases and reactions lists in our conditional operator. In this sense,
-our conditional can be considered as a predicate over terms of type
-``elementary base'' and ``reaction list'', where these terms can of course be
-arbitrary variables that can be bound by quantifiers.
+The logic presented here takes a different approach, in the sense that the
+conditional operator with implicit quantification is dropped in favor of one
+that is equipped with explicit information about the deduction that was used to
+establish it. As we explained in Section 2, it is possible to satisfactorily
+reintroduce a connective with the same semantics of the one given in
+\cite{adding-logic} by keeping the conditional introduced here and existentially
+quantifying over elementary bases and reaction lists.
 
-\[
-  A \rightarrow B \quad \equiv \quad \exists e l . A \rightarrow_l^e B
-\]
-
-Then, the original introduction rule becomes a derived rule composed of
-$\rightarrow \mathcal{I}$ followed by $\exists \mathcal{I}$:
-
-\[
-  \begin{prooftree}
-    \[
-      \[
-        \Gamma, A
-        \leadsto
-        B
-      \]
-      \qquad
-      \Gamma, \Delta
-      \justifies
-      A \rightarrow_{\mathrm{L}}^{\elembases{\Gamma}} B, \Delta
-      \using{\rightarrow \mathcal{I}}
-    \]
-    \justifies
-    \exists s l . A \rightarrow_{l}^{s} B, \Delta
-    \quad \equiv \quad
-    A \rightarrow B, \Delta
-    \using{\exists \mathcal{I}}
-  \end{prooftree}
-\]
-
-where $\mathrm{L}$ represents the concrete reaction list associated with the
-deduction $\Gamma, A \vdash B$.
-In order to understand how this new conditional, formulated as a predicate,
-interacts with the other rules and relates to the original Z-conditional
-operator, we must extend the definition of elementary base to account for the
-presence of free variables. To start with, we should extend the definition of
-elementary base to quantifiers as follows:
-
-\[
-  \elembases{\exists x . A} = \elembases{A}
-\]
-
-As free variables represent a kind of metalinguistic universal quantification, a
-formula $A \rightarrow^e B$ represents a transition with an arbitrary elementary
-base, so that any use of it must work out correctly for any possible
-substitution of $e$ for a concrete elementary base.  As our logical system is
-meant to reflect a world characterized by a dynamically growing knowledge, it
-makes sense to make variables range over what is known \emph{at that current
-  moment}. Under this interpretation, a natural definition of elementary base
-for $A \rightarrow^e B$ if one that considers the elementary bases for all
-formulas of that type that are known at the moment. This requires us to consider
-elementary bases as sets of contexts rather than simple contexts, leading to a
-definition that turns out to correspond to the one given in \cite{adding-logic}
-
-\[
-  \elembases{A \rightarrow^e B} =
-  \{ \Delta \, | \, A \rightarrow^{\Delta} B \ \text{is known to be valid} \}
-\]
-
-the correspondence is not perfect, given that \cite{adding-logic} considers when
-$\Delta, A \models B$ is known to hold, rather than $A \rightarrow^{\Delta} B$.
-Our definition does make sense, however: if $\Delta, A \models B$ holds, then
-surely $A \rightarrow^{\Delta} B$ is valid.  It is not very clear though how a
-theorem proving software is supposed to discover new facts, like the validity of
-some $A \rightarrow^{\Delta} B$ (should it be under user input? should it
-discover them automatically? should it do both?).
-
-Consider now how an elimination rule could be derived, using our definition of
-the original Z-conditional as an existentially quantified one:
-
-\[
-  \begin{prooftree}
-    \Gamma, \exists l . A \rightarrow_l B, A
-    \, \equiv \,
-    \Gamma, A \rightarrow B, A
-    \qquad
-    %\resplist{\Gamma}{l}
-    (\star)
-    \quad
-    \[
-      \Gamma, A \rightarrow_l B, A
-      \qquad
-      \resplist{\Gamma}{l}
-      \justifies
-      \Gamma, B
-      \using{\rightarrow \mathcal{E}}
-    \]
-    \justifies
-    \Gamma, B
-    \using{\exists \mathcal{E}}
-  \end{prooftree}
-\]
-
-where $l$ is intended to be a fresh free variable that gets discharged as
-part of the existential elimination rule.
-To have an elimination rule that corresponds to the original one given in
-\cite{adding-logic}, we have to define a side-condition, indicated
-above as $(\star)$, that is logically equivalent (or sufficiently similar) to
-the original one, and that entails $\resplist{\Gamma}{l}$.
-The real connection between our interpretation and the original Z-conditional
-thus crucially depends on the interpretation of $\resplist{\Gamma}{l}$ when $l$
-is a free variable.
-
-Continuing on the same line of reasoning as with elementary bases, to prove
-something from $A \rightarrow_l B$ with $l$ free is to prove it for any
-possible substitution of $l$ to non-variable
-reaction lists $\mathrm{list}$, such that
-$A \rightarrow_{\mathrm{list}} B$ is known to hold at the moment the
-proof is done.
-Then
-
-\[
-  (\star) \equiv
-  \resplist{\Gamma}{\mathfrak{L}_{A \rightarrow B}} \equiv
-  \text{for all known } A \rightarrow_{\mathrm{list}} B,
-  \; \resplist{\Gamma}{\mathrm{list}}
-\]
-
-and similarly, extending the $\resplist{}{}$ relation to
-
-\[
-  \resplist{\Gamma}{l} \equiv
-  \text{for all known } A \rightarrow_{\mathrm{list}} B,
-  \resplist{\Gamma}{\mathrm{list}}
-\]
-
-when $A \rightarrow_l B$ and $l$ is a free variable. Notice that this is a
-positive definition, in the sense that it considers what is currently known
-about the system to give an interpretation of variables.
-For this reason, it is different from the one given in \cite{adding-logic},
-which is negative. In particular, the following is allowed:
-
-\[
-  \begin{prooftree}
-    \Gamma, A \rightarrow B, A
-    \justifies
-    \Gamma, B
-  \end{prooftree}
-\]
-
-only when $\Gamma$ is \emph{not known} to inhibit the reaction, that is, when it
-is not true that $\Gamma, A \not \models B$ is known. We therefore can
-identify, in general, two possible interpretations of formulas involving free
-variables,
-
-\begin{enumerate}
-\item $\Gamma, A(x) \vdash \Delta$ holds if it holds for all substitutions $t$
-  for $x$ such that $A(t)$ is currently known to hold;
-\item $\Gamma, A(x) \vdash \Delta$ holds if we do not have reason to reject its
-  validity, that is, we do not currently know of any substitution $t$ for $x$
-  such that $\Gamma, A(t) \not \vdash \Delta$.
-\end{enumerate}
-
-The first, ``positive'' interpretation is more in line with the definition of
-elementary bases given above: we consider a free variable to range over all
-current knowledge; hence, we consider a formula $A(x)$ valid if valid for any
-possible substitution. We prefer this interpretation as it is more conservative,
-in the sense that it validates formulas as theorems on the basis of known facts
-justifying them, and not on the lack of disproofs.
-
-Implementation-wise, this positive approach of course works well only if the
-theorem prover is very clever in discovering new things and adding them to the
-set of known facts. Otherwise, the user may see some obviously valid sequents
-being rejected, only because the software was not able to collect enough facts
-to prove them valid. Similarly it is again not very clear, if one choses to
-implement the second option, how the theorem prover is supposed to gain
-knowledge about transitions that do \emph{not} hold.
-
-Besides considerations about which of the two possible interpretations is more
-appropriate, the extension of the logic presented in this report with free
-variables and quantifiers is mainly a tiresome rather than conceptually
-challenging work, and it should be possible to adapt the work of
-\cite{chaudhuri-thesis} to our reduced case. One significant difficulty has to
-do with how to compute the domain over which free variables range \emph{during a
-  certain proof}. Consider a principal cut involving an existentially quantified
-conditional that is first introduced and then eliminated:
-
-\[
-  \begin{prooftree}
-    \[
-      \Gamma \Longrightarrow A \rightarrow_{\mathrm{L}}^{\mathrm{E}} B
-      \justifies
-      \Gamma \Longrightarrow \exists e l . A \rightarrow_l^e B
-    \]
-    \qquad
-    \[
-      \Delta, A \rightarrow_l^e B \Longrightarrow C
-      \justifies
-      \Delta, \exists e l . A \rightarrow_l^e B \Longrightarrow C
-    \]
-    \justifies
-    \Gamma, \Delta \Longrightarrow C
-  \end{prooftree}
-\]
-
-where $\mathrm{E}, \mathrm{L}$ just stand for arbitrary non-variable elementary
-bases and reaction lists. To be able to move the cut to the premises, the
-premise on the right must have been derived with its free variables ranging over
-a domain that \strong{includes} knowledge about the transition $A \rightarrow B$
-that is proved in the left premise. In other words, to make the cut elimination
-theorem go through, we need some parts of a derivation to know about other parts
-of the \emph{same} derivation. This requires us to carefully assign an explicit
-temporal order to branches of a derivation, as the validity of parts of it may
-crucially depend on facts that are established in others that are intended to
-come before.
-
-At this point, we could ask ourselves if it would have been better to just
-consider the original Z-conditional with implicit quantification, and shape the
-calculus around it without an additional, more informative operator. Firstly,
-notice that this would not have resulted in a simpler logic. Getting to a
-satisfactory definition and implementation of the Z-conditional operator
-\emph{is} an inevitably difficult task; this work just exposes why it is so, it
-does not introduce any difficulty in itself. The problem with cut elimination
-described above, for example, would have arisen in the same way if we considered
-cuts of Z-conditionals in the original sense of \cite{adding-logic}, since it
-has to do with the interaction between quantifiers and the dynamic
-interpretation of the domain over which variables range. The only difference is
-that in our case, existential quantification and free variables are made
-explicit.
-
-Secondly, by hiding the quantification in the informal meaning of the
-conditional operator, we would have removed useful expressive power from the
-logic. A transition $A \rightarrow B$ given as an axiom is, for example,
-fundamentally different from the same transition obtained after a long proof
-involving several intermediate reactions. In the formalism presented here this
-difference is evident, as the two formulas obviously would end up having very
-different reaction lists. The ability to differentiate between such apperently
-identical biological types yields a more expressive language, capable of proving
-facts that would have been unprovable otherwise, as explained in
-Section~\ref{sec:zsyntax}.
-
-The approach proposed here is thus based on the general view, which in many ways
-characterizes constructive mathematics (\cite{richman}, \cite{unif}), according
-to which it is better to start with a more informative logic, and then introduce
-ways to \emph{selectively} generalize it only when really needed and with very
-little cost, for example by quantifying the elementary base and reaction list
-data on the conditional opearator to restore the semantics of the original
-Z-conditional. Conversely, it is much more expensive to try to recover
-information that we failed to express in the first place.
+As we have seen, the quantifier-free fragment that we presented and that has
+been implemented in the proving tool is already interesting and quite useful
+alone. Nevertheless, the addition of quantifiers to it undoubtedly configures
+itself as one of the most interesting extensions that could be done in the
+future.
 
 \subsection{Higher-order conditionals}
 
@@ -345,10 +104,6 @@ to the remaining connectives, again following [cmu thesis] as a model, should be
 rather straightforward. This is because the additional connectives are not
 different from their linear logic counterparts in any fundamental way, so
 already existing literature on the subject can be leveraged with little effort.
-
-\subsection{Smarter handling of diverging sequents}
-
-TODO
 
 %%% Local Variables:
 %%% mode: latex
