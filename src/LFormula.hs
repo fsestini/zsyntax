@@ -252,6 +252,9 @@ liftUnifun 'Srch 'frmlMapAtoms
 liftUnifun 'SrchAx 'mapCtyAx
 liftBifun 'Srch 'mapEbCty
 
+instance T.Pretty a => T.PrettyK (SrchFormula eb cty a l) where
+  prettyk (Srch f) = T.pretty f
+
 instance (Ord a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
   (==) = on (==) (label . axToFormula . unSrchAx)
 instance (Ord a, Ord l, Monoid cty) => Ord (SrchAxiom cty a l) where
