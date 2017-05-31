@@ -43,6 +43,7 @@ import UnrestrContext
 import Rules.Interface
 import ForwardSequent
 import Prover (SearchTriple(..))
+import Data.Bifunctor
 
 --------------------------------------------------------------------------------
 
@@ -68,6 +69,9 @@ data DT term payload = DT
   { term :: term
   , payload :: payload
   } deriving (Eq, Ord)
+
+instance Bifunctor DT where
+  bimap f g (DT x y) = DT (f x) (g y)
 
 -- | Derivation term-decorated neutral sequents.
 type DTSequent term axs frml cty = DT term (NSequent axs frml cty)
