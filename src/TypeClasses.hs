@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -16,6 +17,7 @@ module TypeClasses
   , PickMonad(..)
   , Coercible(..)
   , Pretty(..)
+  , PrettyK(..)
   , filterOut
   , prettys
   ) where
@@ -30,6 +32,9 @@ import Data.List (intersperse)
 
 class Pretty a where
   pretty :: a -> String
+
+class PrettyK (f :: k -> *) where
+  prettyk :: f a -> String
 
 prettys :: (Pretty a, Foldable f) => f a -> String
 prettys = concat . intersperse "," . fmap pretty . toList
