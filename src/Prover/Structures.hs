@@ -118,6 +118,9 @@ data InactiveSequents seq =
 type ConclSequent seq = SearchSequent Concl seq
 data GlobalIndex seq = GI Int [seq]
 
+instance Foldable GlobalIndex where
+  foldr f z (GI _ l) = foldr f z l
+
 --------------------------------------------------------------------------------
 
 initialize :: seqty -> SearchSequent Initial seqty
