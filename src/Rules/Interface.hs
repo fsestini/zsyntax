@@ -16,6 +16,7 @@
 
 module Rules.Interface where
 
+import TypeClasses (Pretty(..), PrettyK(..))
 import qualified Data.List.NonEmpty as NE
 import Data.Constraint
 import Prover
@@ -128,6 +129,12 @@ switchF' = trimap snd snd snd . switchF
 
 data Opaque (frml :: FKind -> *) = forall k . O (frml k)
 data Neutral (frml :: FKind -> *) = forall k . (NeutralKind k) => N (frml k)
+
+instance PrettyK frml => Pretty (Neutral frml) where
+  pretty (N f) = prettyk f
+
+instance PrettyK frml => Pretty (Opaque frml) where
+  pretty (O f) = prettyk f
 
 opaque :: fr k -> Opaque fr
 opaque = O
