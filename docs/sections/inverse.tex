@@ -17,10 +17,10 @@ connectives, that exibit rules characterized by \emph{multiplicative
 \]
 
 Suppose the rule above is used for backwards proof search. Without weakening,
-these the search procedure must infer a division of the linear resources of the
+the search procedure must infer a division of the linear resources of the
 conclusion in order to distribute it among the premises. To guarantee
-completeness, a backwards proof search procedure must either backtrack, or
-implement resource management in other ways.
+completeness, a backwards proof search procedure must either support
+backtracking, or implement resource management in other ways.
 
 Suppose now that the inference rules are read in the forward direction, that is
 by using them to derive new sequents from previously established ones.
@@ -131,13 +131,13 @@ problem is identical in the forward direction) may lead to a loop
   \end{prooftree}
 \]
 
-We conjecture that these bad cases are not as frequent as it might seem, so
-that it should not be necessary, at least in its early stages, to complicate the
+We conjecture that these bad cases are not as frequent as it might seem, so that
+it should not be necessary, at least in its early stages, to complicate the
 development of a theorem prover to avoid as many such cases as possible. For our
-implementation, we just decided to fix an upper bound to the dimension of the
-search space. If the derivation fails due to a violation of this upper
-bound, the error can be reported to the user who may then decide to retry with a
-bigger upper bound.
+implementation, we just decided to fix an upper bound to the size of the search
+space. If the derivation fails due to a violation of this upper bound, the error
+can be reported to the user who may then decide to retry with a bigger upper
+bound.
 
 \subsection{Forward calculus}
 
@@ -171,16 +171,16 @@ that our calculus has the subformula property.
 
 \subsection{Forward derived rules}
 
-In Section [TODO] we added a light form of focusing to our backward calculus
-that allows us to generate derived rules that speed up the proof search process.
-In this section we introduced the inverse method, another technique for
-automated deduction that is particularly useful in logics (as the one we are
-using) with multiplicative connectives since it perform proof search in the
-forward direction to eliminate multiplicative non-determinism. As the final
-objective is to use forward search and the inverse method in conjunction with
-(lightweight) focusing for Zsyntax, we need to adapt the backward calculus of
-derived rules of the previous section to the forward direction. Again, we follow
-\cite{chaudhuri-thesis} as a model.
+In Section~\ref{sec:focusing} we added a light form of focusing to our backward
+calculus that allows us to generate derived rules that speed up the proof search
+process. At the beginning of this section we introduced the inverse method,
+another technique for automated deduction that is particularly useful in logics
+(as the one we are using) with multiplicative connectives since it perform proof
+search in the forward direction to eliminate multiplicative non-determinism. As
+the final objective is to use forward search and the inverse method in
+conjunction with (lightweight) focusing for Zsyntax, we need to adapt the
+backward calculus of derived rules of the previous section to the forward
+direction. Again, we follow \cite{chaudhuri-thesis} as a model.
 
 \begin{definition}[Forward pre-sequent]
   A forward presequent is a term of the form

@@ -33,24 +33,23 @@ Even though from a proof-theoretic point of view there are no limitations on the
 level of nesting of conditional formulas, the current implementation disallows
 the user to specify higher-order conditionals in the goal sequents.  The reason
 is that our theorem prover was designed with the idea that users should not be
-required to specify, or even known anything about, reaction lists when using the
-tool.
+required to specify, or even known anything about, reaction lists or any other
+monotonicity control facilities when using the tool.
 
 It follows that, without quantifiers, it is not clear how to use higher-order
-conditionals in a way that is clear and intuitive to the user.
-\footnote{Notice that we include specifying implication formulas in the linear
-  context of a goal sequent in the uses of ``higher-order'' conditionals, as
+conditionals in a way that is clear and intuitive to the user.  \footnote{Notice
+  that we consider implication formulas in the linear context of a goal sequent
+  as ``higher-order'' conditionals, as
   $\Gamma, A \rightarrow B \vdash C \simeq \Gamma \vdash (A \rightarrow B)
-  \rightarrow C$.}
-As an example, consider the following goal sequent issued by a user: $\Gamma, A
-\rightarrow B \Longrightarrow \Delta$. In order to establish the validity of
-this sequent, the prover has to decorate the conditional $A \rightarrow B$ with
-an elementary base and a reaction list, since this is how the underlying logic
-is defined. However, it is not clear how to do this decoration in a way that
-corresponds with the intuitive meaning that the user assigns to the
-conditional she specified, which is to test is the sequent is derivable
-for \emph{some} instance of $A \rightarrow B$.
-Therefore, the goal sequent above would have been best specified as
+  \rightarrow C$.}  As an example, consider the following goal sequent issued by
+a user: $\Gamma, A \rightarrow B \Longrightarrow \Delta$. In order to establish
+the validity of this sequent, the prover has to decorate the conditional
+$A \rightarrow B$ with an elementary base and a reaction list, since this is how
+the underlying logic is defined. However, it is not clear how to do this
+decoration in a way that corresponds with the intuitive meaning that the user
+assigns to the specified conditional, which is to test if the sequent is
+derivable for \emph{some} instance of $A \rightarrow B$.  Therefore, the goal
+sequent above would have been best specified as
 $\Gamma, \exists l e . (A \rightarrow_l^e B) \Longrightarrow \Delta$.
 
 Consider now another example goal sequent,
@@ -100,10 +99,11 @@ sufficiently small to be manageable in the small time available.
 
 Given that the main challenges regarding the implementation of Zsyntax are given
 by the conditional operator, we speculate that the extension of the present work
-to the remaining connectives, again following [cmu thesis] as a model, should be
-rather straightforward. This is because the additional connectives are not
-different from their linear logic counterparts in any fundamental way, so
-already existing literature on the subject can be leveraged with little effort.
+to the remaining connectives, again following \cite{chaudhuri-thesis} as a
+model, should be rather straightforward. This is because the additional
+connectives are not different from their linear logic counterparts in any
+fundamental way, so already existing literature on the subject can be leveraged
+with little effort.
 
 %%% Local Variables:
 %%% mode: latex

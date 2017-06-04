@@ -5,7 +5,7 @@
 During the preliminary rule generation phase, as well as during proof search, we
 need to refer to subformulas of the goal sequent. It is important to remark that
 we need to differentiate between two syntactically identical subformulas of
-different formulas. Consider the following forward neutral sequen:
+different formulas. Consider the following forward neutral sequent:
 
 \[
   \zfneuseq{\cdot}{(p \otimes q) \otimes (p \otimes q),
@@ -38,7 +38,7 @@ derived rules refer to labelled sequents only.
 
 \subsection{Rules and rule application}
 
-Derived rules are precomputed to the frontier formulas of the goal sequent , or
+Derived rules are precomputed to the frontier formulas of the goal sequent, or
 rather, to the labels associated to the frontier subformulas. Given that our
 derived inference rules are actually rule schemas, they can be applied to input
 sequents in different ways, as long as the input sequents satisfy the sufficient
@@ -185,7 +185,7 @@ The procedure maintains two continually updated sequent databases:
   should be considered for rule applications.
 \end{enumerate}
 
-we follow the approach of \cite{chaudhuri-thesis} and ``currify'' inference
+We follow the approach of \cite{chaudhuri-thesis} and ``currify'' inference
 rules with multiple premises. More precisely, we treat all rules as essentially
 unary rules that produce either a conclusion sequent or a new, partially
 instantiated rule. At the end of each iteration, all rules that have been
@@ -315,20 +315,20 @@ The abstraction facilities typical of polymorphic functional programming allowed
 the program to be developed in a modular way, and the advanced type system
 (\cite{gadts}, \cite{dependent-haskell})
 made possible to encode several properties and invariants of the search
-procedure and the logical calculus in the types, making most of their
+procedure and the logical calculus in the types, making a good part of their
 implementation correct by costruction.
 
 \subsubsection{Implemented features}
 
 The logical calculus that has been implemented is the full calculus of forward
 derived rules. The search procedure is the one described in
-Section~\ref{srch-procedure}, with no significant differences.  As already
-said, the possibility of adding axioms to the proof \emph{ad libitum} may lead
-to combinatorial explosion in some particularly bad cases.  The theorem prover
+Section~\ref{srch-procedure}, with no significant differences.  As already said,
+the possibility of adding axioms to the proof \emph{ad libitum} may lead to
+combinatorial explosion in some particularly bad cases.  The theorem prover
 employs a simple counter measure, which consists of enforcing an upper bound to
-the search space, that is limiting the number of sequents that can be generated
-during proof search for a particular goal sequent.  It is our opinion that this
-simple counter measure should be enough, given that
+the size of the search space, that is limiting the number of sequents that can
+be generated during proof search for a particular goal sequent.  It is our
+opinion that this simple counter measure should be enough, given that
 
 \begin{enumerate}
 \item the search procedure operates in a breadth-first way. This means that if a
@@ -363,7 +363,8 @@ or more elementary contexts, as defined in the previous sections and in
 \cite{adding-logic}. Contexts can be of two kinds: regular and superset-closed.
 Regular contexts are as usual, whereas superset-closed context are such that if
 one of them, say $\Delta$, is specified for some control set $\ctrlset{}$, then
-$\ctrlset{}$ is assumed to contain also all supersets of $\Delta$.
+$\ctrlset{}$ is assumed to contain also all supersets of $\Delta$. This is the
+only way to specify infinite control sets.
 
 Queries are analogously specified by giving an initial elementary aggregate and
 a final elementary aggregate, together with a set of axioms that should be used
@@ -375,15 +376,24 @@ not that \emph{should} be used. In particular, proof search ends successfully
 even if the goal is found using less axioms than those initially specified. In
 contrast, the prover does not attempt to use more axioms than indicated.
 
-Theorems that turn up to be valid can be named and stored for future use. As an
-example, suppose the user queries about the validity of the goal sequent
-$\Delta \Longrightarrow \nabla$, and the system discovers the existence of a
-derivation $\Gamma ; \Delta \Longrightarrow_l \Delta$ for some group of axioms
-$\Gamma$ and reaction list $l$.  It clearly follows that
-$\Gamma ; \cdot \Longrightarrow \Delta \rightarrow^{\emptyset}_l \Delta$ is
-valid, so this fact can be added to the current ``knowledge'' of the system as
-a new axiom $\Delta^{\otimes} \rightarrow_l^{\emptyset} \nabla^{\otimes}$, which can
-then used in subsequent queries.
+To summarize, queries are specified by the user in terms of an initial
+elementary aggregate $\Delta_1$ and a final elementary aggregate $\Delta_2$,
+together with a (possibly empty) set of axioms $\Gamma$. The theorem prover then
+attempts to determine the validity of the following statement:
+
+\[
+  \text{there exists } l \text{ such that }
+  \zsyseq{\Gamma'}{\Delta_1}{l}{\Delta_2^{\otimes}}
+\]
+
+for some $\Gamma' \subseteq \Gamma$. Theorems that turn up to be valid can be
+named and stored for future use. As an example, suppose the query given above
+has a positive answer. It clearly follows that
+$\Gamma' ; \cdot \Longrightarrow \Delta_1 \rightarrow^{\emptyset}_l
+\Delta_2^{\otimes}$ is valid, so this fact can be added to the current
+``knowledge'' of the system as a new axiom
+$\Delta_1^{\otimes} \rightarrow_l^{\emptyset} \Delta_2^{\otimes}$, which can then
+used in subsequent queries.
 
 %%% Local Variables:
 %%% mode: latex

@@ -1,4 +1,4 @@
-\section{Focused derivations}
+\section{Focused derivations}\label{sec:focusing}
 
 Focused derivations originated in the context of the proof theory of linear
 logic. The idea was introduced by Andreoli \cite{andreoli92} to reduce the
@@ -39,27 +39,28 @@ inevitably reduces the search space considerably (once a formula is selected for
 focusing, rules are only applied on it or its subformulas).
 
 Our logic lacks some of the properties of plain intuitionistic linear logic,
-preventing us to adapt focusing from [thesis] to our case in a straightforward
-way. Contrary to ILL, we do not have a good symmetric subdivision of the
-connectives into synchronous and asynchronous ones. To start with, the
-$\rightarrow R$ rule is not invertible, so we cannot treat $\rightarrow$ as a
-right asynchronous connective. Moreover, the logic is strongly order-dependent,
-so rule applications in a Zsyntax proof do not in general commute with each
-other. Since focusing imposes a precise order in the application of inference
-rules, many derivations that are equivalent under focusing in linear logic are
-very different in Zsyntax. It is therefore necessary to tune the ``amount of
-focusing'' in order to keep the calculus complete.
+preventing us to adapt focusing from \cite{chaudhuri-thesis} to our case in a
+straightforward way. Contrary to ILL, we do not have a good symmetric
+subdivision of the connectives into synchronous and asynchronous ones. To start
+with, the $\rightarrow R$ rule is not invertible, so we cannot treat
+$\rightarrow$ as a right asynchronous connective. Moreover, the logic is
+strongly order-dependent, so rule applications in a Zsyntax proof do not in
+general commute with each other. Since focusing imposes a precise order in the
+application of inference rules, many derivations that are equivalent under
+focusing in linear logic are very different in Zsyntax. It is therefore
+necessary to tune the ``amount of focusing'' in order to keep the calculus
+complete.
 
 It should be quite clear that, to do so, we are forced to keep the rules for the
 conditional connective as they are. In other words, we lose $\rightarrow$ as
 both a left-synchronous and a right-asynchronous connective. We can still
-identify the two phases (active and focused), but the actions that will be
-allowed in them will be more constrained. As $\otimes$ retains all its
-properties from linear logic, we can still focus on conjunctions on the right of
-the sequent symbol, and freely eliminate conjunctions on the left. Hence, during
-the active phase, all possible rules are applied to $\otimes$ propositions on
-the left. When only atoms or implications remain, we may start a \emph{focused
-  phase} if there is a $\otimes$ formula on the right.
+identify the two phases (active and focused), but we will allow fewer actions to
+be performed. As our $\otimes$ retains all the properties from its linear logic
+counterpart, we can still focus on conjunctions on the right of the sequent
+symbol, and freely eliminate conjunctions on the left. Hence, during the active
+phase, all possible rules are applied to $\otimes$ propositions on the
+left. When only atoms or implications remain, we may start a \emph{focused
+  phase} if there is a $\otimes$ or atomic formula on the right.
 
 Our backward focusing calculus consists of the following kinds of sequents:
 
@@ -97,15 +98,14 @@ focusable proposition on the conclusion.
 When we are on a neutral sequent, we may also copy a formula out of the
 unrestricted context and immediately use a left rule on it. This is because
 formulas in the unrestricted context do no interact with the rest of the context
-(they have empty elementary base), so it does not make any difference if they
-get copied right when we need them or in another moment. The premises of the
-copy rule in the focused calculus resemble those for $\rightarrow L$, since all
-formulas in the unrestricted context are implications.
+(they have empty elementary base), so our decision of introducing unrestricted
+formulas right before using them does not compromise completeness. The premises
+of the copy rule in the focused calculus resemble those for $\rightarrow L$,
+since all formulas in the unrestricted context are implications.
 
-In what follows we use the convention, adapted from \cite{chaudhuri-thesis}, to
-have the metavariable $P$ range over implications or atoms on the left of the
-sequent symbol, $R$ over implications on the right of the sequent symbol, and
-$p$ over atoms.
+In what follows we use the convention of having the metavariable $P$ range over
+implications or atoms on the left of the sequent symbol, $R$ over implications
+on the right of the sequent symbol, and $p$ over atoms.
 
 \begin{figure}[h]
   \begin{mdframed}
@@ -234,8 +234,8 @@ theorems repeated here, the reason is that our focused calculus, despite being
 heavily inspired and very similar to the one in \cite{chaudhuri-thesis}, exibits
 some significant differences, namely a weaker form of focusing and monotonicity
 control annotations. This required some proofs to be carried out is a slightly
-different way than \cite{chaudhuri-thesis}, sometimes simplifying things, and
-some other times complicating them a bit or requiring additional lemmas.
+different way than Chaudhuri's thesis, sometimes simplifying things, and some
+other times complicating them a bit or requiring additional lemmas.
 
 Nevertheless, the general idea is still very much the one of
 \cite{chaudhuri-thesis}, so we avoid spelling out too many details that can be
@@ -387,8 +387,9 @@ found in the referenced work.
   See appendix.
 \end{proof}
 
-
-We define an auxiliary function on formulas, \textsf{exp}, as follows:
+As in \cite{adding-logic}, $\mathcal{L}$ represents the set of formulas of the
+formal language. We define an auxiliary function on formulas, \textsf{exp}, as
+follows.
 
 \begin{definition}
   The function $\textsf{exp} : \mathcal{L} \to \mathcal{L}^*$ is inductively
@@ -670,7 +671,7 @@ needed for a given goal sequent.
 For any given proposition, we are interested in constructing a derived rule for
 that proposition corresponding to a single pair of focusing and active
 phases. The idea is to interpret a proposition itself as the derived rules that
-it embodies. Every propostiion is viewed as a relation between the conclusion of
+it embodies. Every proposition is viewed as a relation between the conclusion of
 the rule and its premises at the leaves of the derived rule. Both the conclusion
 and the premises are neutral sequents, which we indicate as
 $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$.
@@ -761,7 +762,7 @@ rules acting on neutral sequents only (Figure~\ref{fig:bkwdderivedcalculus}).
         }{
           \zbneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{Q}
         }
-        \using{match}
+        \using{\matchrule}
       \end{prooftree}
     \]
 
@@ -775,7 +776,7 @@ rules acting on neutral sequents only (Figure~\ref{fig:bkwdderivedcalculus}).
         }{
           \zbneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{Q}
         }
-        \using{match'}
+        \using{\matchprimerule}
       \end{prooftree}
     \]
   \end{mdframed}
@@ -1132,12 +1133,12 @@ rules acting on neutral sequents only (Figure~\ref{fig:bkwdderivedcalculus}).
 \subsection{Remarks}
 
 We have seen that focusing can be used as a powerful tool to make proof search
-in linear logic much more feasible. Even though many proof-theoretical
-properties that make focusing in the context of linear logic possible do not
-hold in our case, we were still able to adapt some of the inspiring ideas to our
-backward sequent calculus and obtain some efficiency improvements out of it.
-The next section will continue following \cite{chaudhuri-thesis}, with the
-conversion of the focused calculus we just defined to the forward direction.
+in linear logic more feasible. Even though many proof-theoretical properties
+that make focusing in the context of linear logic possible do not hold in our
+case, we were still able to adapt some of the inspiring ideas to our backward
+sequent calculus and obtain some improvements. The next section will continue
+following \cite{chaudhuri-thesis}, with the conversion of the focused calculus
+we just defined to the forward direction.
 
 %%% Local Variables:
 %%% mode: latex

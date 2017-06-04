@@ -114,25 +114,25 @@ assistant can be seen as a small (and much simpler) fragment of propositional
 intuitionistic linear logic. The original parts presented here concern the
 addition of control set-based facilities to a standard backward sequent calculus
 and the other calculi of \cite{chaudhuri-thesis}, and the modification of parts
-of to correctly account for the order-sensitiveness of Zsyntax deductions.
+of them to correctly account for the order-sensitivity of Zsyntax deductions.
 
-As already mentioned, the whole work was an attempt to implement (a suitable
-part of) the logic presented in \cite{adding-logic}.  Other articles by the same
-authors provided useful reference, in particular \cite{non-mono} is where the
-idea of adding annotations to sequents comes from, as well as the formalism used
-for control sets.  Contrary to \cite{adding-logic}, and therefore the work
-presented here, \cite{non-mono} does not consider implication operators, but
-instead represents empirical knowledge as additional axioms to be added to the
-formal system. It also presents a more powerful conjunction, capable of
+As we already said, the whole work was an attempt to implement (a suitable part
+of) the logic presented in \cite{adding-logic}, so that is our main reference.
+Other articles by the same authors provided useful material, in particular
+\cite{non-mono} is where the idea of adding annotations to sequents comes from,
+as well as the formalism used for control sets.  Contrary to
+\cite{adding-logic}, \cite{non-mono} does not consider implication operators,
+but instead represents empirical knowledge as additional axioms to be added to
+the formal system. It also presents a more powerful conjunction, capable of
 expressing when two aggregates are in the same linear context but do not
 interact with each other.
 
 \subsection{Outline}
 
-Section 2 gives some reasons why Zsyntax, as given in \cite{adding-logic}, is
-not entirely satisfactory when it comes to machine implementation. It then
-proceeds by defining an alternative formulation that is very much related but
-subtly different, settting the foundation for the rest of the work.
+Section 2 gives some reasons why the implemented logic is not exactly the
+version of Zsyntax given in \cite{adding-logic}. It then proceeds by defining an
+alternative formulation that is very much related but subtly different, settting
+the foundation for the rest of the work.
 
 Section 3 gives a cut-free sequent calculus translation of the logic of Section
 2, and establishes soundness and completeness with respect to it. A proof of cut
