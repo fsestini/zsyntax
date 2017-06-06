@@ -20,6 +20,10 @@ module TypeClasses
   , PrettyK(..)
   , filterOut
   , prettys
+  , LogMonad(..)
+  , mlogPretty
+  , mlogShow
+  , mlogLn
   ) where
 
 import qualified Data.Set as S
@@ -29,6 +33,18 @@ import Prelude hiding (map)
 import Data.Foldable
 import Data.Constraint
 import Data.List (intersperse)
+
+class Monad m => LogMonad m where
+  mlog :: String -> m ()
+
+mlogPretty :: (Pretty a, LogMonad m) => a -> m ()
+mlogPretty = mlog . pretty
+
+mlogLn :: LogMonad m => String -> m ()
+mlogLn str = mlog str >> mlog "\n"
+
+mlogShow :: (Show a, LogMonad m) => a -> m ()
+mlogShow = mlog . show
 
 class Pretty a where
   pretty :: a -> String
