@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -144,6 +145,9 @@ deriving instance Functor (LAxiom cty a)
 deriving instance Foldable (LAxiom cty a)
 deriving instance Traversable (LAxiom cty a)
 
+instance (Monoid cty, T.Pretty a) => T.Pretty (LAxiom cty a l) where
+  pretty ax = T.pretty (axToFormula ax)
+
 axToFormula :: Monoid cty => LAxiom cty a l -> LFormula () cty KImpl CComplex a l
 axToFormula (LAx (BF f1) cty (BF f2) l) =
   Impl
@@ -254,6 +258,8 @@ liftBifun 'Srch 'mapEbCty
 
 instance T.Pretty a => T.PrettyK (SrchFormula eb cty a l) where
   prettyk (Srch f) = T.pretty f
+
+deriving instance (Monoid cty, T.Pretty a) => T.Pretty (SrchAxiom cty a l)
 
 instance (Ord a, Eq l, Monoid cty) => Eq (SrchAxiom cty a l) where
   (==) = on (==) (label . axToFormula . unSrchAx)
