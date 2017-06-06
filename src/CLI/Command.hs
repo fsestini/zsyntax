@@ -261,11 +261,11 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
 exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
 exportTheorem (TN name) (QS axs fromAggr toAggr) =
   "query " ++ name ++ " (" ++
-  T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ") with " ++ (qMode ++ qAxs)
+  T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ")" ++ qMode ++ " with " ++ qAxs
   where
     qMode =
       case mode axs of
-        Refine -> "refine "
+        Refine -> " refine"
         Normal -> ""
     qAxs =
       case names axs of
