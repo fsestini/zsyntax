@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeApplications #-}
@@ -138,6 +139,12 @@ instance PrettyK frml => Pretty (Opaque frml) where
 
 opaque :: fr k -> Opaque fr
 opaque = O
+
+unOpaque :: (forall k . fr k -> a) -> Opaque fr -> a
+unOpaque f (O fr) = f fr
+
+neutralToOpaque :: Neutral f -> Opaque f
+neutralToOpaque (N f) = O f
 
 maybeNeutral :: Formula fr => Opaque fr -> Either (Neutral fr) (NE.NonEmpty (Opaque fr))
 maybeNeutral (O f) =
