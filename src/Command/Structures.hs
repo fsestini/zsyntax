@@ -91,6 +91,11 @@ data Command axr frepr
 type family DerT ax axr frepr :: *
 -- type family SrchF (frml :: *) :: FKind -> *
 
+type MyGoalNSequent ax axr frepr =
+  GoalNSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr)
+type MyNSequent ax axr frepr =
+  NSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr) (Cty (SrchF ax axr frepr))
+
 class Search ax axr frepr | ax -> axr frepr where
   type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
   fromRNS
@@ -103,10 +108,7 @@ class Search ax axr frepr | ax -> axr frepr where
     :: AxEnv axr ax
     -> ThrmEnv frepr ax
     -> QueriedSeq frepr
-    -> Either String
-        (GoalNSequent
-          (Ax (SrchF ax axr frepr))
-          (SrchF ax axr frepr))
+    -> Either String (MyGoalNSequent ax axr frepr)
   toAx :: Ax (SrchF ax axr frepr) -> ax
 
 -- class Search ax axr frepr | ax -> frml where
