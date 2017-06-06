@@ -111,6 +111,10 @@ class Search ax axr frepr | ax -> axr frepr where
     -> Either String (MyGoalNSequent ax axr frepr)
   toAx :: Ax (SrchF ax axr frepr) -> ax
 
+class SearchDump ax axr frepr where
+  goalDiff :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> Int
+  pprintSeq :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> String
+
 -- class Search ax axr frepr | ax -> frml where
 --   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax
 --   queryToGoal
