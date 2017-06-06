@@ -51,12 +51,15 @@ import ForwardSequent
 import Control.Monad (MonadPlus(..))
 import qualified Data.Dequeue as D
 import Data.Foldable
+import TypeClasses (LogMonad)
 
 --------------------------------------------------------------------------------
 
 class ForwardSequent seqty =>
       SearchTriple seqty goalty proof | seqty -> proof where
-  subsumesGoal :: seqty -> goalty -> Maybe proof
+  subsumesGoal
+    :: (LogMonad ml, MonadPlus mp)
+    => seqty -> goalty -> ml (mp proof)
 
 --------------------------------------------------------------------------------
 -- Types.
