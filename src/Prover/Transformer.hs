@@ -77,6 +77,9 @@ runProverT prover sequent =
                (runReaderT (unProverT prover) (PE (makeGoal sequent)))
                (PS [] emptyActives emptyInactives emptyGlobalIndex)
 
+instance LogMonad m => LogMonad (ProverT seqty goalty m) where
+  mlog msg = ProverT (lift (lift (mlog msg)))
+
 deriving instance (Functor m) => Functor (ProverT seqty goalty m)
 deriving instance (Monad m) => Applicative (ProverT seqty goalty m)
 deriving instance (Monad m) => Monad (ProverT seqty goalty m)
@@ -121,4 +124,4 @@ instance (Monad m, SearchTriple seqty goalty proof) =>
          HasProverEnvironment seqty proof (ProverT seqty goalty m) where
   subsumesGoal s = do
     (e :: ProverEnvironment goalty) <- ask
-    return $ s `Prover.Structures.subsumesGoalOp` (goalSequent e)
+    s `Prover.Structures.subsumesGoalOp` (goalSequent e)
