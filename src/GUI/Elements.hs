@@ -32,11 +32,14 @@ ctrlListView vbox = do
   renderer <- cellRendererTextNew
   cellLayoutPackStart col renderer True
   cellLayoutSetAttributes col renderer list $
-     \row -> [cellText := show row]
+     \row -> [cellText := shower row]
   _ <- treeViewAppendColumn tree col
   treeViewColumnSetTitle col "Control context"
   boxPackStart vbox tree PackGrow 0
   return list
+  where
+    shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
+    shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
 ctrlDialog :: IO (Maybe (CtrlSetCtxt BioAtoms))
 ctrlDialog = do
