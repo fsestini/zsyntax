@@ -33,9 +33,13 @@ import Prelude hiding (map)
 import Data.Foldable
 import Data.Constraint
 import Data.List (intersperse)
+import Data.Functor.Identity
 
 class Monad m => LogMonad m where
   mlog :: String -> m ()
+
+instance LogMonad Identity where
+  mlog = const (return ())
 
 mlogPretty :: (Pretty a, LogMonad m) => a -> m ()
 mlogPretty = mlog . pretty
