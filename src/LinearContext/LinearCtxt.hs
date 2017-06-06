@@ -40,13 +40,15 @@ instance Foldable LinearCtxt where
     where
       listed = M.foldMapWithKey (\x y -> repeatN x y) lc
 
-lcSubCtxtOf :: (Ord a) => LinearCtxt a -> LinearCtxt a -> Bool
+lcSubCtxtOf :: (Ord a) => LinearCtxt a -> LinearCtxt a -> [a]
 lcSubCtxtOf (LC m1) (LC m2) =
   if m1 == m2
-    then True
-    else and $ map duane (M.toList m1)
+    then []
+    else concatMap duane (M.toList m1) -- and $ map duane (M.toList m1)
   where
-    duane (key, val) = fromMaybe False $ M.lookup key m2 >>= return . (val <=)
+    duane (key, pi1) =
+      flip (maybe (repeatN key pi1)) (M.lookup key m2) $ \pi2 ->
+        take (toInt pi2 - toInt pi1) (repeat key)
 
 instance Ord a => Monoid (LinearCtxt a) where
   mempty = LC M.empty
@@ -118,7 +120,7 @@ instance Ord elem => Context (NonEmptyLinearCtxt elem) where
 instance Ord elem => Semigroup (NonEmptyLinearCtxt elem) where
   m1 <> m2 = merge m1 m2
 
-neSubCtxtOf :: Ord a => NonEmptyLinearCtxt a -> NonEmptyLinearCtxt a -> Bool
+neSubCtxtOf :: Ord a => NonEmptyLinearCtxt a -> NonEmptyLinearCtxt a -> [a]
 neSubCtxtOf nelc1 nelc2 = subCtxtOf (toLC nelc1) (toLC nelc2)
 
 toNEList :: NonEmptyLinearCtxt elem -> NE.NonEmpty elem
