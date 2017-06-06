@@ -237,10 +237,9 @@ removeSubsumedByOp (FSCheckedSS s) (IS r is) =
     filterer = \iseq -> not (s `subsumesBool` (extractSequent iseq))
 
 subsumesGoalOp
-  :: (MonadPlus mf, SearchTriple seqty goalty proof)
-  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf proof
-subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  maybe mzero return (s1 `subsumesGoal` s2)
+  :: (MonadPlus mf, LogMonad ml, SearchTriple seqty goalty proof)
+  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> ml (mf proof)
+subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) = s1 `subsumesGoal` s2
 
 toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
 toProverRules = dimap extractSequent (dimap extractSequent ConclSS)
