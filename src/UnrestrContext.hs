@@ -23,7 +23,7 @@ instance Ord a => Context (UnrestrCtxt a) where
   type Elems (UnrestrCtxt a) = a
   add x (UC set) = UC (S.insert x set)
   singleton x = UC (S.singleton x)
-  subCtxtOf (UC s1) (UC s2) = S.isSubsetOf s1 s2
+  subCtxtOf = ucSubCtxtOf
   asFoldable f (UC set) = f set
 
 instance Show a => Show (UnrestrCtxt a) where
@@ -32,3 +32,8 @@ instance Show a => Show (UnrestrCtxt a) where
 instance T.CanMap UnrestrCtxt where
   type Constr UnrestrCtxt x = Ord x
   map f (UC s) = UC . S.fromList . map f . S.toList $ s
+
+ucSubCtxtOf (UC s1) (UC s2) =
+  if S.isSubsetOf s1 s2
+    then []
+    else (S.toList (s1 S.\\ s2))
