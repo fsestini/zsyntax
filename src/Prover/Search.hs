@@ -51,7 +51,7 @@ class MonadPlus m => SearchMonad m where
   failThresholdBreak :: m a
 
 type SearchConstraint m mf seqty proof =
-  (Monad m, SearchMonad mf, HasProverState seqty m
+  (LogMonad m, SearchMonad seqty mf, HasProverState seqty m
    , HasProverEnvironment seqty proof m, Ord seqty, Eq seqty)
 
 doSearch

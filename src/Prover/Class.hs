@@ -32,12 +32,12 @@ class HasProverState seqty m where
 
 class HasProverEnvironment seqty proof m where
   subsumesGoal
-    :: (MonadPlus mf)
+    :: (MonadPlus mf, LogMonad m)
     => SearchSequent FSChecked seqty -> m (mf proof)
 
 haveGoal
-  :: ( Monad m
-     , MonadPlus mf
+  :: ( MonadPlus mf
+     , LogMonad m
      , HasProverEnvironment seqty proof m
      , Foldable f
      -- , SearchTriple seqty goalty proof

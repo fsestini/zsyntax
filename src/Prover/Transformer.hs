@@ -38,8 +38,8 @@ import Prover.Search
 
 proverSearch'
   :: ( Ord seqty
-     , Monad m
-     , SearchMonad mf
+     , LogMonad m
+     , SearchMonad seqty mf
      , SearchTriple seqty goalty proof
      , Foldable f
      )
