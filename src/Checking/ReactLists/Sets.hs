@@ -12,6 +12,7 @@ module Checking.ReactLists.Sets
   , fromFoldableCtxts
   , toCtxtList
   , CtrlSetCtxt(..)
+  , asFoldable
   ) where
 
 import SFormula (BioFormula(..))
