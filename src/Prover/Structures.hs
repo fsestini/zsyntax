@@ -222,7 +222,7 @@ fwdSubsumes
   -> SearchSequent Concl seqty
   -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI _ globalIndex) (ConclSS s) =
-  if or . map (\gi -> gi `subsumes` s) $ globalIndex
+  if or . map (\gi -> gi `subsumesBool` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
@@ -234,7 +234,7 @@ removeSubsumedByOp
 removeSubsumedByOp (FSCheckedSS s) (IS r is) =
   ( IS r (D.fromList . filter filterer . toList $ is), BSCheckedSS s)
   where
-    filterer = \iseq -> not (s `subsumes` (extractSequent iseq))
+    filterer = \iseq -> not (s `subsumesBool` (extractSequent iseq))
 
 subsumesGoalOp
   :: (MonadPlus mf, SearchTriple seqty goalty proof)
