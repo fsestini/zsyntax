@@ -23,7 +23,7 @@ import Data.Maybe (isJust, fromMaybe)
 import Control.Monad
 import Control.Arrow ((>>>))
 import qualified Data.Map as M
-import qualified TypeClasses as T (Pretty(..), CanMap(..))
+import qualified TypeClasses as T (Pretty(..), CanMap(..), prettys)
 import Data.List (intersperse)
 import LinearContext.PosInt
 import Data.Foldable (toList)
@@ -63,7 +63,7 @@ instance (Ord a) => Context (LinearCtxt a) where
   asFoldable f lc = f lc
 
 instance T.Pretty a => T.Pretty (LinearCtxt a) where
-  pretty (LC m) = concat . intersperse "," . map T.pretty . M.keys $ m
+  pretty = T.prettys
 
 instance T.CanMap LinearCtxt where
   type Constr LinearCtxt x = Ord x
