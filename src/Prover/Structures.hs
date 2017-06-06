@@ -1,4 +1,3 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -56,7 +55,7 @@ import TypeClasses (LogMonad)
 --------------------------------------------------------------------------------
 
 class ForwardSequent seqty =>
-      SearchTriple seqty goalty proof | seqty -> proof where
+      SearchTriple seqty goalty proof where
   subsumesGoal
     :: (LogMonad ml, MonadPlus mp)
     => seqty -> goalty -> ml (mp proof)
