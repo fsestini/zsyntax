@@ -229,6 +229,7 @@ data UIF next
   = UILog String next
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
+  | UIStdErr String next
   deriving (Functor)
 
 type UI a = Free UIF a
@@ -241,3 +242,6 @@ uiLoadFile path = liftF (UILoadFile path id)
 
 uiSaveFile :: FilePath -> String -> Free UIF ()
 uiSaveFile path content = liftF (UISaveFile path content ())
+
+uiStdErr :: String -> Free UIF ()
+uiStdErr str = liftF (UIStdErr str ())
