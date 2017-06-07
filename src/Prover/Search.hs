@@ -46,9 +46,9 @@ import Prover.Structures
 
 -}
 
-class MonadPlus m => SearchMonad m where
-  failSaturated :: m a
-  failThresholdBreak :: m a
+class MonadPlus m => SearchMonad seqty m where
+  failSaturated :: S.Set seqty -> m a
+  failThresholdBreak :: S.Set seqty -> m a
 
 type SearchConstraint m mf seqty proof =
   (LogMonad m, SearchMonad seqty mf, HasProverState seqty m
@@ -73,8 +73,8 @@ otterLoop
 otterLoop = do
   inactive <- (popInactive @seqty @_)
   case inactive of
-    Left Saturated -> return $ failSaturated
-    Left ThresholdBreak -> return $ failThresholdBreak
+    Left Saturated -> globalIndex @seqty @_ >>= return . failSaturated
+    Left ThresholdBreak -> globalIndex @seqty @_ >>= return . failThresholdBreak
     Right sequent ->
       do
         res <- processNewActive sequent
