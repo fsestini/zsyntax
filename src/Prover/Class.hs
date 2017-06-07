@@ -12,6 +12,7 @@ import TypeClasses
 import Control.Monad hiding (fail)
 import Prelude hiding (fail)
 import Control.Applicative
+import qualified Data.Set as S
 
 import Prover.Structures
        (SearchSequent, Stage(..), ActiveSequent, ActiveSequents,
@@ -21,6 +22,7 @@ import Prover.Structures
 -- added to the inactive set.
 class HasProverState seqty m where
   getRules :: m ([Rule seqty])
+  globalIndex :: m (S.Set seqty)
   addRule :: Rule seqty -> m ()
   addInactive :: SearchSequent BSChecked seqty -> m ()
   popInactive :: m (InactivesResult (ActiveSequent seqty))
