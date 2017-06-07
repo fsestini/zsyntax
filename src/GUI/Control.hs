@@ -1,5 +1,6 @@
 module GUI.Control where
 
+import System.IO
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
 import Control.Monad.IO.Class (liftIO)
@@ -194,6 +195,7 @@ interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
 interpret _ (UILoadFile path x) = fmap x (readFile path)
 interpret _ (UISaveFile path content x) = writeFile path content >> return x
+interpret _ (UIStdErr str x) = hPutStrLn stderr str >> return x
 
 toIO :: GUI -> UI a -> IO a
 toIO gui = foldFree (interpret gui)
