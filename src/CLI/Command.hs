@@ -89,6 +89,29 @@ instance Search CLIAxiom AxRepr FrmlRepr where
     return gns
   toAx = S.srchAxToSax
 
+instance SearchDump CLIAxiom AxRepr FrmlRepr where
+  goalDiff ns gns =
+    uncurry
+      (+)
+      (bimap
+         (uncurry (+) . (bimap length length))
+         (uncurry (+) . (bimap length length))
+         (diffs ns gns))
+  pprintSeq (NS _ lc _ concl) _ = T.pretty lc ++ " ===> " ++ T.pretty concl
+
+diffs
+  :: NSequent t1 CLISrchFormula t
+  -> GoalNSequent t2 CLISrchFormula
+  -> (([Neutral CLISrchFormula], [Neutral CLISrchFormula]),
+      ([Opaque CLISrchFormula], [Opaque CLISrchFormula]))
+diffs (NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
+  (eqCtxt lc1 (toLC lc2), eqCtxt co1 co2)
+  where
+    co1 :: LinearCtxt (Opaque (SrchF CLIAxiom AxRepr FrmlRepr))
+    co1 = either (singleton . neutralToOpaque) fromFoldable (maybeNeutral concl1)
+    co2 :: LinearCtxt (Opaque (SrchF CLIAxiom AxRepr FrmlRepr))
+    co2 = either (singleton . neutralToOpaque) fromFoldable (maybeNeutral concl2)
+
 --------------------------------------------------------------------------------
 -- Auxiliary PickMonad
 
