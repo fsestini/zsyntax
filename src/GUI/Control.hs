@@ -84,6 +84,7 @@ gui = do
 
   wireThrmEntry gui state thrmEntry
   wireAxiomsArea gui state axioms
+  wireThrmArea gui state theorems
 
   widgetShowAll w
   on w deleteEvent $ liftIO mainQuit >> return False
@@ -155,6 +156,23 @@ askEditAxiom parent content =
   maybeP (axiomsDialog parent "Change axiom..." (Just content)) $ \adc ->
     Just $ ChangeAxiom (name adc)
       (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+
+--------------------------------------------------------------------------------
+-- Theorem area
+
+wireThrmArea :: GUI -> IORef AppState -> TheoremsArea ThrmItem -> IO ()
+wireThrmArea gui state thrms = do
+  onClicked (btnRefreshThrms thrms) (execCommandInGUI gui state RefreshTheorems)
+  onClicked (btnCopyThrm thrms) $
+    selected (storeThrms thrms) (treeSelThrms thrms) >>=
+    maybeM (putThrm gui) . join . fmap headMay
+  onClicked (btnRemoveThrm thrms) $
+    maybeMM'
+      (selected (storeThrms thrms) (treeSelThrms thrms))
+      ((execCommandInGUI gui state . RemoveTheorems) . fmap fst)
+  return ()
+
+--------------------------------------------------------------------------------
 
 appendLog :: TextBuffer -> String -> IO ()
 appendLog b str = do
