@@ -34,6 +34,10 @@ import Data.Bifunctor (bimap)
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
 
+newtype CLI a = CLI
+  { unCLI :: a
+  } deriving (Eq, Ord, Show, T.Pretty)
+
 newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
   deriving (Eq, Ord, Show)
 
@@ -54,10 +58,10 @@ type CLICtrlSet = CtrlSet BioAtoms
 type CLIControlType = RList CLIElemBase CLICtrlSet
 -- The particular fully applied type of axioms that are used in the user
 -- interface.
-type CLIAxiom = S.SAxiom CLIControlType BioAtoms
+type CLIAxiom = CLI (S.SAxiom CLIControlType BioAtoms)
 -- The particular fully applied type of formulas that are used in the user
 -- interface.
-type CLIFormula = S.SFormula CLIElemBase CLIControlType String
+type CLIFormula = CLI (S.SFormula CLIElemBase CLIControlType String)
 
 type CLIAxEnv = AxEnv AxRepr CLIAxiom
 type CLIThrmEnv = ThrmEnv Aggregate CLIAxiom
@@ -76,7 +80,7 @@ instance Search CLIAxiom AxRepr FrmlRepr where
     maybe NonAxiomatic Axiomatic $ do
       nelc <- mapM decideN $ toNEList lc
       toFrml <- decideOF concl
-      return $ S.fromBasicNS nelc cty toFrml
+      return $ CLI (S.fromBasicNS nelc cty toFrml)
   queryToGoal axs thrms (QS axlist q1 q2) = do
     axioms <-
       case names axlist of
@@ -84,10 +88,10 @@ instance Search CLIAxiom AxRepr FrmlRepr where
         AllOfEm -> return (fmap snd (legitAxioms axs thrms))
     let lc = fmap S.sAtom . unAggr $ q1
         concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
-        sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
+        sq = S.SQ (fromFoldable (fmap unCLI axioms)) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
-  toAx = S.srchAxToSax
+  toAx = CLI . S.srchAxToSax
 
 instance SearchDump CLIAxiom AxRepr FrmlRepr where
   goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
@@ -139,7 +143,7 @@ instance Num n => T.PickMonad (PickM n) n where
 
 instance CommAx AxRepr CLIAxiom where
   reprAx (AR fromAggr ctrl' toAggr) = do
-    return $
+    return . CLI $
       S.sAx
         (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ fromAggr)
         (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ toAggr)
