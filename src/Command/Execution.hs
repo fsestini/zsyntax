@@ -16,8 +16,8 @@
 
 module Command.Execution where
 
-import TypeClasses (Pretty(..), PrettyK, prettys, LogMonad(..))
-import Utils (trim)
+import TypeClasses (Pretty(..), PrettyK, prettys)
+import Utils (trim, (&&&))
 
 import Command.Structures
 
@@ -268,7 +268,7 @@ type MyDTS ax axr frepr = DT (DerT ax axr frepr) (MyNSequent ax axr frepr)
 runSearch
   :: forall ax axr frepr . (SrchConstr ax axr frepr)
   => MyGNS ax axr frepr -> MySrchRes ax axr frepr
-runSearch neutral = (runStateLog . (srch initS initR)) neutral
+runSearch neutral = ((const "") &&& runIdentity . (srch initS initR)) neutral
   where
     (initS :: S.Set (MyDTS ax axr frepr), initR) =
       initialSequentsAndRules neutral
