@@ -177,19 +177,6 @@ data SearchRes seqty a
   | ThresholdBreak (S.Set seqty)
   deriving (Functor)
 
-newtype StateLog a = SL (State String a)
-deriving instance Functor StateLog
-deriving instance Applicative StateLog
-deriving instance Monad StateLog
-deriving instance MonadState String StateLog
-
-instance LogMonad StateLog where
-  mlog logMsg = fmap (++ logMsg) get >>= put
-
-runStateLog :: StateLog a -> (String, a)
-runStateLog (SL a) = swap $ runState a ""
-  where swap (x,y) = (y,x)
-
 instance Applicative (SearchRes seqty) where
   pure = return
   (<*>) = ap
