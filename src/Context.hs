@@ -29,13 +29,6 @@ class Semigroup ctxt => Context ctxt where
   -- | Returns a list of elements of the first context in case it is not a
   -- subcontext of the second.
   subCtxtOf :: ctxt -> ctxt -> [Elems ctxt]
-  -- | Equality comparison function that returns a proof in the case the two
-  -- contexts are different. The proof is a pair containing a list of elements of
-  -- the first contexts that are missing from the second, and a list of elements
-  -- of the second that are missing from the first.
-  -- The two contexts are equal iff the two lists are both empty.
-  eqCtxt :: ctxt -> ctxt -> ([Elems ctxt],[Elems ctxt])
-  eqCtxt c1 c2 = (c1 `subCtxtOf` c2, c2 `subCtxtOf` c1)
   asFoldable :: (forall f. Foldable f => f (Elems ctxt) -> b) -> ctxt -> b
 
 subCtxtOfBool :: Context ctxt => ctxt -> ctxt -> Bool
