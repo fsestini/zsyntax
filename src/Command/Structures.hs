@@ -79,6 +79,7 @@ data Command axr frepr
   | RemoveAxioms [ThrmName]
   | AddTheorem ThrmName (QueriedSeq frepr)
   | RefreshTheorems
+  | RemoveTheorems [ThrmName]
   | Query (QueriedSeq frepr)
   | LoadFile FilePath
   -- ^ Loading a file executes all commands in it, so that their effects act on
