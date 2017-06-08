@@ -17,7 +17,7 @@
 
 module Rules.Interface where
 
-import TypeClasses
+import qualified TypeClasses as T
        (Pretty(..), PrettyK(..), LogMonad(..), mlogPretty, prettys,
         mlogLn)
 import qualified Data.List.NonEmpty as NE
@@ -133,11 +133,11 @@ switchF' = trimap snd snd snd . switchF
 data Opaque (frml :: FKind -> *) = forall k . O (frml k)
 data Neutral (frml :: FKind -> *) = forall k . (NeutralKind k) => N (frml k)
 
-instance PrettyK frml => Pretty (Neutral frml) where
-  pretty (N f) = prettyk f
+instance T.PrettyK frml => T.Pretty (Neutral frml) where
+  pretty (N f) = T.prettyk f
 
-instance PrettyK frml => Pretty (Opaque frml) where
-  pretty (O f) = prettyk f
+instance T.PrettyK frml => T.Pretty (Opaque frml) where
+  pretty (O f) = T.prettyk f
 
 opaque :: fr k -> Opaque fr
 opaque = O
@@ -171,22 +171,22 @@ data NSequent axs frml cty =
   NS (UCtxt axs) (LCtxt frml) cty (Opaque frml)
   deriving (Eq, Ord)
 
-instance (Pretty axs, PrettyK frml, Formula frml) =>
-         Pretty (NSequent axs frml cty) where
+instance (T.Pretty axs, T.PrettyK frml, Formula frml) =>
+         T.Pretty (NSequent axs frml cty) where
   pretty (NS uc lc _ concl) =
-    "... ; " ++ asFoldable prettys lc ++ " ==> " ++ pretty concl
+    "... ; " ++ asFoldable T.prettys lc ++ " ==> " ++ T.pretty concl
 
-instance (Formula frml, Pretty axs, PrettyK frml, Ord axs, Eq cty) =>
+instance (Formula frml, T.Pretty axs, T.PrettyK frml, Ord axs, Eq cty) =>
          ForwardSequent (NSequent axs frml cty) where
   ns1@(NS un1 lin1 cty1 concl1) `subsumes` ns2@(NS un2 lin2 cty2 concl2) = do
-   mlogLn "testing "
-   mlogLn $ "  " ++ pretty ns1
-   mlogLn "  against"
-   mlogLn $ "  " ++ pretty ns2
+   T.mlogLn "testing "
+   T.mlogLn $ "  " ++ T.pretty ns1
+   T.mlogLn "  against"
+   T.mlogLn $ "  " ++ T.pretty ns2
    uRes <- logUCSub un1 un2
    lRes <- logLCEq lin1 lin2
    let res = uRes && lRes && cty1 == cty2 && concl1 == concl2
-   mlogLn ("Result: " ++ show res) >> mlogLn ""
+   T.mlogLn ("Result: " ++ show res) >> T.mlogLn ""
    return res
    --un1 `subCtxtOf` un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
 
@@ -194,19 +194,19 @@ logUCSub uc1 uc2 =
   case uc1 `subCtxtOf` uc2 of
     [] -> return True
     l -> do
-      mlogLn $ prettys uc1 ++ " is not a subcontext of " ++ prettys uc2
-      mlogLn $
+      T.mlogLn $ T.prettys uc1 ++ " is not a subcontext of " ++ T.prettys uc2
+      T.mlogLn $
         "the following elements of the first are not in the second: " ++
-        (prettys l)
+        (T.prettys l)
       return False
 
 logLCEq lin1 lin2 =
   case eqCtxt lin1 lin2 of
     ([], []) -> return True
     (l1, l2) -> do
-      mlogLn $ (prettys lin1) ++ " is not equal to " ++ (prettys lin2)
-      mlogLn $ "the first has " ++ (prettys l1)
-      mlogLn $ "the second has " ++ (prettys l2)
+      T.mlogLn $ (T.prettys lin1) ++ " is not equal to " ++ (T.prettys lin2)
+      T.mlogLn $ "the first has " ++ (T.prettys l1)
+      T.mlogLn $ "the second has " ++ (T.prettys l2)
       return False
 
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
