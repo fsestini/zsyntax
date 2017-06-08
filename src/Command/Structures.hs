@@ -230,6 +230,7 @@ processThrms f (TE env) = foldlM f' feEmpty (toList env)
 
 data UIF next
   = UILog String next
+  | UIError String next
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
   | UIStdErr String next
@@ -239,6 +240,9 @@ type UI a = Free UIF a
 
 logUI :: String -> Free UIF ()
 logUI str = liftF (UILog str ())
+
+uiError :: String -> Free UIF ()
+uiError str = liftF (UIError str ())
 
 uiLoadFile :: FilePath -> Free UIF String
 uiLoadFile path = liftF (UILoadFile path id)
