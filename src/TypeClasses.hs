@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -24,6 +26,7 @@ module TypeClasses
   , mlogPretty
   , mlogShow
   , mlogLn
+  , StateLog(..)
   ) where
 
 import qualified Data.Set as S
@@ -34,12 +37,26 @@ import Data.Foldable
 import Data.Constraint
 import Data.List (intersperse)
 import Data.Functor.Identity
+import Control.Monad.State
 
 class Monad m => LogMonad m where
   mlog :: String -> m ()
 
 instance LogMonad Identity where
   mlog = const (return ())
+
+newtype StateLog a = SL (State String a)
+deriving instance Functor StateLog
+deriving instance Applicative StateLog
+deriving instance Monad StateLog
+deriving instance MonadState String StateLog
+
+instance LogMonad StateLog where
+  mlog logMsg = fmap (++ logMsg) get >>= put
+
+runStateLog :: StateLog a -> (String, a)
+runStateLog (SL a) = swap $ runState a ""
+  where swap (x,y) = (y,x)
 
 mlogPretty :: (Pretty a, LogMonad m) => a -> m ()
 mlogPretty = mlog . pretty
