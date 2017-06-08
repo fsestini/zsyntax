@@ -12,6 +12,8 @@ module LinearContext.LinearCtxt
   , toNEList
   , fromNEList
   , mapNELC
+  , EqInfo(..)
+  , Eq'(..)
   ) where
 
 import Context
@@ -26,7 +28,9 @@ import qualified Data.Map as M
 import qualified TypeClasses as T (Pretty(..), CanMap(..), prettys)
 import Data.List (intersperse)
 import LinearContext.PosInt
-import Data.Foldable (toList)
+import Data.Foldable (toList, fold)
+import TypeClasses (filterOut, Eq'(..), EqInfo(..))
+import Utils (uncurry3)
 
 --------------------------------------------------------------------------------
 -- Linear contexts
@@ -49,6 +53,34 @@ lcSubCtxtOf (LC m1) (LC m2) =
     duane (key, pi1) =
       flip (maybe (repeatN key pi1)) (M.lookup key m2) $ \pi2 ->
         take (toInt pi2 - toInt pi1) (repeat key)
+instance Ord a => Eq' (LinearCtxt a) where
+  eq' lc1 lc2 = fmap fromFoldable $ lcEqCtxt lc1 lc2
+
+lcEqCtxt :: Ord a => LinearCtxt a -> LinearCtxt a -> EqInfo [a]
+lcEqCtxt lc1@(LC m1) lc2@(LC m2) =
+  fold .
+  filterOut .
+  fmap (uncurry3 eqElem) . fmap (\x -> (x, M.lookup x m1, M.lookup x m2)) $
+  M.keys lc
+  where
+    (LC lc) = lc1 <> lc2
+
+eqElem
+  :: Ord a
+  => a -> Maybe PosInt -> Maybe PosInt -> Maybe (EqInfo [a])
+eqElem x Nothing Nothing = Nothing
+eqElem x (Just pi1) Nothing =
+  Just (EI (repeatN x pi1) mempty mempty)
+eqElem x Nothing (Just pi2) =
+  Just (EI mempty (repeatN x pi2) mempty)
+eqElem x (Just pi1) (Just pi2) =
+  case eq' (Sum . toInt $ pi1) (Sum . toInt $ pi2) of
+    EI f s b ->
+      Just
+        (EI
+           (take (getSum f) . repeat $ x)
+           (take (getSum s) . repeat $ x)
+           (take (getSum b) . repeat $ x))
 
 instance Ord a => Monoid (LinearCtxt a) where
   mempty = LC M.empty
