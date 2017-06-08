@@ -89,6 +89,16 @@ gui = do
   on w deleteEvent $ liftIO mainQuit >> return False
   mainGUI
 
+copyThrm :: TheoremEntryArea -> ThrmItem -> IO ()
+copyThrm teArea ((TN name), (qs, _)) = do
+  entrySetText (eName teArea) name
+  case names . qsAxioms $ qs of
+    AllOfEm -> toggleButtonSetActive (rbAll teArea) True
+    Some axs ->
+      entrySetText (eAxioms teArea) (join . intersperse "," . fmap unTN $ axs)
+  entrySetText (eFrom teArea) (T.pretty . qsFrom $ qs :: String)
+  entrySetText (eTo teArea) (T.pretty . qsTo $ qs)
+
 parseThrmNames :: String -> Either String [ThrmName]
 parseThrmNames =
   bimap show id . parse (sepBy (spaces *> thrmName <* spaces) comma <* eof) ""
