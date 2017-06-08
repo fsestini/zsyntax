@@ -273,6 +273,13 @@ prettyAxNames (Some list) = T.prettys list
 
 --------------------------------------------------------------------------------
 
+selected :: ListStore t -> TreeSelection -> IO (Maybe [t])
+selected store treeSel =
+  treeSelectionGetSelectedRows treeSel >>=
+  mapM (mapM (listStoreGetValue store)) . mapM headMay
+
+--------------------------------------------------------------------------------
+
 maybe' :: Maybe a -> b -> (a -> b) -> b
 maybe' x y z = maybe y z x
 
