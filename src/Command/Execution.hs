@@ -163,11 +163,17 @@ liftSRVerbose goal (msg, x) =
       in outMsg msg'
   where
     outMsg = ExceptT . return . Left
-    dump =
-      ("Some provable reactions were:\n" ++) . pprintSeqs . take 2 . sortSeqs
+    dump seqs =
+      let toPrint = (take 3 . sortSeqs $ seqs)
+      in if null toPrint
+           then ""
+           else (("Some provable reactions were:\n" ++) .
+                 pprintSeqs . take 3 . sortSeqs $
+                 seqs)
     pprintSeqs = concat . intersperse "\n" . fmap (flip pprintSeq goal)
     sortSeqs =
       fmap fst .
+      filter ((> 0) . snd) .
       sortBy (\p1 p2 -> compare (snd p1) (snd p2)) .
       fmap (\s -> (s, goalDiff s goal)) . fmap payload . toList
 
