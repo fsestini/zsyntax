@@ -21,6 +21,7 @@ import Utils (trim, (&&&))
 
 import Command.Structures
 
+import Data.Bitraversable (bitraverse)
 import Data.Foldable
 import qualified Data.Set as S
 import Control.Monad.Free
@@ -333,9 +334,6 @@ liftUITrans f = do
   (newAxs, newThrms) <- lift $ f axs thrms
   put (newAxs, newThrms)
 
-traversePair :: Applicative m => (m a, m b) -> m (a, b)
-traversePair (x,y) = (,) <$> x <*> y
-
 execCommand'
   :: (MegaConstr axr ax frepr) => Command axr frepr
   -> AxEnv axr ax
@@ -348,19 +346,17 @@ execCommand
   => Command axr frepr
   -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
 execCommand (AddAxiom name axrepr) =
-  liftUITrans (axToTrans $ addAxiom name axrepr) >> refreshTheorems
+  liftUITrans (traverseFst $ addAxiom name axrepr) >> refreshTheorems
 execCommand (ChangeAxiom name axrepr) =
-  liftUITrans (axToTrans $ changeAxiom name axrepr) >> refreshTheorems
+  liftUITrans (traverseFst $ changeAxiom name axrepr) >> refreshTheorems
 execCommand (RemoveAxioms axNames) =
-  liftUITrans (axToTrans $ removeAxioms axNames) >> refreshTheorems
+  liftUITrans (traverseFst $ removeAxioms axNames) >> refreshTheorems
 execCommand (AddTheorem name q) =
-  liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
+  liftUITrans (\x -> fmap ((,) x) . (addTheorem name q) x) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
 execCommand (LoadFile path) = loadFile path >> refreshTheorems
 execCommand (OpenFile path) = put (feEmpty, feEmpty) >> loadFile path
 execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
 
-axToTrans :: Monad m => (a1 -> m a) -> a1 -> b -> m (a, b)
-axToTrans f = curry (traversePair . bimap f return)
-thrmToTrans :: Functor f => (t -> a -> f b) -> t -> a -> f (t, b)
-thrmToTrans f ax = fmap ((,) ax) . f ax
+traverseFst :: Applicative m => (a1 -> m a) -> a1 -> b -> m (a, b)
+traverseFst f = curry (bitraverse f pure)
