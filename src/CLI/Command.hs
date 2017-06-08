@@ -90,15 +90,32 @@ instance Search CLIAxiom AxRepr FrmlRepr where
   toAx = S.srchAxToSax
 
 instance SearchDump CLIAxiom AxRepr FrmlRepr where
-  goalDiff ns gns =
-    uncurry
-      (+)
-      (bimap
-         (uncurry (+) . (bimap length length))
-         (uncurry (+) . (bimap length length))
-         (diffs ns gns))
-  pprintSeq (NS _ lc _ concl) _ = T.pretty lc ++ " ===> " ++ T.pretty concl
+  goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
+    if nsIdentity ns then 0 else
+      uncurry (+) (bimap
+        (uncurry (+) . (bimap length length))
+        (uncurry (+) . (bimap length length)) diffs)
+    where
+      co1 = cToLC concl1
+      co2 = cToLC concl2
+      diffs =
+        ( T.eiFirstSecond . fmap toList $ (eq' lc1 (toLC lc2))
+        , T.eiFirstSecond . fmap toList $ (eq' co1 co2))
+  pprintSeq (NS _ lc1 _ concl) (GNS _ lc2 _) =
+    (if (not . null $ d2)
+       then " >> " ++ T.prettys d2 ++ " << "
+       else "") ++
+    (if (not . null $ d1)
+       then " << " ++ T.prettys d1 ++ " >> "
+       else "") ++
+    T.prettys comm ++
+    " ===> " ++
+    T.prettys (cToLC concl)
+    where
+      (EI d1 d2 comm) = fmap toList (eq' lc1 (toLC lc2))
 
+cToLC :: Opaque CLISrchFormula -> LinearCtxt (Opaque (SrchF CLIAxiom AxRepr FrmlRepr))
+cToLC = either (singleton . neutralToOpaque) fromFoldable . maybeNeutral
 
 --------------------------------------------------------------------------------
 -- Auxiliary PickMonad
