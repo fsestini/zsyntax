@@ -19,7 +19,7 @@ module Rules.Interface where
 
 import qualified TypeClasses as T
        (Pretty(..), PrettyK(..), LogMonad(..), mlogPretty, prettys,
-        mlogLn)
+        mlogLn, CanMap(..))
 import qualified Data.List.NonEmpty as NE
 import Data.Constraint
 import Prover
@@ -191,7 +191,7 @@ instance (Formula frml, T.Pretty axs, T.PrettyK frml, Ord axs, Eq cty) =>
    --un1 `subCtxtOf` un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
 
 logUCSub uc1 uc2 =
-  case uc1 `subCtxtOf` uc2 of
+  case scOnOnlyFirst (uc1 `subCtxtOf` uc2) of
     [] -> return True
     l -> do
       T.mlogLn $ T.prettys uc1 ++ " is not a subcontext of " ++ T.prettys uc2
@@ -201,9 +201,9 @@ logUCSub uc1 uc2 =
       return False
 
 logLCEq lin1 lin2 =
-  case eqCtxt lin1 lin2 of
-    ([], []) -> return True
-    (l1, l2) -> do
+  case fmap toList (eq' lin1 lin2) of
+    EI [] [] _ -> return True
+    EI l1 l2 _ -> do
       T.mlogLn $ (T.prettys lin1) ++ " is not equal to " ++ (T.prettys lin2)
       T.mlogLn $ "the first has " ++ (T.prettys l1)
       T.mlogLn $ "the second has " ++ (T.prettys l2)
