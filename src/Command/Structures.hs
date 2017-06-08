@@ -134,7 +134,10 @@ newtype AxEnv axr ax =
 newtype ThrmEnv frepr ax =
   TE (D.BankersDequeue (ThrmName, (QueriedSeq frepr, Maybe (ThrmShape ax))))
 
-data ThrmShape ax = Axiomatic ax | NonAxiomatic
+data ThrmShape ax
+  = Axiomatic ax
+  | NonAxiomatic
+  deriving (Eq, Ord, Show)
 toMaybe :: ThrmShape ax -> Maybe ax
 toMaybe (Axiomatic ax) = Just ax
 toMaybe NonAxiomatic = Nothing
