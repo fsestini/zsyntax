@@ -5,19 +5,26 @@
 module Context
   ( module Data.Semigroup
   , Context(..)
+  , SubCtxt(..)
   , fromFoldable
   , subCtxtOfBool
   ) where
 
+import Utils ((.:))
 import qualified Data.List.NonEmpty as NE
 import Control.Monad.Fail
 import Data.Constraint
 import Data.Semigroup
-import TypeClasses (CanMap)
+import TypeClasses (CanMap, EqInfo(..), Eq'(..))
 import Data.Bifunctor (bimap)
 
 --------------------------------------------------------------------------------
 -- Context class
+
+data SubCtxt elem = SC
+  { scOnOnlyFirst :: [elem]
+  , scRestFirst :: [elem]
+  }
 
 -- | Typeclass of generic contexts to be used in sequents and during
 -- proof-search.
@@ -28,11 +35,11 @@ class Semigroup ctxt => Context ctxt where
   singleton :: Elems ctxt -> ctxt
   -- | Returns a list of elements of the first context in case it is not a
   -- subcontext of the second.
-  subCtxtOf :: ctxt -> ctxt -> [Elems ctxt]
+  subCtxtOf :: Context ctxt => ctxt -> ctxt -> SubCtxt (Elems ctxt)
   asFoldable :: (forall f. Foldable f => f (Elems ctxt) -> b) -> ctxt -> b
 
 subCtxtOfBool :: Context ctxt => ctxt -> ctxt -> Bool
-subCtxtOfBool c1 c2 = null (subCtxtOf c1 c2)
+subCtxtOfBool = null . scOnOnlyFirst .: subCtxtOf
 
 fromFoldable
   :: (Monoid ctxt, Context ctxt, Foldable f)
