@@ -73,11 +73,11 @@ gui = do
   addSep vbox
 
   -- Theorems list
-  thList <- theoremArea vbox
-    (("Name", T.pretty . fst) NE.:|
-    [("Theorem", T.pretty . fst . snd)
-    ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
-    ,("Provable", maybe "No" (const "Yes") . snd . snd)])
+  theorems <- theoremArea vbox
+            (("Name", T.pretty . fst) NE.:|
+            [("Theorem", T.pretty . fst . snd)
+            ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
+            ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui = GUI thList (storeAxioms axioms) b
 
