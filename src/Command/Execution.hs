@@ -51,10 +51,16 @@ tryInsertTheorem
   -> ThrmEnv frepr ax
   -> EUI (ThrmEnv frepr ax)
 tryInsertTheorem nm@(TN name) (q, frml) thrms =
-  maybe (throwE msg >> return thrms) return newThrms
+  maybe ask return (feInsert nm newItem thrms)
   where
-    newThrms = feInsert nm (q, Just frml) thrms
-    msg = "theorem named '" ++ name ++ "' already present"
+    ask = do
+      answ <- lift $ uiAskReplaceThrm nm
+      case answ of
+        Yes -> return $ feReplace nm newItem thrms
+        No ->
+          throwE ("theorem named '" ++ name ++ "' already present") >>
+          return thrms
+    newItem = (q, Just frml)
 
 tryInsertAxiom
   :: ThrmName
