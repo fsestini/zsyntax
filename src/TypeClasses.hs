@@ -29,6 +29,7 @@ module TypeClasses
   , mlogPretty
   , mlogShow
   , mlogLn
+  , eiFirstSecond
   , StateLog(..)
   ) where
 
@@ -48,6 +49,9 @@ data EqInfo a = EI
   , eiOnSecond :: a
   , eiOnBoth :: a
   } deriving (Functor)
+
+eiFirstSecond :: EqInfo a -> (a,a)
+eiFirstSecond (EI x y _) = (x,y)
 
 instance Monoid a => Monoid (EqInfo a) where
   mempty = EI mempty mempty mempty
