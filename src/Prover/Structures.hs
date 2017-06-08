@@ -1,4 +1,3 @@
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -51,12 +50,15 @@ import ForwardSequent
 import Control.Monad (MonadPlus(..))
 import qualified Data.Dequeue as D
 import Data.Foldable
+import TypeClasses (LogMonad)
 
 --------------------------------------------------------------------------------
 
 class ForwardSequent seqty =>
-      SearchTriple seqty goalty proof | seqty -> proof where
-  subsumesGoal :: seqty -> goalty -> Maybe proof
+      SearchTriple seqty goalty proof where
+  subsumesGoal
+    :: (LogMonad ml, MonadPlus mp)
+    => seqty -> goalty -> ml (mp proof)
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -220,7 +222,7 @@ fwdSubsumes
   -> SearchSequent Concl seqty
   -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI _ globalIndex) (ConclSS s) =
-  if or . map (\gi -> gi `subsumes` s) $ globalIndex
+  if or . map (\gi -> gi `subsumesBool` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
@@ -232,13 +234,12 @@ removeSubsumedByOp
 removeSubsumedByOp (FSCheckedSS s) (IS r is) =
   ( IS r (D.fromList . filter filterer . toList $ is), BSCheckedSS s)
   where
-    filterer = \iseq -> not (s `subsumes` (extractSequent iseq))
+    filterer = \iseq -> not (s `subsumesBool` (extractSequent iseq))
 
 subsumesGoalOp
-  :: (MonadPlus mf, SearchTriple seqty goalty proof)
-  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> mf proof
-subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) =
-  maybe mzero return (s1 `subsumesGoal` s2)
+  :: (MonadPlus mf, LogMonad ml, SearchTriple seqty goalty proof)
+  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> ml (mf proof)
+subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) = s1 `subsumesGoal` s2
 
 toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
 toProverRules = dimap extractSequent (dimap extractSequent ConclSS)

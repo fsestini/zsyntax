@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeApplications #-}
@@ -16,7 +17,9 @@
 
 module Rules.Interface where
 
-import TypeClasses (Pretty(..), PrettyK(..))
+import qualified TypeClasses as T
+       (Pretty(..), PrettyK(..), LogMonad(..), mlogPretty, prettys,
+        mlogLn, CanMap(..))
 import qualified Data.List.NonEmpty as NE
 import Data.Constraint
 import Prover
@@ -130,14 +133,20 @@ switchF' = trimap snd snd snd . switchF
 data Opaque (frml :: FKind -> *) = forall k . O (frml k)
 data Neutral (frml :: FKind -> *) = forall k . (NeutralKind k) => N (frml k)
 
-instance PrettyK frml => Pretty (Neutral frml) where
-  pretty (N f) = prettyk f
+instance T.PrettyK frml => T.Pretty (Neutral frml) where
+  pretty (N f) = T.prettyk f
 
-instance PrettyK frml => Pretty (Opaque frml) where
-  pretty (O f) = prettyk f
+instance T.PrettyK frml => T.Pretty (Opaque frml) where
+  pretty (O f) = T.prettyk f
 
 opaque :: fr k -> Opaque fr
 opaque = O
+
+unOpaque :: (forall k . fr k -> a) -> Opaque fr -> a
+unOpaque f (O fr) = f fr
+
+neutralToOpaque :: Neutral f -> Opaque f
+neutralToOpaque (N f) = O f
 
 maybeNeutral :: Formula fr => Opaque fr -> Either (Neutral fr) (NE.NonEmpty (Opaque fr))
 maybeNeutral (O f) =
@@ -162,10 +171,51 @@ data NSequent axs frml cty =
   NS (UCtxt axs) (LCtxt frml) cty (Opaque frml)
   deriving (Eq, Ord)
 
-instance (Formula frml, Ord axs, Eq cty) =>
+instance (T.Pretty axs, T.PrettyK frml, Formula frml) =>
+         T.Pretty (NSequent axs frml cty) where
+  pretty (NS uc lc _ concl) =
+    "... ; " ++ asFoldable T.prettys lc ++ " ==> " ++ T.pretty concl
+
+instance (Formula frml, T.Pretty axs, T.PrettyK frml, Ord axs, Eq cty) =>
          ForwardSequent (NSequent axs frml cty) where
-  (NS un1 lin1 cty1 concl1) `subsumes` (NS un2 lin2 cty2 concl2) =
-    un1 `subCtxtOf` un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
+  ns1@(NS un1 lin1 cty1 concl1) `subsumes` ns2@(NS un2 lin2 cty2 concl2) = do
+   T.mlogLn "testing "
+   T.mlogLn $ "  " ++ T.pretty ns1
+   T.mlogLn "  against"
+   T.mlogLn $ "  " ++ T.pretty ns2
+   uRes <- logUCSub un1 un2
+   lRes <- logLCEq lin1 lin2
+   let res = uRes && lRes && cty1 == cty2 && concl1 == concl2
+   T.mlogLn ("Result: " ++ show res) >> T.mlogLn ""
+   return res
+   --un1 `subCtxtOf` un2 && lin1 == lin2 && cty1 == cty2 && concl1 == concl2
+
+logUCSub uc1 uc2 =
+  case scOnOnlyFirst (uc1 `subCtxtOf` uc2) of
+    [] -> return True
+    l -> do
+      T.mlogLn $ T.prettys uc1 ++ " is not a subcontext of " ++ T.prettys uc2
+      T.mlogLn $
+        "the following elements of the first are not in the second: " ++
+        (T.prettys l)
+      return False
+
+logLCEq lin1 lin2 =
+  case fmap toList (eq' lin1 lin2) of
+    EI [] [] _ -> return True
+    EI l1 l2 _ -> do
+      T.mlogLn $ (T.prettys lin1) ++ " is not equal to " ++ (T.prettys lin2)
+      T.mlogLn $ "the first has " ++ (T.prettys l1)
+      T.mlogLn $ "the second has " ++ (T.prettys l2)
+      return False
+
+nsIdentity :: forall ax fr cty . Formula fr => NSequent ax fr cty -> Bool
+nsIdentity (NS _ lc _ concl) = nlc == co
+  where
+    co :: LinearCtxt (Opaque fr)
+    co = either (singleton . neutralToOpaque) fromFoldable (maybeNeutral concl)
+    nlc :: LinearCtxt (Opaque fr)
+    nlc = T.map neutralToOpaque lc
 
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
 -- elements of some type of axiomatic formulas.

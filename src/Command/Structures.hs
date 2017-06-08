@@ -91,6 +91,11 @@ data Command axr frepr
 type family DerT ax axr frepr :: *
 -- type family SrchF (frml :: *) :: FKind -> *
 
+type MyGoalNSequent ax axr frepr =
+  GoalNSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr)
+type MyNSequent ax axr frepr =
+  NSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr) (Cty (SrchF ax axr frepr))
+
 class Search ax axr frepr | ax -> axr frepr where
   type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
   fromRNS
@@ -103,11 +108,12 @@ class Search ax axr frepr | ax -> axr frepr where
     :: AxEnv axr ax
     -> ThrmEnv frepr ax
     -> QueriedSeq frepr
-    -> Either String
-        (GoalNSequent
-          (Ax (SrchF ax axr frepr))
-          (SrchF ax axr frepr))
+    -> Either String (MyGoalNSequent ax axr frepr)
   toAx :: Ax (SrchF ax axr frepr) -> ax
+
+class SearchDump ax axr frepr where
+  goalDiff :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> Int
+  pprintSeq :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> String
 
 -- class Search ax axr frepr | ax -> frml where
 --   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax
@@ -223,6 +229,7 @@ data UIF next
   = UILog String next
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
+  | UIStdErr String next
   deriving (Functor)
 
 type UI a = Free UIF a
@@ -235,3 +242,6 @@ uiLoadFile path = liftF (UILoadFile path id)
 
 uiSaveFile :: FilePath -> String -> Free UIF ()
 uiSaveFile path content = liftF (UISaveFile path content ())
+
+uiStdErr :: String -> Free UIF ()
+uiStdErr str = liftF (UIStdErr str ())

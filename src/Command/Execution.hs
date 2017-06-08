@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -15,12 +16,13 @@
 
 module Command.Execution where
 
-import TypeClasses (Pretty(..), prettys)
-import Utils (trim)
+import TypeClasses (Pretty(..), PrettyK, prettys)
+import Utils (trim, (&&&))
 
 import Command.Structures
 
 import Data.Foldable
+import qualified Data.Set as S
 import Control.Monad.Free
 import Rules hiding (reprAx, AxRepr)
 import Data.List
@@ -98,7 +100,8 @@ addTheorem nm q env thrms =
   where
     res :: EUI ([TransRepr (DerT ax axr frepr)], ThrmEnv frepr ax)
     res = do
-      (DT dt ns) <- liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
+      goal <- liftParse (queryToGoal env thrms q)
+      (DT dt ns) <- liftSRVerbose goal (runSearch goal)
       let usedAxNames = toNames env thrms . fmap toAx . toList . rnsUc $ ns
           m = mode . qsAxioms $ q
       q' <-
@@ -121,8 +124,12 @@ query q env thrms = flip (toUI' logUI) implsM $ \impls -> do
   forM_ impls (logUI . shower)
   where
     shower = pretty
-    implsM = fmap (transitions . term) $
-      liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
+    implsM = do
+      goal <- liftParse (queryToGoal env thrms q)
+      t <- liftSRVerbose goal (runSearch goal)
+      return (transitions . term $ t)
+    -- implsM = fmap (transitions . term) $
+    --   liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
 
 adjoinMsgEUI :: String -> EUI a -> EUI a
 adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
@@ -130,33 +137,72 @@ adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
 adjoinMsgE :: String -> Either String a -> Either String a
 adjoinMsgE str = first (str ++)
 
-liftSR :: SearchRes a -> EUI a
-liftSR (OkRes x) = return x
-liftSR Saturated = ExceptT . return . Left $ "not provable: not a theorem"
-liftSR ThresholdBreak =
-  ExceptT . return . Left $ "not provable: search space too big"
+liftSR :: (String, SearchRes seqty a) -> EUI a
+liftSR (msg, res) =
+  lift (uiStdErr msg) >>
+  case res of
+    (OkRes x) -> return x
+    (Saturated _) -> ExceptT . return . Left $ "not provable: not a theorem"
+    (ThresholdBreak _) ->
+      ExceptT . return . Left $ "not provable: search space too big"
 
-data SearchRes a = OkRes a | Saturated | ThresholdBreak deriving (Functor)
-instance Applicative SearchRes where
+liftSRVerbose
+  :: (Search ax axr frepr, SearchDump ax axr frepr)
+  => MyGoalNSequent ax axr frepr
+  -> (String, SearchRes (MyDTS ax axr frepr) a)
+  -> EUI a
+liftSRVerbose goal (msg, x) =
+  lift (uiStdErr msg) >>
+  case x of
+    OkRes res -> return res
+    Saturated seqs ->
+      let msg' = "not provable: not a theorem\n" ++ dump seqs
+      in outMsg msg'
+    ThresholdBreak seqs ->
+      let msg' = "not provable: search space too big\n" ++ dump seqs
+      in outMsg msg'
+  where
+    outMsg = ExceptT . return . Left
+    dump seqs =
+      let toPrint = (take 3 . sortSeqs $ seqs)
+      in if null toPrint
+           then ""
+           else (("Some provable reactions were:\n" ++) .
+                 pprintSeqs . take 3 . sortSeqs $
+                 seqs)
+    pprintSeqs = concat . intersperse "\n" . fmap (flip pprintSeq goal)
+    sortSeqs =
+      fmap fst .
+      filter ((> 0) . snd) .
+      sortBy (\p1 p2 -> compare (snd p1) (snd p2)) .
+      fmap (\s -> (s, goalDiff s goal)) . fmap payload . toList
+
+data SearchRes seqty a
+  = OkRes a
+  | Saturated (S.Set seqty)
+  | ThresholdBreak (S.Set seqty)
+  deriving (Functor)
+
+instance Applicative (SearchRes seqty) where
   pure = return
   (<*>) = ap
-instance Monad SearchRes where
+instance Monad (SearchRes seqty) where
   return = OkRes
   (OkRes x) >>= f = f x
-  Saturated >>= _ = Saturated
-  ThresholdBreak >>= _ = ThresholdBreak
-instance Alternative SearchRes where
+  (Saturated x) >>= _ = Saturated x
+  (ThresholdBreak x) >>= _ = ThresholdBreak x
+instance Alternative (SearchRes seqty) where
   empty = mzero
   (<|>) = mplus
-instance MonadPlus SearchRes where
-  mzero = Saturated
+instance MonadPlus (SearchRes seqty) where
+  mzero = Saturated S.empty
   mplus (OkRes x) _ = OkRes x
-  mplus Saturated x = x
-  mplus ThresholdBreak x = x
+  mplus (Saturated _) x = x
+  mplus (ThresholdBreak _) x = x
 
-instance SearchMonad SearchRes where
-  failSaturated = Saturated
-  failThresholdBreak = ThresholdBreak
+instance SearchMonad seqty (SearchRes seqty) where
+  failSaturated seqs = Saturated seqs
+  failThresholdBreak seqs = ThresholdBreak seqs
 
 liftParse :: Either String a -> EUI a
 liftParse = ExceptT . return . (first ("parse error: " ++))
@@ -196,9 +242,11 @@ type SrchPr term srchfr =
                 (ResultNSequent (Ax srchfr) srchfr (Cty srchfr)))
 
 type SrchConstr ax axr frepr =
-  (
-  SrchPr (DerT ax axr frepr) (SrchF ax axr frepr),
-  Formula (SrchF ax axr frepr)
+  ( SrchPr (DerT ax axr frepr) (SrchF ax axr frepr)
+  , Formula (SrchF ax axr frepr)
+  , Pretty (Ax (SrchF ax axr frepr))
+  , PrettyK (SrchF ax axr frepr)
+  , SearchDump ax axr frepr
   , HasElemBase (SrchF ax axr frepr), HasControlType (SrchF ax axr frepr)
   , BaseCtrl (Eb (SrchF ax axr frepr)) (Cty (SrchF ax axr frepr))
   , DerTerm (DerT ax axr frepr) (SrchF ax axr frepr)
@@ -209,18 +257,28 @@ type MyGNS ax axr frepr =
   GoalNSequent (Ax (SrchF ax axr frepr))
                (SrchF ax axr frepr)
 
+-- type MyNSequent ax axr frepr =
+--   NSequent (Ax (SrchF ax axr frepr))
+--                  (SrchF ax axr frepr)
+--                  (Cty (SrchF ax axr frepr))
+
 type MySrchRes ax axr frepr =
-  SearchRes (DT (DerT ax axr frepr)
-    (ResultNSequent (Ax (SrchF ax axr frepr))
-                    (SrchF ax axr frepr)
-                    (Cty (SrchF ax axr frepr))))
+  (String, SearchRes (DT (DerT ax axr frepr) (MyNSequent ax axr frepr))
+    (DT (DerT ax axr frepr)
+        (ResultNSequent (Ax (SrchF ax axr frepr))
+                        (SrchF ax axr frepr)
+                        (Cty (SrchF ax axr frepr)))))
+
+type MyDTS ax axr frepr = DT (DerT ax axr frepr) (MyNSequent ax axr frepr)
 
 runSearch
-  :: (SrchConstr ax axr frepr)
+  :: forall ax axr frepr . (SrchConstr ax axr frepr)
   => MyGNS ax axr frepr -> MySrchRes ax axr frepr
-runSearch neutral = (runIdentity . proverSearch initS initR) neutral
+runSearch neutral = ((const "") &&& runIdentity . (srch initS initR)) neutral
   where
-    (initS, initR) = initialSequentsAndRules neutral
+    (initS :: S.Set (MyDTS ax axr frepr), initR) =
+      initialSequentsAndRules neutral
+    srch = proverSearch
 
 changeAxiom
   :: (CommAx axr ax)

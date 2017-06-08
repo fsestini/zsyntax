@@ -45,6 +45,8 @@ import ForwardSequent
 import Prover (SearchTriple(..))
 import Data.Bifunctor
 
+import TypeClasses (Pretty, PrettyK)
+
 --------------------------------------------------------------------------------
 
 -- | A relation is an unbounded curried function with derivation term-decorated
@@ -76,7 +78,7 @@ instance Bifunctor DT where
 -- | Derivation term-decorated neutral sequents.
 type DTSequent term axs frml cty = DT term (NSequent axs frml cty)
 
-instance (Formula frml, Ord axs, Eq cty) =>
+instance (Formula frml, Ord axs, Pretty axs, PrettyK frml, Eq cty) =>
          ForwardSequent (DTSequent term axs frml cty) where
   subsumes (DT _ s1) (DT _ s2) = subsumes s1 s2
 
@@ -85,7 +87,7 @@ instance (SearchTriple seqty goalty proof, ForwardSequent (DT term seqty)) =>
          SearchTriple (DT term seqty) goalty (DT term proof) where
   subsumesGoal (DT term s) g = do
     res <- s `subsumesGoal` g
-    return (DT term res)
+    return (fmap (DT term) res)
 
 --------------------------------------------------------------------------------
 
