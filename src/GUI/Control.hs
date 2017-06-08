@@ -128,41 +128,31 @@ printError gui str = appendLog (logBuffer gui) ("error: " ++ str)
 wireAxiomsArea :: GUI -> IORef AppState -> AxiomsArea AxItem -> IO ()
 wireAxiomsArea gui state axioms = do
   onClicked (btnAddAxiom axioms) $
-    maybeMM' askAddAxiom (execCommandInGUI gui state)
+    maybeMM' (askAddAxiom (mainWindow gui)) (execCommandInGUI gui state)
   onClicked (btnChangeAxiom axioms) $
     maybeMM'
-      (selectedAxiom axioms)
-      (askEditAxiom . toADC >=> maybeM (execCommandInGUI gui state))
+      (fmap join . fmap (fmap headMay) $
+       selected (storeAxioms axioms) (treeSelAxioms axioms))
+      ((askEditAxiom (mainWindow gui)) . toADC >=>
+       maybeM (execCommandInGUI gui state))
   onClicked (btnRemoveAxiom axioms) $
     maybeMM'
-      (selectedAxioms axioms)
+      (selected (storeAxioms axioms) (treeSelAxioms axioms))
       ((execCommandInGUI gui state . RemoveAxioms) . fmap fst)
   return ()
   where
     toADC :: AxItem -> AxDiaContent
     toADC (name, (AAx ar, _)) = ADC name ar
 
-selectedAxiom :: AxiomsArea AxItem -> IO (Maybe AxItem)
-selectedAxiom axioms = do
-  sel <- treeSelectionGetSelectedRows (treeSelAxioms axioms)
-  maybe' (join (fmap headMay (maySingleton sel))) (return Nothing) $ \i -> do
-    item <- listStoreGetValue (storeAxioms axioms) i
-    return (Just item)
-
-selectedAxioms :: AxiomsArea AxItem -> IO (Maybe [AxItem])
-selectedAxioms axioms =
-  treeSelectionGetSelectedRows (treeSelAxioms axioms) >>=
-    mapM (mapM (listStoreGetValue (storeAxioms axioms))) . mapM headMay
-
-askAddAxiom :: IO (Maybe GUICommand)
-askAddAxiom =
-  maybeP (axiomsDialog "Add axiom..." Nothing) $ \adc ->
+askAddAxiom :: Window -> IO (Maybe GUICommand)
+askAddAxiom parent =
+  maybeP (axiomsDialog parent "Add axiom..." Nothing) $ \adc ->
     Just $ AddAxiom (name adc)
       (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
-askEditAxiom :: AxDiaContent -> IO (Maybe GUICommand)
-askEditAxiom content =
-  maybeP (axiomsDialog "Change axiom..." (Just content)) $ \adc ->
+askEditAxiom :: Window -> AxDiaContent -> IO (Maybe GUICommand)
+askEditAxiom parent content =
+  maybeP (axiomsDialog parent "Change axiom..." (Just content)) $ \adc ->
     Just $ ChangeAxiom (name adc)
       (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
