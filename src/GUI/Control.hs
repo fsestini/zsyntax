@@ -35,6 +35,8 @@ data GUI = GUI
   { thrmsStore :: ListStore ThrmItem
   , axiomsStore :: ListStore AxItem
   , logBuffer :: TextBuffer
+  , putThrm :: ThrmItem -> IO ()
+  , mainWindow :: Window
   }
 
 gui :: IO ()
