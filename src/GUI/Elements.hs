@@ -132,6 +132,29 @@ titledEntry vbox str = do
 
 --------------------------------------------------------------------------------
 
+askReplaceThrm :: Window -> ThrmName -> IO ReplaceAnswer
+askReplaceThrm parent nm@(TN name) = do
+  dia <- dialogNew
+  windowSetTransientFor dia parent
+  windowSetModal dia True
+  dialogAddButton dia stockYes ResponseYes
+  dialogAddButton dia stockNo ResponseNo
+  upbox <- dialogGetUpper dia
+  l <-
+    labelNew
+      (Just ("A theorem named '" ++ name ++ "' already exists. Replace?"))
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  answer <- dialogRun dia
+  let res =
+        case answer of
+          ResponseYes -> Yes
+          _ -> No
+  widgetDestroy dia
+  return res
+
+--------------------------------------------------------------------------------
+
 addSep :: VBox -> IO ()
 addSep vbox = hSeparatorNew >>= \s -> boxPackStart vbox s PackNatural 10
 
