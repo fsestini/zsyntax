@@ -17,3 +17,5 @@ infix 8 .:
 infix 8 &&&
 (&&&) :: (a -> b) -> (a -> c) -> a -> (b,c)
 (f &&& g) x = (f x, g x)
+
+uncurry3 f (x,y,z) = f x y z
