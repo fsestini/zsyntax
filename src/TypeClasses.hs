@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -23,6 +24,8 @@ module TypeClasses
   , filterOut
   , prettys
   , LogMonad(..)
+  , EqInfo(..)
+  , Eq'(..)
   , mlogPretty
   , mlogShow
   , mlogLn
@@ -37,7 +40,22 @@ import Data.Foldable
 import Data.Constraint
 import Data.List (intersperse)
 import Data.Functor.Identity
+import Data.Semigroup
 import Control.Monad.State
+
+data EqInfo a = EI
+  { eiOnFirst :: a
+  , eiOnSecond :: a
+  , eiOnBoth :: a
+  } deriving (Functor)
+
+class Semigroup a => Eq' a where
+  eq' :: a -> a -> EqInfo a
+
+instance Eq' (Sum Int) where
+  eq' (Sum n) (Sum m) | n == m = EI mempty mempty (Sum n)
+                      | n < m = EI mempty (Sum (m - n)) (Sum n)
+                      | otherwise = EI (Sum (n - m)) mempty (Sum m)
 
 class Monad m => LogMonad m where
   mlog :: String -> m ()
