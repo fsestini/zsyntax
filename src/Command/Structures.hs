@@ -190,8 +190,8 @@ legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
 
 axsFromList
   :: AxEnv axr ax -> ThrmEnv frepr ax -> [ThrmName] -> Either String [ax]
-axsFromList axs thrms names = do
-  mapM mmm names
+axsFromList axs thrms nms = do
+  mapM mmm nms
   where
     axioms = legitAxioms axs thrms
     mmm nm@(TN str) =
