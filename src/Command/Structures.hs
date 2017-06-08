@@ -228,9 +228,12 @@ processThrms f (TE env) = foldlM f' feEmpty (toList env)
 --------------------------------------------------------------------------------
 -- Free monad interface
 
+data ReplaceAnswer = Yes | No
+
 data UIF next
   = UILog String next
   | UIError String next
+  | UIAskReplaceThrm ThrmName (ReplaceAnswer -> next)
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
   | UIStdErr String next
@@ -243,6 +246,9 @@ logUI str = liftF (UILog str ())
 
 uiError :: String -> Free UIF ()
 uiError str = liftF (UIError str ())
+
+uiAskReplaceThrm :: ThrmName -> Free UIF ReplaceAnswer
+uiAskReplaceThrm name = liftF (UIAskReplaceThrm name id)
 
 uiLoadFile :: FilePath -> Free UIF String
 uiLoadFile path = liftF (UILoadFile path id)
