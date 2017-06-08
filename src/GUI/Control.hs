@@ -196,6 +196,11 @@ thrmAreaToCommand nmE axE fromE toE useList m = do
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
+interpret gui (UIError str x) =
+  -- TODO: use dialog
+  appendLog (logBuffer gui) ("error: " ++ str) >> return x
+interpret gui (UIAskReplaceThrm name x) =
+  askReplaceThrm (mainWindow gui) name >>= return . x
 interpret _ (UILoadFile path x) = fmap x (readFile path)
 interpret _ (UISaveFile path content x) = writeFile path content >> return x
 interpret _ (UIStdErr str x) = hPutStrLn stderr str >> return x
