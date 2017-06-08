@@ -79,7 +79,8 @@ gui = do
             ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
             ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
-  let gui = GUI thList (storeAxioms axioms) b
+  let gui =
+        GUI (storeThrms theorems) (storeAxioms axioms) b (copyThrm thrmEntry) w
 
   wireThrmEntry gui state thrmEntry
   wireAxiomsArea gui state axioms
