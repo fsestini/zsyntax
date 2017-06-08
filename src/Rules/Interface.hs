@@ -209,6 +209,14 @@ logLCEq lin1 lin2 =
       T.mlogLn $ "the second has " ++ (T.prettys l2)
       return False
 
+nsIdentity :: forall ax fr cty . Formula fr => NSequent ax fr cty -> Bool
+nsIdentity (NS _ lc _ concl) = nlc == co
+  where
+    co :: LinearCtxt (Opaque fr)
+    co = either (singleton . neutralToOpaque) fromFoldable (maybeNeutral concl)
+    nlc :: LinearCtxt (Opaque fr)
+    nlc = T.map neutralToOpaque lc
+
 -- | Type of unrestricted contexts. Unrestricted contexts are made out of
 -- elements of some type of axiomatic formulas.
 type UCtxt axs = UnrestrCtxt axs
