@@ -49,6 +49,11 @@ data EqInfo a = EI
   , eiOnBoth :: a
   } deriving (Functor)
 
+instance Monoid a => Monoid (EqInfo a) where
+  mempty = EI mempty mempty mempty
+  (EI x y z) `mappend` (EI x' y' z') =
+    EI (x `mappend` x') (y `mappend` y') (z `mappend` z')
+
 class Semigroup a => Eq' a where
   eq' :: a -> a -> EqInfo a
 
