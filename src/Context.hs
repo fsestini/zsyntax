@@ -38,10 +38,3 @@ fromFoldable
   :: (Monoid ctxt, Context ctxt, Foldable f)
   => f (Elems ctxt) -> ctxt
 fromFoldable f = foldr add mempty f
-
-maybeEqCtxt
-  :: Context ctxt
-  => ctxt
-  -> ctxt
-  -> (Maybe (NE.NonEmpty (Elems ctxt)), Maybe (NE.NonEmpty (Elems ctxt)))
-maybeEqCtxt c1 c2 = bimap NE.nonEmpty NE.nonEmpty (eqCtxt c1 c2)
