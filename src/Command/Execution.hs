@@ -351,6 +351,7 @@ execCommand (RemoveAxioms axNames) =
   liftUITrans (traverseFst $ removeAll axNames) >> refreshTheorems
 execCommand (AddTheorem name q) =
   liftUITrans (\x -> fmap ((,) x) . (addTheorem name q) x) >> refreshTheorems
+execCommand RefreshTheorems = refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
 execCommand (LoadFile path) = loadFile path >> refreshTheorems
 execCommand (OpenFile path) = put (feEmpty, feEmpty) >> loadFile path
