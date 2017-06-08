@@ -41,9 +41,10 @@ ctrlListView vbox = do
     shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
     shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
-ctrlDialog :: IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog = do
+ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
+ctrlDialog parent = do
   dia <- dialogNew
+  windowSetTransientFor dia parent
   set dia [windowTitle := "Add control context..."]
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
@@ -69,9 +70,12 @@ ctrlDialog = do
   widgetDestroy dia
   return result
 
-axiomsDialog :: String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
-axiomsDialog title content = do
+axiomsDialog
+  :: WindowClass w
+  => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
+axiomsDialog parent title content = do
   dia <- dialogNew
+  windowSetTransientFor dia parent
   set
     dia
     [ windowTitle := title
@@ -92,7 +96,7 @@ axiomsDialog title content = do
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
   onClicked btnAddCtrl $ do
-    res <- ctrlDialog
+    res <- ctrlDialog dia
     case res of
       Just ctxt -> listStoreAppend list ctxt >> return ()
       Nothing -> return ()
