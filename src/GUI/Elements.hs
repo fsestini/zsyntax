@@ -201,13 +201,34 @@ logArea vbox = do
 
 --------------------------------------------------------------------------------
 
-theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (ListStore t)
+data TheoremsArea t = TA
+  { btnRefreshThrms :: Button
+  , btnCopyThrm :: Button
+  , btnRemoveThrm :: Button
+  , storeThrms :: ListStore t
+  , treeSelThrms :: TreeSelection
+  }
+
+theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (TheoremsArea t)
 theoremArea vbox renders = do
   thLabel <- labelNew (Just "Theorems:")
   miscSetAlignment thLabel 0 0
   boxPackStart vbox thLabel PackNatural 3
-  (_,thList) <- buildListView vbox renders PackGrow
-  return thList
+
+  h <- hBoxNew False 10
+  (tree, list) <- buildListView h renders PackGrow
+  treeSel <- treeViewGetSelection tree
+
+  btns <- vBoxNew False 0
+  btnRefresh <- buttonNewWithLabel "Refresh all"
+  boxPackStart btns btnRefresh PackNatural 0
+  btnCopy <- buttonNewWithLabel "Copy to area"
+  boxPackStart btns btnCopy PackNatural 0
+  btnRem <- buttonNewWithLabel "Remove theorem"
+  boxPackStart btns btnRem PackNatural 0
+  boxPackStart h btns PackNatural 0
+  boxPackStart vbox h PackGrow 0
+  return (TA btnRefresh btnCopy btnRem list treeSel)
 
 --------------------------------------------------------------------------------
 
