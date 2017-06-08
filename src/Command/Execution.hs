@@ -17,7 +17,7 @@
 module Command.Execution where
 
 import TypeClasses (Pretty(..), PrettyK, prettys)
-import Utils (trim, (&&&))
+import Utils (trim, (&&&), (.:))
 
 import Command.Structures
 
@@ -295,14 +295,6 @@ changeAxiom axName axrepr axEnv = toUI axEnv $ do
   let newAxEnv = feReplace axName (AAx axrepr, axiom) axEnv
   return newAxEnv
 
-removeAxiom :: ThrmName -> (AxEnv axr ax) -> UI (AxEnv axr ax)
-removeAxiom axName axEnv = do
-  let newAxioms = feRemove axName axEnv
-  return newAxioms
-
-removeAxioms :: [ThrmName] -> AxEnv axr ax -> UI (AxEnv axr ax)
-removeAxioms = flip (foldM (flip removeAxiom))
-
 loadFile
   :: (MegaConstr axr ax frepr)
   => FilePath -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
@@ -356,7 +348,7 @@ execCommand (AddAxiom name axrepr) =
 execCommand (ChangeAxiom name axrepr) =
   liftUITrans (traverseFst $ changeAxiom name axrepr) >> refreshTheorems
 execCommand (RemoveAxioms axNames) =
-  liftUITrans (traverseFst $ removeAxioms axNames) >> refreshTheorems
+  liftUITrans (traverseFst $ removeAll axNames) >> refreshTheorems
 execCommand (AddTheorem name q) =
   liftUITrans (\x -> fmap ((,) x) . (addTheorem name q) x) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
@@ -366,3 +358,6 @@ execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
 
 traverseFst :: Applicative m => (a1 -> m a) -> a1 -> b -> m (a, b)
 traverseFst f = curry (bitraverse f pure)
+
+removeAll :: FEnv env => [ThrmName] -> env -> UI env
+removeAll = flip (foldM (flip (return .: feRemove)))
