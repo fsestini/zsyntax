@@ -45,8 +45,8 @@ gui = do
   initGUI
   w <- windowNew
   set w [ windowTitle := "Zsyntax"
-        , windowDefaultWidth := 500
-        , windowDefaultHeight := 500
+        , windowDefaultWidth := 600
+        , windowDefaultHeight := 600
         , containerBorderWidth := 10 ]
 
   vbox <- vBoxNew False 0
