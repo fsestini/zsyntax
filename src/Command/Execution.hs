@@ -145,9 +145,13 @@ adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
 adjoinMsgE :: String -> Either String a -> Either String a
 adjoinMsgE str = first (str ++)
 
-liftSR :: (String, SearchRes seqty a) -> EUI a
+mayStdErr :: Maybe String -> Free UIF ()
+mayStdErr Nothing = return ()
+mayStdErr (Just x) = uiStdErr x
+
+liftSR :: (Maybe String, SearchRes seqty a) -> EUI a
 liftSR (msg, res) =
-  lift (uiStdErr msg) >>
+  lift (mayStdErr msg) >>
   case res of
     (OkRes x) -> return x
     (Saturated _) -> ExceptT . return . Left $ "not provable: not a theorem"
@@ -157,10 +161,10 @@ liftSR (msg, res) =
 liftSRVerbose
   :: (Search ax axr frepr, SearchDump ax axr frepr)
   => MyGoalNSequent ax axr frepr
-  -> (String, SearchRes (MyDTS ax axr frepr) a)
+  -> (Maybe String, SearchRes (MyDTS ax axr frepr) a)
   -> EUI a
 liftSRVerbose goal (msg, x) =
-  lift (uiStdErr msg) >>
+  lift (mayStdErr msg) >>
   case x of
     OkRes res -> return res
     Saturated seqs ->
@@ -271,7 +275,7 @@ type MyGNS ax axr frepr =
 --                  (Cty (SrchF ax axr frepr))
 
 type MySrchRes ax axr frepr =
-  (String, SearchRes (DT (DerT ax axr frepr) (MyNSequent ax axr frepr))
+  (Maybe String, SearchRes (DT (DerT ax axr frepr) (MyNSequent ax axr frepr))
     (DT (DerT ax axr frepr)
         (ResultNSequent (Ax (SrchF ax axr frepr))
                         (SrchF ax axr frepr)
@@ -282,7 +286,8 @@ type MyDTS ax axr frepr = DT (DerT ax axr frepr) (MyNSequent ax axr frepr)
 runSearch
   :: forall ax axr frepr . (SrchConstr ax axr frepr)
   => MyGNS ax axr frepr -> MySrchRes ax axr frepr
-runSearch neutral = ((const "") &&& runIdentity . (srch initS initR)) neutral
+runSearch neutral =
+  ((const Nothing) &&& runIdentity . (srch initS initR)) neutral
   where
     (initS :: S.Set (MyDTS ax axr frepr), initR) =
       initialSequentsAndRules neutral
