@@ -159,10 +159,7 @@ instance CommAx AxRepr CLIAxiom where
 type CLICommand = Command AxRepr FrmlRepr
 
 instance CParse AxRepr FrmlRepr where
-  parseCommand = bimap show id . CLI.Command.parseCommand
-
-parseCommand :: String -> Either ParseError CLICommand
-parseCommand = parse command ""
+  pCommand = command
 
 thrmName :: Parser ThrmName
 thrmName = TN <$> many1 alphaNum

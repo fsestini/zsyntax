@@ -21,6 +21,7 @@ import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
+import Parsing (Parser)
 
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
 data AddedAxiom axr = AAx { unAAx :: axr }
@@ -67,7 +68,7 @@ toNames env thrms axs =
 --   reprFrml :: frepr -> Either String frml
 
 class CParse  axr frepr where
-  parseCommand :: String -> Either String (Command axr frepr)
+  pCommand :: Parser (Command axr frepr)
 
 class CPrint axr frepr | axr -> frepr, frepr -> axr where
   printAx :: ThrmName -> AddedAxiom axr -> String

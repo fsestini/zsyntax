@@ -36,6 +36,7 @@ import Control.Monad.Trans
 import Prover
 import Control.Applicative (Alternative(..))
 import Control.Monad.Trans.Except
+import Parsing
 
 type EUI a = ExceptT String (Free UIF) a
 
@@ -301,7 +302,9 @@ loadFile
 loadFile path = do
   contents <- lift $ uiLoadFile path
   let commandsE =
-        mapM parseCommand (filter (not . null . trim) . lines $ contents)
+        mapM
+          (parseString (padded pCommand))
+          (filter (not . null . trim) . lines $ contents)
   case commandsE of
     Left err -> lift . logUI $ "error parsing the file: " ++ (show err)
     Right commands -> mapM_ execCommand commands

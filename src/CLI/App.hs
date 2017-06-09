@@ -20,10 +20,12 @@ import Data.Bifunctor
 import Control.Monad.Morph
 import Control.Monad.Free
 import qualified Data.Map as M
+import Parsing
 
 import TypeClasses (Pretty(..))
 
-import Command.Structures (UIF(..), ThrmName(..), FEnv(..), AddedAxiom(..))
+import Command.Structures
+       (UIF(..), ThrmName(..), FEnv(..), AddedAxiom(..), CParse(..))
 import Command.Execution (execCommand)
 import CLI.Command
 
@@ -61,7 +63,7 @@ loop :: App a
 loop = do
   liftIO $ putStr "> " >> hFlush stdout
   line <- liftIO getLine
-  case parseCommand line of
+  case (parseString (padded pCommand)) line of
     Left err ->
       case line of
         "list axioms" -> printAxioms
