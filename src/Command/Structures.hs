@@ -162,7 +162,7 @@ instance FEnv (ThrmEnv frepr ax) where
       then Nothing
       else Just (TE (D.pushBack thrms (nm, (q, sa))))
   feRemove name (TE thrms) =
-    (TE (D.fromList . filter ((== name) . fst) . toList $ thrms))
+    (TE (D.fromList . filter ((/= name) . fst) . toList $ thrms))
   feReplace name x (TE thrms) =
     TE . D.fromList $ (replaceAssocL (name, x) (toList thrms))
   feLookup nm (TE thrms) = lookup nm (toList thrms)
