@@ -256,9 +256,16 @@ parseRemoveAxiom =
   btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token thrmName)
 
 command :: Parser CLICommand
-command =
-  parseAxiom "add" <|> parseAxiom "change" <|> queryTheorem
-  <|> parseLoadFile <|> parseOpenFile <|> parseSaveToFile <|> parseRemoveAxiom
+command = commands <?> "a command name"
+  where
+    commands =
+      try (parseAxiom "add") <|>
+      try (parseAxiom "change") <|>
+      try queryTheorem <|>
+      try parseLoadFile <|>
+      try parseOpenFile <|>
+      try parseSaveToFile <|>
+      try parseRemoveAxiom
 
 comma :: Parser Char
 comma = char ','
