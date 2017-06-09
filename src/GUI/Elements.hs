@@ -153,6 +153,22 @@ askReplaceThrm p nm@(TN name) = do
   widgetDestroy dia
   return res
 
+errorDiag :: WindowClass w => w -> String -> IO ()
+errorDiag p msg = do
+  dia <- dialogNew
+  windowSetTransientFor dia p
+  windowSetModal dia True
+  dialogAddButton dia stockOk ResponseOk
+  upbox <- dialogGetUpper dia
+  l <- labelNew (Just msg)
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  _ <- dialogRun dia
+  widgetDestroy dia
+
+errorDiagShow :: (WindowClass w, Show a) => w -> a -> IO ()
+errorDiagShow p = errorDiag p . show
+
 --------------------------------------------------------------------------------
 
 addSep :: VBox -> IO ()
