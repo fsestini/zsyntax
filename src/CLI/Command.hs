@@ -33,16 +33,20 @@ import Data.Foldable (toList)
 import Data.Bifunctor (bimap)
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
+import Control.Newtype
 
-newtype CLI a = CLI
-  { unCLI :: a
-  } deriving (Eq, Ord, Show, T.Pretty)
+newtype CLI a = CLI a deriving (Eq, Ord, Show, T.Pretty)
 
-newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
+instance Newtype (CLI a) a where { pack = CLI ; unpack (CLI x) = x }
+
+newtype Aggregate = Aggr (NE.NonEmpty (BioFormula BioAtoms))
   deriving (Eq, Ord, Show)
 
+instance Newtype Aggregate (NE.NonEmpty (BioFormula BioAtoms))
+  where { pack = Aggr ; unpack (Aggr a) = a }
+
 instance T.Pretty Aggregate where
-  pretty = T.prettys . unAggr
+  pretty = T.prettys . unpack
 
 data AxRepr = AR
   { from :: Aggregate
@@ -86,9 +90,9 @@ instance Search CLIAxiom AxRepr FrmlRepr where
       case names axlist of
         Some list -> axsFromList axs thrms list
         AllOfEm -> return (fmap snd (legitAxioms axs thrms))
-    let lc = fmap S.sAtom . unAggr $ q1
-        concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
-        sq = S.SQ (fromFoldable (fmap unCLI axioms)) (fromNEList lc) concl
+    let lc = fmap S.sAtom . unpack $ q1
+        concl = foldr1 S.sConj . fmap S.sAtom . unpack $ q2
+        sq = S.SQ (fromFoldable (fmap unpack axioms)) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
   toAx = CLI . S.srchAxToSax
@@ -145,8 +149,8 @@ instance CommAx AxRepr CLIAxiom where
   reprAx (AR fromAggr ctrl' toAggr) = do
     return . CLI $
       S.sAx
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ fromAggr)
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ toAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ fromAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ toAggr)
         (RL [(mempty, ctrl')])
 
 --------------------------------------------------------------------------------
