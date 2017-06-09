@@ -1,5 +1,6 @@
 module GUI.Elements where
 
+import Utils (discardResP)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
 import Control.Monad.IO.Class (liftIO)
@@ -61,7 +62,7 @@ ctrlDialog p = do
     if answer == ResponseApply
       then do
         txt <- entryGetText e :: IO String
-        flip (either (const (return Nothing))) (parseCtxt txt) $ \ctxt -> do
+        flip (either (discardResP . errorDiagShow p)) (parseCtxt txt) $ \ctxt -> do
           state <- toggleButtonGetActive regularBtn
           if state
             then return (Just (Regular ctxt))
@@ -113,7 +114,7 @@ axiomsDialog p title content = do
               from <- parseAggregate fromTxt
               to <- parseAggregate toTxt
               return (from, to)
-        flip (either (const (return Nothing))) eee $ \(from, to) ->
+        flip (either (discardResP . errorDiagShow p . show)) eee $ \(from, to) ->
           return . Just $
           ADC (TN nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
       else return Nothing
