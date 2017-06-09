@@ -42,9 +42,9 @@ ctrlListView vbox = do
     shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
 ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog parent = do
+ctrlDialog p = do
   dia <- dialogNew
-  windowSetTransientFor dia parent
+  windowSetTransientFor dia p
   set dia [windowTitle := "Add control context..."]
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
@@ -64,8 +64,8 @@ ctrlDialog parent = do
         flip (either (const (return Nothing))) (parseCtxt txt) $ \ctxt -> do
           state <- toggleButtonGetActive regularBtn
           if state
-             then return (Just (Regular ctxt))
-             else return (Just (SupsetClosed ctxt))
+            then return (Just (Regular ctxt))
+            else return (Just (SupsetClosed ctxt))
       else return Nothing
   widgetDestroy dia
   return result
@@ -73,9 +73,9 @@ ctrlDialog parent = do
 axiomsDialog
   :: WindowClass w
   => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
-axiomsDialog parent title content = do
+axiomsDialog p title content = do
   dia <- dialogNew
-  windowSetTransientFor dia parent
+  windowSetTransientFor dia p
   set
     dia
     [ windowTitle := title
@@ -133,9 +133,9 @@ titledEntry vbox str = do
 --------------------------------------------------------------------------------
 
 askReplaceThrm :: Window -> ThrmName -> IO ReplaceAnswer
-askReplaceThrm parent nm@(TN name) = do
+askReplaceThrm p nm@(TN name) = do
   dia <- dialogNew
-  windowSetTransientFor dia parent
+  windowSetTransientFor dia p
   windowSetModal dia True
   dialogAddButton dia stockYes ResponseYes
   dialogAddButton dia stockNo ResponseNo
