@@ -17,10 +17,11 @@
 module Command.Execution where
 
 import TypeClasses (Pretty(..), PrettyK, prettys)
-import Utils (trim, (&&&))
+import Utils (trim, (&&&), (.:))
 
 import Command.Structures
 
+import Data.Bitraversable (bitraverse)
 import Data.Foldable
 import qualified Data.Set as S
 import Control.Monad.Free
@@ -35,6 +36,7 @@ import Control.Monad.Trans
 import Prover
 import Control.Applicative (Alternative(..))
 import Control.Monad.Trans.Except
+import Parsing
 
 type EUI a = ExceptT String (Free UIF) a
 
@@ -50,10 +52,16 @@ tryInsertTheorem
   -> ThrmEnv frepr ax
   -> EUI (ThrmEnv frepr ax)
 tryInsertTheorem nm@(TN name) (q, frml) thrms =
-  maybe (throwE msg >> return thrms) return newThrms
+  maybe ask return (feInsert nm newItem thrms)
   where
-    newThrms = feInsert nm (q, Just frml) thrms
-    msg = "theorem named '" ++ name ++ "' already present"
+    ask = do
+      answ <- lift $ uiAskReplaceThrm nm
+      case answ of
+        Yes -> return $ feReplace nm newItem thrms
+        No ->
+          throwE ("theorem named '" ++ name ++ "' already present") >>
+          return thrms
+    newItem = (q, Just frml)
 
 tryInsertAxiom
   :: ThrmName
@@ -137,9 +145,13 @@ adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
 adjoinMsgE :: String -> Either String a -> Either String a
 adjoinMsgE str = first (str ++)
 
-liftSR :: (String, SearchRes seqty a) -> EUI a
+mayStdErr :: Maybe String -> Free UIF ()
+mayStdErr Nothing = return ()
+mayStdErr (Just x) = uiStdErr x
+
+liftSR :: (Maybe String, SearchRes seqty a) -> EUI a
 liftSR (msg, res) =
-  lift (uiStdErr msg) >>
+  lift (mayStdErr msg) >>
   case res of
     (OkRes x) -> return x
     (Saturated _) -> ExceptT . return . Left $ "not provable: not a theorem"
@@ -149,10 +161,10 @@ liftSR (msg, res) =
 liftSRVerbose
   :: (Search ax axr frepr, SearchDump ax axr frepr)
   => MyGoalNSequent ax axr frepr
-  -> (String, SearchRes (MyDTS ax axr frepr) a)
+  -> (Maybe String, SearchRes (MyDTS ax axr frepr) a)
   -> EUI a
 liftSRVerbose goal (msg, x) =
-  lift (uiStdErr msg) >>
+  lift (mayStdErr msg) >>
   case x of
     OkRes res -> return res
     Saturated seqs ->
@@ -263,7 +275,7 @@ type MyGNS ax axr frepr =
 --                  (Cty (SrchF ax axr frepr))
 
 type MySrchRes ax axr frepr =
-  (String, SearchRes (DT (DerT ax axr frepr) (MyNSequent ax axr frepr))
+  (Maybe String, SearchRes (DT (DerT ax axr frepr) (MyNSequent ax axr frepr))
     (DT (DerT ax axr frepr)
         (ResultNSequent (Ax (SrchF ax axr frepr))
                         (SrchF ax axr frepr)
@@ -274,7 +286,8 @@ type MyDTS ax axr frepr = DT (DerT ax axr frepr) (MyNSequent ax axr frepr)
 runSearch
   :: forall ax axr frepr . (SrchConstr ax axr frepr)
   => MyGNS ax axr frepr -> MySrchRes ax axr frepr
-runSearch neutral = ((const "") &&& runIdentity . (srch initS initR)) neutral
+runSearch neutral =
+  ((const Nothing) &&& runIdentity . (srch initS initR)) neutral
   where
     (initS :: S.Set (MyDTS ax axr frepr), initR) =
       initialSequentsAndRules neutral
@@ -288,21 +301,15 @@ changeAxiom axName axrepr axEnv = toUI axEnv $ do
   let newAxEnv = feReplace axName (AAx axrepr, axiom) axEnv
   return newAxEnv
 
-removeAxiom :: ThrmName -> (AxEnv axr ax) -> UI (AxEnv axr ax)
-removeAxiom axName axEnv = do
-  let newAxioms = feRemove axName axEnv
-  return newAxioms
-
-removeAxioms :: [ThrmName] -> AxEnv axr ax -> UI (AxEnv axr ax)
-removeAxioms = flip (foldM (flip removeAxiom))
-
 loadFile
   :: (MegaConstr axr ax frepr)
   => FilePath -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
 loadFile path = do
   contents <- lift $ uiLoadFile path
   let commandsE =
-        mapM parseCommand (filter (not . null . trim) . lines $ contents)
+        mapM
+          (parseString (padded pCommand))
+          (filter (not . null . trim) . lines $ contents)
   case commandsE of
     Left err -> lift . logUI $ "error parsing the file: " ++ (show err)
     Right commands -> mapM_ execCommand commands
@@ -333,9 +340,6 @@ liftUITrans f = do
   (newAxs, newThrms) <- lift $ f axs thrms
   put (newAxs, newThrms)
 
-traversePair :: Applicative m => (m a, m b) -> m (a, b)
-traversePair (x,y) = (,) <$> x <*> y
-
 execCommand'
   :: (MegaConstr axr ax frepr) => Command axr frepr
   -> AxEnv axr ax
@@ -348,19 +352,23 @@ execCommand
   => Command axr frepr
   -> StateT (AxEnv axr ax, ThrmEnv frepr ax) (Free UIF) ()
 execCommand (AddAxiom name axrepr) =
-  liftUITrans (axToTrans $ addAxiom name axrepr) >> refreshTheorems
+  liftUITrans (traverseFst $ addAxiom name axrepr) >> refreshTheorems
 execCommand (ChangeAxiom name axrepr) =
-  liftUITrans (axToTrans $ changeAxiom name axrepr) >> refreshTheorems
+  liftUITrans (traverseFst $ changeAxiom name axrepr) >> refreshTheorems
 execCommand (RemoveAxioms axNames) =
-  liftUITrans (axToTrans $ removeAxioms axNames) >> refreshTheorems
+  liftUITrans (traverseFst $ removeAll axNames) >> refreshTheorems
 execCommand (AddTheorem name q) =
-  liftUITrans (thrmToTrans $ addTheorem name q) >> refreshTheorems
+  liftUITrans (\x -> fmap ((,) x) . (addTheorem name q) x) >> refreshTheorems
+execCommand RefreshTheorems = refreshTheorems
+execCommand (RemoveTheorems thNames) =
+  liftUITrans (curry (bitraverse pure (removeAll thNames))) >> refreshTheorems
 execCommand (Query q) = get >>= lift . uncurry (query q)
 execCommand (LoadFile path) = loadFile path >> refreshTheorems
 execCommand (OpenFile path) = put (feEmpty, feEmpty) >> loadFile path
 execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
 
-axToTrans :: Monad m => (a1 -> m a) -> a1 -> b -> m (a, b)
-axToTrans f = curry (traversePair . bimap f return)
-thrmToTrans :: Functor f => (t -> a -> f b) -> t -> a -> f (t, b)
-thrmToTrans f ax = fmap ((,) ax) . f ax
+traverseFst :: Applicative m => (a1 -> m a) -> a1 -> b -> m (a, b)
+traverseFst f = curry (bitraverse f pure)
+
+removeAll :: FEnv env => [ThrmName] -> env -> UI env
+removeAll = flip (foldM (flip (return .: feRemove)))

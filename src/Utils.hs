@@ -2,6 +2,7 @@ module Utils where
 
 import Data.Char
 import Data.List
+import Control.Monad
 
 trim :: String -> String
 trim = dropWhileEnd isSpace . dropWhile isSpace
@@ -19,3 +20,6 @@ infix 8 &&&
 (f &&& g) x = (f x, g x)
 
 uncurry3 f (x,y,z) = f x y z
+
+discardResP :: (Monad m, MonadPlus p) => m a -> m (p b)
+discardResP m = m >> return mzero

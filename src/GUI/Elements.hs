@@ -1,5 +1,6 @@
 module GUI.Elements where
 
+import Utils (discardResP)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
 import Control.Monad.IO.Class (liftIO)
@@ -41,9 +42,10 @@ ctrlListView vbox = do
     shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
     shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
-ctrlDialog :: IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog = do
+ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
+ctrlDialog p = do
   dia <- dialogNew
+  windowSetTransientFor dia p
   set dia [windowTitle := "Add control context..."]
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
@@ -60,18 +62,21 @@ ctrlDialog = do
     if answer == ResponseApply
       then do
         txt <- entryGetText e :: IO String
-        flip (either (const (return Nothing))) (parseCtxt txt) $ \ctxt -> do
+        flip (either (discardResP . errorDiagShow p)) (parseCtxt txt) $ \ctxt -> do
           state <- toggleButtonGetActive regularBtn
           if state
-             then return (Just (Regular ctxt))
-             else return (Just (SupsetClosed ctxt))
+            then return (Just (Regular ctxt))
+            else return (Just (SupsetClosed ctxt))
       else return Nothing
   widgetDestroy dia
   return result
 
-axiomsDialog :: String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
-axiomsDialog title content = do
+axiomsDialog
+  :: WindowClass w
+  => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
+axiomsDialog p title content = do
   dia <- dialogNew
+  windowSetTransientFor dia p
   set
     dia
     [ windowTitle := title
@@ -92,7 +97,7 @@ axiomsDialog title content = do
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
   onClicked btnAddCtrl $ do
-    res <- ctrlDialog
+    res <- ctrlDialog dia
     case res of
       Just ctxt -> listStoreAppend list ctxt >> return ()
       Nothing -> return ()
@@ -109,7 +114,7 @@ axiomsDialog title content = do
               from <- parseAggregate fromTxt
               to <- parseAggregate toTxt
               return (from, to)
-        flip (either (const (return Nothing))) eee $ \(from, to) ->
+        flip (either (discardResP . errorDiagShow p . show)) eee $ \(from, to) ->
           return . Just $
           ADC (TN nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
       else return Nothing
@@ -125,6 +130,45 @@ titledEntry vbox str = do
   boxPackStart hb entry PackGrow 5
   boxPackStart vbox hb PackNatural 0
   return entry
+
+--------------------------------------------------------------------------------
+
+askReplaceThrm :: Window -> ThrmName -> IO ReplaceAnswer
+askReplaceThrm p nm@(TN name) = do
+  dia <- dialogNew
+  windowSetTransientFor dia p
+  windowSetModal dia True
+  dialogAddButton dia stockYes ResponseYes
+  dialogAddButton dia stockNo ResponseNo
+  upbox <- dialogGetUpper dia
+  l <-
+    labelNew
+      (Just ("A theorem named '" ++ name ++ "' already exists. Replace?"))
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  answer <- dialogRun dia
+  let res =
+        case answer of
+          ResponseYes -> Yes
+          _ -> No
+  widgetDestroy dia
+  return res
+
+errorDiag :: WindowClass w => w -> String -> IO ()
+errorDiag p msg = do
+  dia <- dialogNew
+  windowSetTransientFor dia p
+  windowSetModal dia True
+  dialogAddButton dia stockOk ResponseOk
+  upbox <- dialogGetUpper dia
+  l <- labelNew (Just msg)
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  _ <- dialogRun dia
+  widgetDestroy dia
+
+errorDiagShow :: (WindowClass w, Show a) => w -> a -> IO ()
+errorDiagShow p = errorDiag p . show
 
 --------------------------------------------------------------------------------
 
@@ -174,13 +218,34 @@ logArea vbox = do
 
 --------------------------------------------------------------------------------
 
-theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (ListStore t)
+data TheoremsArea t = TA
+  { btnRefreshThrms :: Button
+  , btnCopyThrm :: Button
+  , btnRemoveThrm :: Button
+  , storeThrms :: ListStore t
+  , treeSelThrms :: TreeSelection
+  }
+
+theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (TheoremsArea t)
 theoremArea vbox renders = do
   thLabel <- labelNew (Just "Theorems:")
   miscSetAlignment thLabel 0 0
   boxPackStart vbox thLabel PackNatural 3
-  (_,thList) <- buildListView vbox renders PackGrow
-  return thList
+
+  h <- hBoxNew False 10
+  (tree, list) <- buildListView h renders PackGrow
+  treeSel <- treeViewGetSelection tree
+
+  btns <- vBoxNew False 0
+  btnRefresh <- buttonNewWithLabel "Refresh all"
+  boxPackStart btns btnRefresh PackNatural 0
+  btnCopy <- buttonNewWithLabel "Copy to area"
+  boxPackStart btns btnCopy PackNatural 0
+  btnRem <- buttonNewWithLabel "Remove theorem"
+  boxPackStart btns btnRem PackNatural 0
+  boxPackStart h btns PackNatural 0
+  boxPackStart vbox h PackGrow 0
+  return (TA btnRefresh btnCopy btnRem list treeSel)
 
 --------------------------------------------------------------------------------
 

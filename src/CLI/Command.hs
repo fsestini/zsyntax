@@ -28,17 +28,25 @@ import LFormula
 import Rules hiding (AxRepr, AR)
 import Parser
 import Data.Char (isSpace)
-import Data.List (dropWhileEnd)
+import Data.List (dropWhileEnd, intersperse)
 import Data.Foldable (toList)
 import Data.Bifunctor (bimap)
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
+import Control.Newtype
 
-newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
+newtype CLI a = CLI a deriving (Eq, Ord, Show, T.Pretty)
+
+instance Newtype (CLI a) a where { pack = CLI ; unpack (CLI x) = x }
+
+newtype Aggregate = Aggr (NE.NonEmpty (BioFormula BioAtoms))
   deriving (Eq, Ord, Show)
 
+instance Newtype Aggregate (NE.NonEmpty (BioFormula BioAtoms))
+  where { pack = Aggr ; unpack (Aggr a) = a }
+
 instance T.Pretty Aggregate where
-  pretty = T.prettys . unAggr
+  pretty = T.prettys . unpack
 
 data AxRepr = AR
   { from :: Aggregate
@@ -54,10 +62,10 @@ type CLICtrlSet = CtrlSet BioAtoms
 type CLIControlType = RList CLIElemBase CLICtrlSet
 -- The particular fully applied type of axioms that are used in the user
 -- interface.
-type CLIAxiom = S.SAxiom CLIControlType BioAtoms
+type CLIAxiom = CLI (S.SAxiom CLIControlType BioAtoms)
 -- The particular fully applied type of formulas that are used in the user
 -- interface.
-type CLIFormula = S.SFormula CLIElemBase CLIControlType String
+type CLIFormula = CLI (S.SFormula CLIElemBase CLIControlType String)
 
 type CLIAxEnv = AxEnv AxRepr CLIAxiom
 type CLIThrmEnv = ThrmEnv Aggregate CLIAxiom
@@ -76,18 +84,18 @@ instance Search CLIAxiom AxRepr FrmlRepr where
     maybe NonAxiomatic Axiomatic $ do
       nelc <- mapM decideN $ toNEList lc
       toFrml <- decideOF concl
-      return $ S.fromBasicNS nelc cty toFrml
+      return $ CLI (S.fromBasicNS nelc cty toFrml)
   queryToGoal axs thrms (QS axlist q1 q2) = do
     axioms <-
       case names axlist of
         Some list -> axsFromList axs thrms list
         AllOfEm -> return (fmap snd (legitAxioms axs thrms))
-    let lc = fmap S.sAtom . unAggr $ q1
-        concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
-        sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
+    let lc = fmap S.sAtom . unpack $ q1
+        concl = foldr1 S.sConj . fmap S.sAtom . unpack $ q2
+        sq = S.SQ (fromFoldable (fmap unpack axioms)) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
-  toAx = S.srchAxToSax
+  toAx = CLI . S.srchAxToSax
 
 instance SearchDump CLIAxiom AxRepr FrmlRepr where
   goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
@@ -139,10 +147,10 @@ instance Num n => T.PickMonad (PickM n) n where
 
 instance CommAx AxRepr CLIAxiom where
   reprAx (AR fromAggr ctrl' toAggr) = do
-    return $
+    return . CLI $
       S.sAx
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ fromAggr)
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ toAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ fromAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ toAggr)
         (RL [(mempty, ctrl')])
 
 --------------------------------------------------------------------------------
@@ -151,20 +159,20 @@ instance CommAx AxRepr CLIAxiom where
 type CLICommand = Command AxRepr FrmlRepr
 
 instance CParse AxRepr FrmlRepr where
-  parseCommand = bimap show id . CLI.Command.parseCommand
-
-parseCommand :: String -> Either ParseError CLICommand
-parseCommand = parse command ""
+  pCommand = command
 
 thrmName :: Parser ThrmName
 thrmName = TN <$> many1 alphaNum
 
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
-  aggr <- sepBy1 (token bioExpr) comma
+  aggr <- sepBy1 (bioExpr <* spaces) (comma <* spaces)
   case aggr of
-    [] -> unexpected "invalid empty context in control set"
+    [] -> unexpected "invalid empty aggregate"
     (x:xs) -> return (x NE.:| xs)
+
+parenAggr :: Parser (NE.NonEmpty (BioFormula BioAtoms))
+parenAggr = parens (token aggregate1')
 
 neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
 neCtxt = do
@@ -173,27 +181,29 @@ neCtxt = do
   return ctxt
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
-ctrlCtxt =  try (token (string "regular") >> fmap Regular neCtxt)
-        <|> (token (string "super") >> fmap SupsetClosed neCtxt)
+ctrlCtxt =  try (string "regular" >> fmap Regular neCtxt)
+        <|> (string "super" >> fmap SupsetClosed neCtxt)
 
 ctrlSet :: Parser (CtrlSet BioAtoms)
-ctrlSet = do
-  ctxts <- many (try (parens ctrlCtxt))
-  return (fromFoldableCtxts ctxts)
+ctrlSet = parens (token pCtxts)
+  where pCtxts = do
+          ctxts <- many (parens (token ctrlCtxt) <* spaces)
+          return (fromFoldableCtxts ctxts)
 
 -- str axiom name (aggr...) (aggr...) unless ((regular ...) (super ...) ...)
 parseAxiom :: String -> Parser CLICommand
-parseAxiom str = token (string str) >> token (string "axiom") >> do
+parseAxiom str = string str >> token (string "axiom") >> do
   name <- token thrmName
-  fromAggr <- parens (aggregate1')
-  spaces
-  toAggr <- parens (aggregate1')
+  fromAggr <- token parenAggr
+  toAggr <- token parenAggr
   _ <- token (string "unless")
-  ctrlset <- parens ctrlSet
+  ctrlset <- token ctrlSet
   return $ AddAxiom name (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
 axiomList :: Parser [ThrmName]
-axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
+axiomList = parens (token pList)
+  where
+    pList = sepBy (thrmName <* spaces) (comma <* spaces)
 
 queryAxioms :: AxMode -> Parser QueryAxioms
 queryAxioms m = try allParser <|> try someParser
@@ -203,7 +213,7 @@ queryAxioms m = try allParser <|> try someParser
       string "all" >> spaces >> string "axioms" >> return (QA AllOfEm m)
     someParser :: Parser QueryAxioms
     someParser =
-      string "axioms" >> spaces >> (flip QA m . Some <$> parens axiomList)
+      string "axioms" >> spaces >> (flip QA m . Some <$> axiomList)
 
 queryAxMode :: Parser AxMode
 queryAxMode = try (string "refine" >> return Refine) <|> return Normal
@@ -211,47 +221,54 @@ queryAxMode = try (string "refine" >> return Refine) <|> return Normal
 -- query name (aggr...) (aggr...) [refine] with axioms (...)
 queryTheorem :: Parser CLICommand
 queryTheorem =
-  token (string "query") >> do
+  string "query" >> do
     maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
-    fromAggr <- parens (aggregate1')
-    spaces
-    toAggr <- parens (aggregate1')
+    fromAggr <- token parenAggr
+    toAggr <- token parenAggr
     m <- token queryAxMode
     _ <- token (string "with")
-    qAxs <- spaces >> queryAxioms m
+    qAxs <- token (queryAxioms m)
     let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
       Just name -> return $ AddTheorem name q
       Nothing -> return $ Query q
 
+url :: Parser FilePath
+url = many1 (noneOf [' '])
+
 parseLoadFile :: Parser CLICommand
-parseLoadFile =
-  token (string "load file") >> spaces >>
-  LoadFile <$> token (many1 (noneOf [' ']))
+parseLoadFile = string "load file" >> spaces >> LoadFile <$> url
 
 parseOpenFile :: Parser CLICommand
-parseOpenFile =
-  token (string "open file") >> spaces >>
-  OpenFile <$> token (many1 (noneOf [' ']))
+parseOpenFile = string "open file" >> spaces >> OpenFile <$> url
+
+btwSpaces :: [String] -> Parser ()
+btwSpaces = foldr1 (>>) . intersperse spaces . fmap ((>> return ()) . string)
 
 parseSaveToFile :: Parser CLICommand
-parseSaveToFile =
-  token (string "save to file") >> spaces >> SaveToFile <$> many1 (noneOf [' '])
+parseSaveToFile = btwSpaces ["save", "to", "file"] >> SaveToFile <$> token url
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
-  RemoveAxioms . return <$> (token (string "remove axiom") >> (token thrmName))
+  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token thrmName)
 
 command :: Parser CLICommand
-command =
-  parseAxiom "add" <|> parseAxiom "edit" <|> queryTheorem
-  <|> parseLoadFile <|> parseOpenFile <|> parseSaveToFile <|> parseRemoveAxiom
+command = commands <?> "a command name"
+  where
+    commands =
+      try (parseAxiom "add") <|>
+      try (parseAxiom "change") <|>
+      try queryTheorem <|>
+      try parseLoadFile <|>
+      try parseOpenFile <|>
+      try parseSaveToFile <|>
+      try parseRemoveAxiom
 
 comma :: Parser Char
-comma = token (char ',')
+comma = char ','
 
 parens :: Parser a -> Parser a
-parens p = token (char '(') *> p <* token (char ')')
+parens p = char '(' *> p <* char ')'
 
 token :: Parser a -> Parser a
 token p = spaces >> p

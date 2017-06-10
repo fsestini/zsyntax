@@ -2,6 +2,7 @@ module GUI.Command
   ( AxRepr(..)
   , FrmlRepr(..)
   , BioAtoms
+  , ReplaceAnswer(..)
   , GUIElemBase
   , GUICtrlSet
   , GUIControlType

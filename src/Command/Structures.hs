@@ -21,6 +21,7 @@ import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
+import Parsing (Parser)
 
 newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
 data AddedAxiom axr = AAx { unAAx :: axr }
@@ -67,7 +68,7 @@ toNames env thrms axs =
 --   reprFrml :: frepr -> Either String frml
 
 class CParse  axr frepr where
-  parseCommand :: String -> Either String (Command axr frepr)
+  pCommand :: Parser (Command axr frepr)
 
 class CPrint axr frepr | axr -> frepr, frepr -> axr where
   printAx :: ThrmName -> AddedAxiom axr -> String
@@ -78,6 +79,8 @@ data Command axr frepr
   | ChangeAxiom ThrmName axr
   | RemoveAxioms [ThrmName]
   | AddTheorem ThrmName (QueriedSeq frepr)
+  | RefreshTheorems
+  | RemoveTheorems [ThrmName]
   | Query (QueriedSeq frepr)
   | LoadFile FilePath
   -- ^ Loading a file executes all commands in it, so that their effects act on
@@ -134,7 +137,10 @@ newtype AxEnv axr ax =
 newtype ThrmEnv frepr ax =
   TE (D.BankersDequeue (ThrmName, (QueriedSeq frepr, Maybe (ThrmShape ax))))
 
-data ThrmShape ax = Axiomatic ax | NonAxiomatic
+data ThrmShape ax
+  = Axiomatic ax
+  | NonAxiomatic
+  deriving (Eq, Ord, Show)
 toMaybe :: ThrmShape ax -> Maybe ax
 toMaybe (Axiomatic ax) = Just ax
 toMaybe NonAxiomatic = Nothing
@@ -156,7 +162,7 @@ instance FEnv (ThrmEnv frepr ax) where
       then Nothing
       else Just (TE (D.pushBack thrms (nm, (q, sa))))
   feRemove name (TE thrms) =
-    (TE (D.fromList . filter ((== name) . fst) . toList $ thrms))
+    (TE (D.fromList . filter ((/= name) . fst) . toList $ thrms))
   feReplace name x (TE thrms) =
     TE . D.fromList $ (replaceAssocL (name, x) (toList thrms))
   feLookup nm (TE thrms) = lookup nm (toList thrms)
@@ -190,8 +196,8 @@ legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
 
 axsFromList
   :: AxEnv axr ax -> ThrmEnv frepr ax -> [ThrmName] -> Either String [ax]
-axsFromList axs thrms names = do
-  mapM mmm names
+axsFromList axs thrms nms = do
+  mapM mmm nms
   where
     axioms = legitAxioms axs thrms
     mmm nm@(TN str) =
@@ -225,8 +231,12 @@ processThrms f (TE env) = foldlM f' feEmpty (toList env)
 --------------------------------------------------------------------------------
 -- Free monad interface
 
+data ReplaceAnswer = Yes | No
+
 data UIF next
   = UILog String next
+  | UIError String next
+  | UIAskReplaceThrm ThrmName (ReplaceAnswer -> next)
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
   | UIStdErr String next
@@ -236,6 +246,12 @@ type UI a = Free UIF a
 
 logUI :: String -> Free UIF ()
 logUI str = liftF (UILog str ())
+
+uiError :: String -> Free UIF ()
+uiError str = liftF (UIError str ())
+
+uiAskReplaceThrm :: ThrmName -> Free UIF ReplaceAnswer
+uiAskReplaceThrm name = liftF (UIAskReplaceThrm name id)
 
 uiLoadFile :: FilePath -> Free UIF String
 uiLoadFile path = liftF (UILoadFile path id)

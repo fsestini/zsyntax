@@ -35,6 +35,8 @@ data GUI = GUI
   { thrmsStore :: ListStore ThrmItem
   , axiomsStore :: ListStore AxItem
   , logBuffer :: TextBuffer
+  , putThrm :: ThrmItem -> IO ()
+  , mainWindow :: Window
   }
 
 gui :: IO ()
@@ -43,8 +45,8 @@ gui = do
   initGUI
   w <- windowNew
   set w [ windowTitle := "Zsyntax"
-        , windowDefaultWidth := 500
-        , windowDefaultHeight := 500
+        , windowDefaultWidth := 600
+        , windowDefaultHeight := 600
         , containerBorderWidth := 10 ]
 
   vbox <- vBoxNew False 0
@@ -71,20 +73,32 @@ gui = do
   addSep vbox
 
   -- Theorems list
-  thList <- theoremArea vbox
-    (("Name", T.pretty . fst) NE.:|
-    [("Theorem", T.pretty . fst . snd)
-    ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
-    ,("Provable", maybe "No" (const "Yes") . snd . snd)])
+  theorems <- theoremArea vbox
+            (("Name", T.pretty . fst) NE.:|
+            [("Theorem", T.pretty . fst . snd)
+            ,("Axioms", prettyAxNames . names . qsAxioms . fst . snd)
+            ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
-  let gui = GUI thList (storeAxioms axioms) b
+  let gui =
+        GUI (storeThrms theorems) (storeAxioms axioms) b (copyThrm thrmEntry) w
 
   wireThrmEntry gui state thrmEntry
   wireAxiomsArea gui state axioms
+  wireThrmArea gui state theorems
 
   widgetShowAll w
   on w deleteEvent $ liftIO mainQuit >> return False
   mainGUI
+
+copyThrm :: TheoremEntryArea -> ThrmItem -> IO ()
+copyThrm teArea ((TN name), (qs, _)) = do
+  entrySetText (eName teArea) name
+  case names . qsAxioms $ qs of
+    AllOfEm -> toggleButtonSetActive (rbAll teArea) True
+    Some axs ->
+      entrySetText (eAxioms teArea) (join . intersperse "," . fmap unTN $ axs)
+  entrySetText (eFrom teArea) (T.pretty . qsFrom $ qs :: String)
+  entrySetText (eTo teArea) (T.pretty . qsTo $ qs)
 
 parseThrmNames :: String -> Either String [ThrmName]
 parseThrmNames =
@@ -115,43 +129,50 @@ printError gui str = appendLog (logBuffer gui) ("error: " ++ str)
 wireAxiomsArea :: GUI -> IORef AppState -> AxiomsArea AxItem -> IO ()
 wireAxiomsArea gui state axioms = do
   onClicked (btnAddAxiom axioms) $
-    maybeMM' askAddAxiom (execCommandInGUI gui state)
+    maybeMM' (askAddAxiom (mainWindow gui)) (execCommandInGUI gui state)
   onClicked (btnChangeAxiom axioms) $
     maybeMM'
-      (selectedAxiom axioms)
-      (askEditAxiom . toADC >=> maybeM (execCommandInGUI gui state))
+      (fmap join . fmap (fmap headMay) $
+       selected (storeAxioms axioms) (treeSelAxioms axioms))
+      ((askEditAxiom (mainWindow gui)) . toADC >=>
+       maybeM (execCommandInGUI gui state))
   onClicked (btnRemoveAxiom axioms) $
     maybeMM'
-      (selectedAxioms axioms)
+      (selected (storeAxioms axioms) (treeSelAxioms axioms))
       ((execCommandInGUI gui state . RemoveAxioms) . fmap fst)
   return ()
   where
     toADC :: AxItem -> AxDiaContent
     toADC (name, (AAx ar, _)) = ADC name ar
 
-selectedAxiom :: AxiomsArea AxItem -> IO (Maybe AxItem)
-selectedAxiom axioms = do
-  sel <- treeSelectionGetSelectedRows (treeSelAxioms axioms)
-  maybe' (join (fmap headMay (maySingleton sel))) (return Nothing) $ \i -> do
-    item <- listStoreGetValue (storeAxioms axioms) i
-    return (Just item)
-
-selectedAxioms :: AxiomsArea AxItem -> IO (Maybe [AxItem])
-selectedAxioms axioms =
-  treeSelectionGetSelectedRows (treeSelAxioms axioms) >>=
-    mapM (mapM (listStoreGetValue (storeAxioms axioms))) . mapM headMay
-
-askAddAxiom :: IO (Maybe GUICommand)
-askAddAxiom =
-  maybeP (axiomsDialog "Add axiom..." Nothing) $ \adc ->
+askAddAxiom :: Window -> IO (Maybe GUICommand)
+askAddAxiom parent =
+  maybeP (axiomsDialog parent "Add axiom..." Nothing) $ \adc ->
     Just $ AddAxiom (name adc)
       (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
 
-askEditAxiom :: AxDiaContent -> IO (Maybe GUICommand)
-askEditAxiom content =
-  maybeP (axiomsDialog "Change axiom..." (Just content)) $ \adc ->
+askEditAxiom :: Window -> AxDiaContent -> IO (Maybe GUICommand)
+askEditAxiom parent content =
+  maybeP (axiomsDialog parent "Change axiom..." (Just content)) $ \adc ->
     Just $ ChangeAxiom (name adc)
       (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+
+--------------------------------------------------------------------------------
+-- Theorem area
+
+wireThrmArea :: GUI -> IORef AppState -> TheoremsArea ThrmItem -> IO ()
+wireThrmArea gui state thrms = do
+  onClicked (btnRefreshThrms thrms) (execCommandInGUI gui state RefreshTheorems)
+  onClicked (btnCopyThrm thrms) $
+    selected (storeThrms thrms) (treeSelThrms thrms) >>=
+    maybeM (putThrm gui) . join . fmap headMay
+  onClicked (btnRemoveThrm thrms) $
+    maybeMM'
+      (selected (storeThrms thrms) (treeSelThrms thrms))
+      ((execCommandInGUI gui state . RemoveTheorems) . fmap fst)
+  return ()
+
+--------------------------------------------------------------------------------
 
 appendLog :: TextBuffer -> String -> IO ()
 appendLog b str = do
@@ -193,6 +214,11 @@ thrmAreaToCommand nmE axE fromE toE useList m = do
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x
+interpret gui (UIError str x) =
+  -- TODO: use dialog
+  appendLog (logBuffer gui) ("error: " ++ str) >> return x
+interpret gui (UIAskReplaceThrm name x) =
+  askReplaceThrm (mainWindow gui) name >>= return . x
 interpret _ (UILoadFile path x) = fmap x (readFile path)
 interpret _ (UISaveFile path content x) = writeFile path content >> return x
 interpret _ (UIStdErr str x) = hPutStrLn stderr str >> return x
@@ -257,6 +283,13 @@ prettyAA (AAx (AR from _ to)) = T.pretty from ++ " → " ++ T.pretty to
 prettyAxNames :: AxNames -> String
 prettyAxNames AllOfEm = "all"
 prettyAxNames (Some list) = T.prettys list
+
+--------------------------------------------------------------------------------
+
+selected :: ListStore t -> TreeSelection -> IO (Maybe [t])
+selected store treeSel =
+  treeSelectionGetSelectedRows treeSel >>=
+  mapM (mapM (listStoreGetValue store)) . mapM headMay
 
 --------------------------------------------------------------------------------
 
