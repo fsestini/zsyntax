@@ -229,7 +229,7 @@ queryTheorem =
     qAxs <- token (queryAxioms m)
     let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
-      Just name -> return $ AddTheorem name q
+      Just nm -> return $ AddTheorem nm q
       Nothing -> return $ Query q
 
 url :: Parser FilePath
@@ -280,8 +280,8 @@ instance CPrint AxRepr FrmlRepr where
   printThrm = exportTheorem
 
 exportAxiom :: Name -> AddedAxiom AxRepr -> String
-exportAxiom (NM name) (AAx (AR fromAggr cty toAggr)) =
-  "add axiom " ++ name ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
+exportAxiom (NM nm) (AAx (AR fromAggr cty toAggr)) =
+  "add axiom " ++ nm ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
 ppBioFormula :: BioFormula BioAtoms -> String
@@ -303,8 +303,8 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
     list = asFoldable toList ctxt
 
 exportTheorem :: Name -> QueriedSeq FrmlRepr -> String
-exportTheorem (NM name) (QS axs fromAggr toAggr) =
-  "query " ++ name ++ " (" ++
+exportTheorem (NM nm) (QS axs fromAggr toAggr) =
+  "query " ++ nm ++ " (" ++
   T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ")" ++ qMode ++ " with " ++ qAxs
   where
     qMode =
