@@ -43,6 +43,10 @@ instance Pretty Name where
 data AxName = AxNm Name | AxCombine AxName AxName
   deriving (Eq, Ord, Show)
 
+instance Pretty AxName where
+  pretty (AxNm name) = pretty name
+  pretty (AxCombine nm1 nm2) = pretty nm1 ++ " + " ++ pretty nm2
+
 instance Semigroup AxName where
   n1 <> n2 = AxCombine n1 n2
 
