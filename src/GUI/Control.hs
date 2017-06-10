@@ -38,6 +38,7 @@ data GUI = GUI
   , axiomsStore :: ListStore AxItem
   , logBuffer :: TextBuffer
   , putThrm :: ThrmItem -> IO ()
+  , clearThrmEntry :: IO ()
   , mainWindow :: Window
   }
 
@@ -82,7 +83,12 @@ gui = do
             ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui =
-        GUI (storeThrms theorems) (storeAxioms axioms) b (copyThrm thrmEntry) w
+        GUI (storeThrms theorems)
+            (storeAxioms axioms)
+            b
+            (copyThrm thrmEntry)
+            (clearThrmEntryArea thrmEntry)
+            w
 
   wireThrmEntry gui state thrmEntry
   wireAxiomsArea gui state axioms
