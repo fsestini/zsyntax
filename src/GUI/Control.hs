@@ -8,12 +8,14 @@ import Data.IORef (IORef, newIORef, writeIORef, readIORef)
 import Control.Monad
 import Control.Arrow ((>>>))
 import Control.Monad.Free (foldFree)
+import Control.Newtype
 import Text.Parsec
 import Data.Bifunctor
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
 import Utils (trim, maySingleton)
+import Parsing
 import Data.Time
 import Data.Char
 import Data.List
@@ -28,8 +30,8 @@ import GUI.Command
 import Debug.Trace
 
 type AppState = (GUIAxEnv, GUIThrmEnv)
-type AxItem = (ThrmName, Elems GUIAxEnv)
-type ThrmItem = (ThrmName, Elems GUIThrmEnv)
+type AxItem = (Name, Elems GUIAxEnv)
+type ThrmItem = (Name, Elems GUIThrmEnv)
 
 data GUI = GUI
   { thrmsStore :: ListStore ThrmItem
@@ -91,18 +93,17 @@ gui = do
   mainGUI
 
 copyThrm :: TheoremEntryArea -> ThrmItem -> IO ()
-copyThrm teArea ((TN name), (qs, _)) = do
+copyThrm teArea ((NM name), (qs, _)) = do
   entrySetText (eName teArea) name
   case names . qsAxioms $ qs of
     AllOfEm -> toggleButtonSetActive (rbAll teArea) True
     Some axs ->
-      entrySetText (eAxioms teArea) (join . intersperse "," . fmap unTN $ axs)
+      entrySetText (eAxioms teArea) (join . intersperse "," . fmap T.pretty $ axs)
   entrySetText (eFrom teArea) (T.pretty . qsFrom $ qs :: String)
   entrySetText (eTo teArea) (T.pretty . qsTo $ qs)
 
-parseThrmNames :: String -> Either String [ThrmName]
-parseThrmNames =
-  bimap show id . parse (sepBy (spaces *> thrmName <* spaces) comma <* eof) ""
+parseAxNames :: String -> Either ParseError [AxName]
+parseAxNames = parseString (spaces *> axiomList <* (spaces >> eof))
 
 wireThrmEntry :: GUI -> IORef AppState -> TheoremEntryArea -> IO ()
 wireThrmEntry gui state tea = do
@@ -148,14 +149,14 @@ wireAxiomsArea gui state axioms = do
 askAddAxiom :: Window -> IO (Maybe GUICommand)
 askAddAxiom parent =
   maybeP (axiomsDialog parent "Add axiom..." Nothing) $ \adc ->
-    Just $ AddAxiom (name adc)
-      (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+    Just $ AddAxiom (adcName adc)
+      (AR (from . adcRepr $ adc) (ctrl . adcRepr $ adc) (to . adcRepr $ adc))
 
 askEditAxiom :: Window -> AxDiaContent -> IO (Maybe GUICommand)
 askEditAxiom parent content =
   maybeP (axiomsDialog parent "Change axiom..." (Just content)) $ \adc ->
-    Just $ ChangeAxiom (name adc)
-      (AR (from . repr $ adc) (ctrl . repr $ adc) (to . repr $ adc))
+    Just $ ChangeAxiom (adcName adc)
+      (AR (from . adcRepr $ adc) (ctrl . adcRepr $ adc) (to . adcRepr $ adc))
 
 --------------------------------------------------------------------------------
 -- Theorem area
@@ -203,14 +204,16 @@ thrmAreaToCommand nmE axE fromE toE useList m = do
   return $ do
     realName <-
       bimap show id (parse (spaces *> many alphaNum <* spaces <* eof) "" nmTxt)
-    axs <- if useList then Some <$> parseThrmNames axTxt else return AllOfEm
+    axs <-
+      if useList
+        then Some <$> bimap show id (parseAxNames axTxt)
+        else return AllOfEm
     from <- bimap show id . parseAggregate $ fromTxt
     to <- bimap show id . parseAggregate $ toTxt
     if null (trim realName)
-      then return $
-        Query (QS (QA axs m) (Aggr from) (Aggr to))
+      then return $ Query (QS (QA axs m) (Aggr from) (Aggr to))
       else return $
-        AddTheorem (TN realName) (QS (QA axs m) (Aggr from) (Aggr to))
+           AddTheorem (NM realName) (QS (QA axs m) (Aggr from) (Aggr to))
 
 interpret :: GUI -> UIF a -> IO a
 interpret gui (UILog str x) = appendLog (logBuffer gui) str >> return x

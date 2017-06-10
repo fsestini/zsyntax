@@ -12,7 +12,7 @@ module GUI.Command
   , GUIThrmEnv
   , GUICommand
   , Command(..)
-  , ThrmName(..)
+  , Name(..)
   , UIF(..)
   , UI
   , AddedAxiom(..)
@@ -21,11 +21,13 @@ module GUI.Command
   , Aggregate(..)
   , QueryAxioms(..)
   , AxNames(..)
+  , AxName(..)
   , AxMode(..)
   , execCommand
   , execCommand'
   , aggregate1'
-  , thrmName
+  , name
+  , axiom
   , comma
   , neCtxt
   , axiomList

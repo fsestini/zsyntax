@@ -25,7 +25,7 @@ import Parsing
 import TypeClasses (Pretty(..))
 
 import Command.Structures
-       (UIF(..), ThrmName(..), FEnv(..), AddedAxiom(..), CParse(..))
+       (UIF(..), Name(..), FEnv(..), AddedAxiom(..), CParse(..))
 import Command.Execution (execCommand)
 import CLI.Command
 
@@ -39,8 +39,8 @@ toIO (UISaveFile path content x) = writeFile path content >> return x
 hoistApp :: StateT (CLIAxEnv, CLIThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
 
-printAxiom :: (ThrmName, AddedAxiom AxRepr) -> String
-printAxiom (TN name, (AAx (AR from _ to))) =
+printAxiom :: (Name, AddedAxiom AxRepr) -> String
+printAxiom (NM name, (AAx (AR from _ to))) =
   name ++ " : " ++ (pretty from) ++ " -> " ++ (pretty to)
 
 printAxioms :: App ()

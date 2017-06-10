@@ -39,6 +39,7 @@ module LFormula
   , decideOF
   , decideF
   , decideN
+  , bConj
   ) where
 
 import Rules
@@ -114,6 +115,9 @@ deriving instance Traversable (BFormula a)
 
 -- fromBasicLFormula :: LFormula eb cty k CBasic a l -> BFormula a l
 -- fromBasicLFormula f = BF (mapEbCty (const ()) (const ()) f)
+
+bConj :: BFormula a l -> BFormula a l -> l -> BFormula a l
+bConj (BF f1) (BF f2) l = BF (Conj f1 f2 l)
 
 bfToAtoms :: LFormula eb cs k CBasic a l -> [BioFormula a]
 bfToAtoms (Atom x) = [x]

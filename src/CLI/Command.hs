@@ -24,7 +24,7 @@ import Checking.ReactLists.Sets
 import qualified SFormula as S
 import LFormula
        (BioFormula(..), SrchFormula, LGoalNSequent, decideN,
-        decideOF)
+        decideOF, LAxiom(..), bConj)
 import Rules hiding (AxRepr, AR)
 import Parser
 import Data.Char (isSpace)
@@ -34,6 +34,8 @@ import Data.Bifunctor (bimap)
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
 import Control.Newtype
+import Utils (foldMap1)
+import Parsing (sepBy1')
 
 newtype CLI a = CLI a deriving (Eq, Ord, Show, T.Pretty)
 
@@ -96,6 +98,8 @@ instance Search CLIAxiom AxRepr FrmlRepr where
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
   toAx = CLI . S.srchAxToSax
+  mergeAx (CLI (S.SA (LAx a c b _))) (CLI (S.SA (LAx a' c' b' _))) =
+    CLI (S.SA (LAx (bConj a a' ()) (c <> c') (bConj b b' ()) ()))
 
 instance SearchDump CLIAxiom AxRepr FrmlRepr where
   goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
@@ -161,8 +165,8 @@ type CLICommand = Command AxRepr FrmlRepr
 instance CParse AxRepr FrmlRepr where
   pCommand = command
 
-thrmName :: Parser ThrmName
-thrmName = TN <$> many1 alphaNum
+name :: Parser Name
+name = NM <$> many1 alphaNum
 
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
@@ -175,14 +179,11 @@ parenAggr :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 parenAggr = parens (token aggregate1')
 
 neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
-neCtxt = do
-  aggr <- aggregate1'
-  let ctxt = fromNEList aggr
-  return ctxt
+neCtxt = fromNEList <$> aggregate1'
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
-ctrlCtxt =  try (string "regular" >> fmap Regular neCtxt)
-        <|> (string "super" >> fmap SupsetClosed neCtxt)
+ctrlCtxt =  try (string "regular" >> spaces >> fmap Regular neCtxt)
+        <|> (string "super" >> spaces >> fmap SupsetClosed neCtxt)
 
 ctrlSet :: Parser (CtrlSet BioAtoms)
 ctrlSet = parens (token pCtxts)
@@ -193,17 +194,19 @@ ctrlSet = parens (token pCtxts)
 -- str axiom name (aggr...) (aggr...) unless ((regular ...) (super ...) ...)
 parseAxiom :: String -> Parser CLICommand
 parseAxiom str = string str >> token (string "axiom") >> do
-  name <- token thrmName
+  axName <- token name
   fromAggr <- token parenAggr
   toAggr <- token parenAggr
   _ <- token (string "unless")
   ctrlset <- token ctrlSet
-  return $ AddAxiom name (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
+  return $ AddAxiom axName (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
-axiomList :: Parser [ThrmName]
-axiomList = parens (token pList)
-  where
-    pList = sepBy (thrmName <* spaces) (comma <* spaces)
+axiom :: Parser AxName
+axiom = fmap (foldMap1 AxNm) ll
+  where ll = sepBy1' (name <* spaces) (char '+' <* spaces)
+
+axiomList :: Parser [AxName]
+axiomList = sepBy (axiom <* spaces) (comma <* spaces)
 
 queryAxioms :: AxMode -> Parser QueryAxioms
 queryAxioms m = try allParser <|> try someParser
@@ -213,7 +216,8 @@ queryAxioms m = try allParser <|> try someParser
       string "all" >> spaces >> string "axioms" >> return (QA AllOfEm m)
     someParser :: Parser QueryAxioms
     someParser =
-      string "axioms" >> spaces >> (flip QA m . Some <$> axiomList)
+      string "axioms" >> spaces >>
+      (flip QA m . Some <$> (parens (token axiomList)))
 
 queryAxMode :: Parser AxMode
 queryAxMode = try (string "refine" >> return Refine) <|> return Normal
@@ -222,7 +226,7 @@ queryAxMode = try (string "refine" >> return Refine) <|> return Normal
 queryTheorem :: Parser CLICommand
 queryTheorem =
   string "query" >> do
-    maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
+    maybeName <- fmap Just (try (token name)) <|> return Nothing
     fromAggr <- token parenAggr
     toAggr <- token parenAggr
     m <- token queryAxMode
@@ -230,7 +234,7 @@ queryTheorem =
     qAxs <- token (queryAxioms m)
     let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
-      Just name -> return $ AddTheorem name q
+      Just nm -> return $ AddTheorem nm q
       Nothing -> return $ Query q
 
 url :: Parser FilePath
@@ -250,7 +254,7 @@ parseSaveToFile = btwSpaces ["save", "to", "file"] >> SaveToFile <$> token url
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
-  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token thrmName)
+  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token name)
 
 command :: Parser CLICommand
 command = commands <?> "a command name"
@@ -280,9 +284,9 @@ instance CPrint AxRepr FrmlRepr where
   printAx = exportAxiom
   printThrm = exportTheorem
 
-exportAxiom :: ThrmName -> AddedAxiom AxRepr -> String
-exportAxiom (TN name) (AAx (AR fromAggr cty toAggr)) =
-  "add axiom " ++ name ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
+exportAxiom :: Name -> AddedAxiom AxRepr -> String
+exportAxiom (NM nm) (AAx (AR fromAggr cty toAggr)) =
+  "add axiom " ++ nm ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
 ppBioFormula :: BioFormula BioAtoms -> String
@@ -303,9 +307,9 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
 
-exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
-exportTheorem (TN name) (QS axs fromAggr toAggr) =
-  "query " ++ name ++ " (" ++
+exportTheorem :: Name -> QueriedSeq FrmlRepr -> String
+exportTheorem (NM nm) (QS axs fromAggr toAggr) =
+  "query " ++ nm ++ " (" ++
   T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ")" ++ qMode ++ " with " ++ qAxs
   where
     qMode =
