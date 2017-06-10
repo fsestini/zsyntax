@@ -24,7 +24,7 @@ import Checking.ReactLists.Sets
 import qualified SFormula as S
 import LFormula
        (BioFormula(..), SrchFormula, LGoalNSequent, decideN,
-        decideOF)
+        decideOF, LAxiom(..), bConj)
 import Rules hiding (AxRepr, AR)
 import Parser
 import Data.Char (isSpace)
@@ -96,6 +96,8 @@ instance Search CLIAxiom AxRepr FrmlRepr where
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
   toAx = CLI . S.srchAxToSax
+  mergeAx (CLI (S.SA (LAx a c b _))) (CLI (S.SA (LAx a' c' b' _))) =
+    CLI (S.SA (LAx (bConj a a' ()) (c <> c') (bConj b b' ()) ()))
 
 instance SearchDump CLIAxiom AxRepr FrmlRepr where
   goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
