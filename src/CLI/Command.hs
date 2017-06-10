@@ -180,8 +180,8 @@ neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
 neCtxt = fromNEList <$> aggregate1'
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
-ctrlCtxt =  try (string "regular" >> fmap Regular neCtxt)
-        <|> (string "super" >> fmap SupsetClosed neCtxt)
+ctrlCtxt =  try (string "regular" >> spaces >> fmap Regular neCtxt)
+        <|> (string "super" >> spaces >> fmap SupsetClosed neCtxt)
 
 ctrlSet :: Parser (CtrlSet BioAtoms)
 ctrlSet = parens (token pCtxts)
