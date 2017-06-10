@@ -11,14 +11,15 @@ import Text.Parsec
 import Checking.ReactLists.Sets
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
+import Control.Newtype
 
 import GUI.Command
 
 --------------------------------------------------------------------------------
 
 data AxDiaContent = ADC
-  { name :: ThrmName
-  , repr :: AxRepr
+  { adcName :: Name
+  , adcRepr :: AxRepr
   }
 
 parseAggregate = parse (aggregate1' <* eof) ""
@@ -87,13 +88,13 @@ axiomsDialog p title content = do
   dialogAddButton dia stockCancel ResponseCancel
   upbox <- dialogGetUpper dia
   axNmE <- titledEntry upbox "Name: "
-  entrySetText axNmE (maybe "" (unTN . name) content)
+  entrySetText axNmE (maybe "" (unpack . adcName) content)
   axFromE <- titledEntry upbox "Start aggregate: "
-  entrySetText axFromE (maybe "" (T.pretty . from . repr) content)
+  entrySetText axFromE (maybe "" (T.pretty . from . adcRepr) content)
   axToE <- titledEntry upbox "Result aggregate: "
-  entrySetText axToE (maybe "" (T.pretty . to . repr) content)
+  entrySetText axToE (maybe "" (T.pretty . to . adcRepr) content)
   list <- ctrlListView upbox
-  forM_ (maybe [] (toCtxtList . ctrl . repr) content) (listStoreAppend list)
+  forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
   onClicked btnAddCtrl $ do
@@ -116,7 +117,7 @@ axiomsDialog p title content = do
               return (from, to)
         flip (either (discardResP . errorDiagShow p . show)) eee $ \(from, to) ->
           return . Just $
-          ADC (TN nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
+          ADC (NM nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
       else return Nothing
   widgetDestroy dia
   return result
@@ -133,8 +134,8 @@ titledEntry vbox str = do
 
 --------------------------------------------------------------------------------
 
-askReplaceThrm :: Window -> ThrmName -> IO ReplaceAnswer
-askReplaceThrm p nm@(TN name) = do
+askReplaceThrm :: Window -> Name -> IO ReplaceAnswer
+askReplaceThrm p nm@(NM name) = do
   dia <- dialogNew
   windowSetTransientFor dia p
   windowSetModal dia True
