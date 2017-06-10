@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -22,12 +24,18 @@ import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
 import Parsing (Parser)
-newtype Name = NM {unNM :: String} deriving (Eq, Ord, Show)
+import Control.Newtype
+
+newtype Name = NM String deriving (Eq, Ord, Show)
+
+instance Newtype Name String where
+  pack = NM
+  unpack (NM x) = x
 
 data AddedAxiom axr = AAx { unAAx :: axr }
 
 instance Pretty Name where
-  pretty = unTN
+  pretty = unpack
 
 --------------------------------------------------------------------------------
 -- Query axioms
@@ -200,7 +208,7 @@ axsFromList axs thrms nms = do
   mapM mmm nms
   where
     axioms = legitAxioms axs thrms
-    mmm nm@(TN str) =
+    mmm nm@(NM str) =
       maybe
         (Left $ "axioms '" ++ str ++ "' not in scope")
         Right
