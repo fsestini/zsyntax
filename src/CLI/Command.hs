@@ -161,8 +161,8 @@ type CLICommand = Command AxRepr FrmlRepr
 instance CParse AxRepr FrmlRepr where
   pCommand = command
 
-thrmName :: Parser ThrmName
-thrmName = TN <$> many1 alphaNum
+thrmName :: Parser Name
+thrmName = NM <$> many1 alphaNum
 
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
@@ -200,7 +200,7 @@ parseAxiom str = string str >> token (string "axiom") >> do
   ctrlset <- token ctrlSet
   return $ AddAxiom name (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
-axiomList :: Parser [ThrmName]
+axiomList :: Parser [Name]
 axiomList = parens (token pList)
   where
     pList = sepBy (thrmName <* spaces) (comma <* spaces)
@@ -280,8 +280,8 @@ instance CPrint AxRepr FrmlRepr where
   printAx = exportAxiom
   printThrm = exportTheorem
 
-exportAxiom :: ThrmName -> AddedAxiom AxRepr -> String
-exportAxiom (TN name) (AAx (AR fromAggr cty toAggr)) =
+exportAxiom :: Name -> AddedAxiom AxRepr -> String
+exportAxiom (NM name) (AAx (AR fromAggr cty toAggr)) =
   "add axiom " ++ name ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
@@ -303,8 +303,8 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
 
-exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
-exportTheorem (TN name) (QS axs fromAggr toAggr) =
+exportTheorem :: Name -> QueriedSeq FrmlRepr -> String
+exportTheorem (NM name) (QS axs fromAggr toAggr) =
   "query " ++ name ++ " (" ++
   T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ")" ++ qMode ++ " with " ++ qAxs
   where
