@@ -216,16 +216,19 @@ legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
     aux (x, y) = y >>= \yy -> return (x, yy)
 
 axsFromList
-  :: AxEnv axr ax -> ThrmEnv frepr ax -> [Name] -> Either String [ax]
-axsFromList axs thrms nms = do
-  mapM mmm nms
+  :: Search ax axr frepr
+  => AxEnv axr ax -> ThrmEnv frepr ax -> [AxName] -> Either String [ax]
+axsFromList axs thrms axNms = mapM (axFromName axs thrms) axNms
+
+axFromName
+  :: Search ax axr frepr
+  => AxEnv axr ax -> ThrmEnv frepr ax -> AxName -> Either String ax
+axFromName axs thrms (AxCombine nm1 nm2) =
+  mergeAx <$> axFromName axs thrms nm1 <*> axFromName axs thrms nm2
+axFromName axs thrms (AxNm nm@(NM name)) = maybe
+    (Left $ "axiom '" ++ name ++ "' not in scope") Right (lookup nm axioms)
   where
     axioms = legitAxioms axs thrms
-    mmm nm@(NM str) =
-      maybe
-        (Left $ "axioms '" ++ str ++ "' not in scope")
-        Right
-        (lookup nm axioms)
 
 replaceAssocL
   :: Eq a
