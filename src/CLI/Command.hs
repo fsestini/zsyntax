@@ -34,6 +34,8 @@ import Data.Bifunctor (bimap)
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
 import Control.Newtype
+import Utils (foldMap1)
+import Parsing (sepBy1')
 
 newtype CLI a = CLI a deriving (Eq, Ord, Show, T.Pretty)
 
@@ -192,17 +194,19 @@ ctrlSet = parens (token pCtxts)
 -- str axiom name (aggr...) (aggr...) unless ((regular ...) (super ...) ...)
 parseAxiom :: String -> Parser CLICommand
 parseAxiom str = string str >> token (string "axiom") >> do
-  name <- token name
+  axName <- token name
   fromAggr <- token parenAggr
   toAggr <- token parenAggr
   _ <- token (string "unless")
   ctrlset <- token ctrlSet
-  return $ AddAxiom name (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
+  return $ AddAxiom axName (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
-axiomList :: Parser [Name]
-axiomList = parens (token pList)
-  where
-    pList = sepBy (name <* spaces) (comma <* spaces)
+axiom :: Parser AxName
+axiom = fmap (foldMap1 AxNm) ll
+  where ll = sepBy1' (name <* spaces) (char '+' <* spaces)
+
+axiomList :: Parser [AxName]
+axiomList = sepBy (axiom <* spaces) (comma <* spaces)
 
 queryAxioms :: AxMode -> Parser QueryAxioms
 queryAxioms m = try allParser <|> try someParser
@@ -212,7 +216,8 @@ queryAxioms m = try allParser <|> try someParser
       string "all" >> spaces >> string "axioms" >> return (QA AllOfEm m)
     someParser :: Parser QueryAxioms
     someParser =
-      string "axioms" >> spaces >> (flip QA m . Some <$> axiomList)
+      string "axioms" >> spaces >>
+      (flip QA m . Some <$> (parens (token axiomList)))
 
 queryAxMode :: Parser AxMode
 queryAxMode = try (string "refine" >> return Refine) <|> return Normal
