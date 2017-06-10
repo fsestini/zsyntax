@@ -161,8 +161,8 @@ type CLICommand = Command AxRepr FrmlRepr
 instance CParse AxRepr FrmlRepr where
   pCommand = command
 
-thrmName :: Parser Name
-thrmName = NM <$> many1 alphaNum
+name :: Parser Name
+name = NM <$> many1 alphaNum
 
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
@@ -193,7 +193,7 @@ ctrlSet = parens (token pCtxts)
 -- str axiom name (aggr...) (aggr...) unless ((regular ...) (super ...) ...)
 parseAxiom :: String -> Parser CLICommand
 parseAxiom str = string str >> token (string "axiom") >> do
-  name <- token thrmName
+  name <- token name
   fromAggr <- token parenAggr
   toAggr <- token parenAggr
   _ <- token (string "unless")
@@ -203,7 +203,7 @@ parseAxiom str = string str >> token (string "axiom") >> do
 axiomList :: Parser [Name]
 axiomList = parens (token pList)
   where
-    pList = sepBy (thrmName <* spaces) (comma <* spaces)
+    pList = sepBy (name <* spaces) (comma <* spaces)
 
 queryAxioms :: AxMode -> Parser QueryAxioms
 queryAxioms m = try allParser <|> try someParser
@@ -222,7 +222,7 @@ queryAxMode = try (string "refine" >> return Refine) <|> return Normal
 queryTheorem :: Parser CLICommand
 queryTheorem =
   string "query" >> do
-    maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
+    maybeName <- fmap Just (try (token name)) <|> return Nothing
     fromAggr <- token parenAggr
     toAggr <- token parenAggr
     m <- token queryAxMode
@@ -250,7 +250,7 @@ parseSaveToFile = btwSpaces ["save", "to", "file"] >> SaveToFile <$> token url
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
-  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token thrmName)
+  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token name)
 
 command :: Parser CLICommand
 command = commands <?> "a command name"
