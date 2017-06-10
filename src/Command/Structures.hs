@@ -22,18 +22,18 @@ import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
 import Parsing (Parser)
+newtype Name = NM {unNM :: String} deriving (Eq, Ord, Show)
 
-newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
 data AddedAxiom axr = AAx { unAAx :: axr }
 
-instance Pretty ThrmName where
+instance Pretty Name where
   pretty = unTN
 
 --------------------------------------------------------------------------------
 -- Query axioms
 
 data AxNames
-  = Some [ThrmName]
+  = Some [Name]
   | AllOfEm
   deriving (Eq, Ord, Show)
 data AxMode
@@ -60,7 +60,7 @@ instance Pretty frepr => Pretty (QueriedSeq frepr) where
 class CommAx axr ax where
   reprAx :: axr -> Either String ax
 
-toNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [ThrmName]
+toNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [Name]
 toNames env thrms axs =
   fmap fst . filter (flip elem axs . snd) $ legitAxioms env thrms
 
@@ -71,16 +71,16 @@ class CParse  axr frepr where
   pCommand :: Parser (Command axr frepr)
 
 class CPrint axr frepr | axr -> frepr, frepr -> axr where
-  printAx :: ThrmName -> AddedAxiom axr -> String
-  printThrm :: ThrmName -> QueriedSeq frepr -> String
+  printAx :: Name -> AddedAxiom axr -> String
+  printThrm :: Name -> QueriedSeq frepr -> String
 
 data Command axr frepr
-  = AddAxiom ThrmName axr
-  | ChangeAxiom ThrmName axr
-  | RemoveAxioms [ThrmName]
-  | AddTheorem ThrmName (QueriedSeq frepr)
+  = AddAxiom Name axr
+  | ChangeAxiom Name axr
+  | RemoveAxioms [Name]
+  | AddTheorem Name (QueriedSeq frepr)
   | RefreshTheorems
-  | RemoveTheorems [ThrmName]
+  | RemoveTheorems [Name]
   | Query (QueriedSeq frepr)
   | LoadFile FilePath
   -- ^ Loading a file executes all commands in it, so that their effects act on
@@ -133,9 +133,9 @@ class (Pretty (TransRepr term)) => TransDerTerm term where
 --------------------------------------------------------------------------------
 
 newtype AxEnv axr ax =
-  AE (M.Map ThrmName (AddedAxiom axr, ax))
+  AE (M.Map Name (AddedAxiom axr, ax))
 newtype ThrmEnv frepr ax =
-  TE (D.BankersDequeue (ThrmName, (QueriedSeq frepr, Maybe (ThrmShape ax))))
+  TE (D.BankersDequeue (Name, (QueriedSeq frepr, Maybe (ThrmShape ax))))
 
 data ThrmShape ax
   = Axiomatic ax
@@ -148,11 +148,11 @@ toMaybe NonAxiomatic = Nothing
 class FEnv env where
   type Elems env :: *
   feEmpty :: env
-  feInsert :: ThrmName -> Elems env -> env -> Maybe env
-  feRemove :: ThrmName -> env -> env
-  feReplace :: ThrmName -> Elems env -> env -> env
-  feLookup :: ThrmName -> env -> Maybe (Elems env)
-  feAsList :: env -> [(ThrmName, Elems env)]
+  feInsert :: Name -> Elems env -> env -> Maybe env
+  feRemove :: Name -> env -> env
+  feReplace :: Name -> Elems env -> env -> env
+  feLookup :: Name -> env -> Maybe (Elems env)
+  feAsList :: env -> [(Name, Elems env)]
 
 instance FEnv (ThrmEnv frepr ax) where
   type Elems (ThrmEnv frepr ax) = (QueriedSeq frepr, Maybe (ThrmShape ax))
@@ -186,7 +186,7 @@ printAxAll (AE axs) = fmap ((uncurry printAx) . second fst) . M.toList $ axs
 printThrmAll :: CPrint axr frepr => ThrmEnv frepr ax -> [String]
 printThrmAll (TE thrms) = fmap (uncurry printThrm . second fst) . toList $ thrms
 
-legitAxioms :: AxEnv axr ax -> ThrmEnv frepr ax -> [(ThrmName, ax)]
+legitAxioms :: AxEnv axr ax -> ThrmEnv frepr ax -> [(Name, ax)]
 legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
   where
     fromAxs = fmap (second snd) $ M.toList axs
@@ -195,7 +195,7 @@ legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
     aux (x, y) = y >>= \yy -> return (x, yy)
 
 axsFromList
-  :: AxEnv axr ax -> ThrmEnv frepr ax -> [ThrmName] -> Either String [ax]
+  :: AxEnv axr ax -> ThrmEnv frepr ax -> [Name] -> Either String [ax]
 axsFromList axs thrms nms = do
   mapM mmm nms
   where
@@ -216,7 +216,7 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName
+  => (Name
         -> (QueriedSeq frepr, Maybe (ThrmShape ax))
         -> ThrmEnv frepr ax
         -> m (QueriedSeq frepr, Maybe (ThrmShape ax)))
@@ -236,7 +236,7 @@ data ReplaceAnswer = Yes | No
 data UIF next
   = UILog String next
   | UIError String next
-  | UIAskReplaceThrm ThrmName (ReplaceAnswer -> next)
+  | UIAskReplaceThrm Name (ReplaceAnswer -> next)
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
   | UIStdErr String next
@@ -250,7 +250,7 @@ logUI str = liftF (UILog str ())
 uiError :: String -> Free UIF ()
 uiError str = liftF (UIError str ())
 
-uiAskReplaceThrm :: ThrmName -> Free UIF ReplaceAnswer
+uiAskReplaceThrm :: Name -> Free UIF ReplaceAnswer
 uiAskReplaceThrm name = liftF (UIAskReplaceThrm name id)
 
 uiLoadFile :: FilePath -> Free UIF String
