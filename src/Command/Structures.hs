@@ -47,11 +47,9 @@ instance Semigroup AxName where
   n1 <> n2 = AxCombine n1 n2
 
 --------------------------------------------------------------------------------
+-- Query axioms
 
 data AddedAxiom axr = AAx { unAAx :: axr }
-
---------------------------------------------------------------------------------
--- Query axioms
 
 data AxNames
   = Some [AxName]
