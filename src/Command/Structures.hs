@@ -83,9 +83,6 @@ toNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [Name]
 toNames env thrms axs =
   fmap fst . filter (flip elem axs . snd) $ legitAxioms env thrms
 
--- class CommFrml frepr frml | frml -> frepr where
---   reprFrml :: frepr -> Either String frml
-
 class CParse  axr frepr where
   pCommand :: Parser (Command axr frepr)
 
