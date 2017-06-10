@@ -83,9 +83,9 @@ instance Pretty frepr => Pretty (QueriedSeq frepr) where
 class CommAx axr ax where
   reprAx :: axr -> Either String ax
 
-toNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [Name]
-toNames env thrms axs =
-  fmap fst . filter (flip elem axs . snd) $ legitAxioms env thrms
+toAxNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [AxName]
+toAxNames env thrms axs =
+  fmap (AxNm . fst) . filter (flip elem axs . snd) $ legitAxioms env thrms
 
 class CParse  axr frepr where
   pCommand :: Parser (Command axr frepr)
