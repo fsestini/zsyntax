@@ -133,6 +133,7 @@ class Search ax axr frepr | ax -> axr frepr where
     -> QueriedSeq frepr
     -> Either String (MyGoalNSequent ax axr frepr)
   toAx :: Ax (SrchF ax axr frepr) -> ax
+  mergeAx :: ax -> ax -> ax
 
 class SearchDump ax axr frepr where
   goalDiff :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> Int
