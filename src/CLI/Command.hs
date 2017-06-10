@@ -177,10 +177,7 @@ parenAggr :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 parenAggr = parens (token aggregate1')
 
 neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
-neCtxt = do
-  aggr <- aggregate1'
-  let ctxt = fromNEList aggr
-  return ctxt
+neCtxt = fromNEList <$> aggregate1'
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
 ctrlCtxt =  try (string "regular" >> fmap Regular neCtxt)
