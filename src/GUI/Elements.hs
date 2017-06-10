@@ -12,7 +12,7 @@ import Checking.ReactLists.Sets
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
 
-import GUI.Command --(ThrmName(..), CtrlArea(..), FrmlArea(..), aggregate1')
+import GUI.Command
 
 --------------------------------------------------------------------------------
 
