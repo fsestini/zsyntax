@@ -47,11 +47,11 @@ toUI' :: (String -> UI b) -> (a -> UI b) -> EUI a -> UI b
 toUI' f g = (>>= either f g) . runExceptT
 
 tryInsertTheorem
-  :: ThrmName
+  :: Name
   -> (QueriedSeq frepr, ThrmShape ax)
   -> ThrmEnv frepr ax
   -> EUI (ThrmEnv frepr ax)
-tryInsertTheorem nm@(TN name) (q, frml) thrms =
+tryInsertTheorem nm@(NM name) (q, frml) thrms =
   maybe ask return (feInsert nm newItem thrms)
   where
     ask = do
@@ -64,22 +64,22 @@ tryInsertTheorem nm@(TN name) (q, frml) thrms =
     newItem = (q, Just frml)
 
 tryInsertAxiom
-  :: ThrmName
+  :: Name
   -> (AddedAxiom axr, ax)
   -> (AxEnv axr  ax)
   -> EUI (AxEnv axr ax)
-tryInsertAxiom name@(TN nm) axiom env =
+tryInsertAxiom name@(NM nm) axiom env =
   maybe (throwE msg) return (feInsert name axiom env)
   where
     msg = "axiom named '" ++ nm ++ "' already present"
 
 addAxiom
   :: CommAx axr ax
-  => ThrmName
+  => Name
   -> axr
   -> (AxEnv axr ax)
   -> UI (AxEnv axr ax)
-addAxiom name@(TN nm) axrepr env =
+addAxiom name@(NM nm) axrepr env =
   case (reprAx axrepr) of
     Left err -> (logUI $ "parse error: " ++ (show err)) >> return env
     Right axiom ->
@@ -95,7 +95,7 @@ addTheorem
      , SrchConstr ax axr frepr
      , Eq ax
      )
-  => ThrmName
+  => Name
   -> (QueriedSeq frepr)
   -> (AxEnv axr ax)
   -> ThrmEnv frepr ax
@@ -110,7 +110,7 @@ addTheorem nm q env thrms =
     res = do
       goal <- liftParse (queryToGoal env thrms q)
       (DT dt ns) <- liftSRVerbose goal (runSearch goal)
-      let usedAxNames = toNames env thrms . fmap toAx . toList . rnsUc $ ns
+      let usedAxNames = toAxNames env thrms . fmap toAx . toList . rnsUc $ ns
           m = mode . qsAxioms $ q
       q' <-
         case m of
@@ -234,11 +234,11 @@ refreshTheorems'
 refreshTheorems' axioms = processThrms doer
   where
     doer
-      :: ThrmName
+      :: Name
       -> (QueriedSeq frepr, Maybe (ThrmShape ax))
       -> ThrmEnv frepr ax
       -> UI (QueriedSeq frepr, Maybe (ThrmShape ax))
-    doer (TN name) (q, _) thrms =
+    doer (NM name) (q, _) thrms =
       fmap ((,) q) . toUI Nothing . fmap Just $
       adjoinMsgEUI ("theorem " ++ name ++ " failed: ") (doer' axioms thrms q)
     doer' :: AxEnv axr ax -> ThrmEnv frepr ax
@@ -295,7 +295,7 @@ runSearch neutral =
 
 changeAxiom
   :: (CommAx axr ax)
-  => ThrmName -> axr -> (AxEnv axr ax) -> UI (AxEnv axr ax)
+  => Name -> axr -> (AxEnv axr ax) -> UI (AxEnv axr ax)
 changeAxiom axName axrepr axEnv = toUI axEnv $ do
   axiom <- liftParse (reprAx axrepr)
   let newAxEnv = feReplace axName (AAx axrepr, axiom) axEnv
@@ -370,5 +370,5 @@ execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
 traverseFst :: Applicative m => (a1 -> m a) -> a1 -> b -> m (a, b)
 traverseFst f = curry (bitraverse f pure)
 
-removeAll :: FEnv env => [ThrmName] -> env -> UI env
+removeAll :: FEnv env => [Name] -> env -> UI env
 removeAll = flip (foldM (flip (return .: feRemove)))
