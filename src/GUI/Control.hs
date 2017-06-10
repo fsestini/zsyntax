@@ -128,6 +128,8 @@ wireThrmEntry gui state tea = do
     maybeMM' loadFileCommand (execCommandInGUI gui state)
   onClicked (btnExport tea) $
     maybeMM' saveFileCommand (execCommandInGUI gui state)
+  onClicked (btnClear tea) $
+    clearThrmEntry gui >> execCommandInGUI gui state Clear
   return ()
 
 clearThrmEntryArea :: TheoremEntryArea -> IO ()
