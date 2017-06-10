@@ -294,6 +294,7 @@ data TheoremEntryArea = TEA
   , btnLoad :: Button
   , btnOpen :: Button
   , btnExport :: Button
+  , btnClear :: Button
   }
 
 theoremEntryArea :: VBox -> IO TheoremEntryArea
@@ -311,10 +312,12 @@ theoremEntryArea vbox = do
   loadBtn <- buttonNewWithLabel "Load file..."
   openBtn <- buttonNewWithLabel "Open file..."
   exportBtn <- buttonNewWithLabel "Export..."
+  clearBtn <- buttonNewWithLabel "Clear"
   boxPackStart hb teBtn PackNatural 3
   boxPackStart hb loadBtn PackNatural 3
   boxPackStart hb openBtn PackNatural 3
   boxPackStart hb exportBtn PackNatural 3
+  boxPackStart hb clearBtn PackNatural 3
 
   testAxHb <- hBoxNew False 0
   testrbAx <- radioButtonNewWithLabel "Axioms: "
@@ -344,7 +347,7 @@ theoremEntryArea vbox = do
   boxPackStart vbox hb PackNatural 7
   return $
     TEA teName teAxioms testrbAx testrbAll chkRefine teFrom teTo teBtn
-        loadBtn openBtn exportBtn
+        loadBtn openBtn exportBtn clearBtn
 
 packLabel box str = do
   l <- labelNew (Just str)

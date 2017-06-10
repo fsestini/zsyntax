@@ -38,6 +38,7 @@ data GUI = GUI
   , axiomsStore :: ListStore AxItem
   , logBuffer :: TextBuffer
   , putThrm :: ThrmItem -> IO ()
+  , clearThrmEntry :: IO ()
   , mainWindow :: Window
   }
 
@@ -82,7 +83,12 @@ gui = do
             ,("Provable", maybe "No" (const "Yes") . snd . snd)])
 
   let gui =
-        GUI (storeThrms theorems) (storeAxioms axioms) b (copyThrm thrmEntry) w
+        GUI (storeThrms theorems)
+            (storeAxioms axioms)
+            b
+            (copyThrm thrmEntry)
+            (clearThrmEntryArea thrmEntry)
+            w
 
   wireThrmEntry gui state thrmEntry
   wireAxiomsArea gui state axioms
@@ -122,7 +128,16 @@ wireThrmEntry gui state tea = do
     maybeMM' loadFileCommand (execCommandInGUI gui state)
   onClicked (btnExport tea) $
     maybeMM' saveFileCommand (execCommandInGUI gui state)
+  onClicked (btnClear tea) $
+    clearThrmEntry gui >> execCommandInGUI gui state Clear
   return ()
+
+clearThrmEntryArea :: TheoremEntryArea -> IO ()
+clearThrmEntryArea tea = do
+  entrySetText (eName tea) ""
+  entrySetText (eAxioms tea) ""
+  entrySetText (eFrom tea) ""
+  entrySetText (eTo tea) ""
 
 printError :: GUI -> String -> IO ()
 printError gui str = appendLog (logBuffer gui) ("error: " ++ str)

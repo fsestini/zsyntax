@@ -366,6 +366,7 @@ execCommand (Query q) = get >>= lift . uncurry (query q)
 execCommand (LoadFile path) = loadFile path >> refreshTheorems
 execCommand (OpenFile path) = put (feEmpty, feEmpty) >> loadFile path
 execCommand (SaveToFile path) = get >>= lift . uncurry (saveToFile path)
+execCommand Clear = put (feEmpty, feEmpty)
 
 traverseFst :: Applicative m => (a1 -> m a) -> a1 -> b -> m (a, b)
 traverseFst f = curry (bitraverse f pure)

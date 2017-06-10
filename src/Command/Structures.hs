@@ -109,6 +109,8 @@ data Command axr frepr
   -- ^ Opening a file executes all commands in it, after having reset the system
   -- to an initial, empty state.
   | SaveToFile FilePath
+  | Clear
+  -- ^ Clears the system, bringing it to an initial state.
   deriving (Eq, Show)
 
 type family DerT ax axr frepr :: *
