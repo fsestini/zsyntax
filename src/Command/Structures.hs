@@ -25,6 +25,10 @@ import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
 import Parsing (Parser)
 import Control.Newtype
+import Data.Semigroup (Semigroup(..))
+
+--------------------------------------------------------------------------------
+-- Names
 
 newtype Name = NM String deriving (Eq, Ord, Show)
 
@@ -32,16 +36,25 @@ instance Newtype Name String where
   pack = NM
   unpack (NM x) = x
 
-data AddedAxiom axr = AAx { unAAx :: axr }
-
 instance Pretty Name where
   pretty = unpack
+
+
+data AxName = AxNm Name | AxCombine AxName AxName
+  deriving (Eq, Ord, Show)
+
+instance Semigroup AxName where
+  n1 <> n2 = AxCombine n1 n2
+
+--------------------------------------------------------------------------------
+
+data AddedAxiom axr = AAx { unAAx :: axr }
 
 --------------------------------------------------------------------------------
 -- Query axioms
 
 data AxNames
-  = Some [Name]
+  = Some [AxName]
   | AllOfEm
   deriving (Eq, Ord, Show)
 data AxMode
