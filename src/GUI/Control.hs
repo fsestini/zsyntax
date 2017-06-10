@@ -124,6 +124,13 @@ wireThrmEntry gui state tea = do
     maybeMM' saveFileCommand (execCommandInGUI gui state)
   return ()
 
+clearThrmEntryArea :: TheoremEntryArea -> IO ()
+clearThrmEntryArea tea = do
+  entrySetText (eName tea) ""
+  entrySetText (eAxioms tea) ""
+  entrySetText (eFrom tea) ""
+  entrySetText (eTo tea) ""
+
 printError :: GUI -> String -> IO ()
 printError gui str = appendLog (logBuffer gui) ("error: " ++ str)
 
