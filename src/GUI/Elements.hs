@@ -84,7 +84,7 @@ selected store treeSel =
 
 axiomsDialog
   :: WindowClass w
-  => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
+  => w -> String -> Maybe AxDiaContent -> IO (Maybe AxDiaContent)
 axiomsDialog p title content = do
   dia <- dialogNew
   windowSetTransientFor dia p
