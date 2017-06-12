@@ -19,7 +19,7 @@ import Parsing
 import Data.Time
 import Data.Char
 import Data.List
-import Safe
+import Safe (headMay)
 import qualified LinearContext as LC
 
 import Checking.ReactLists.Sets
@@ -148,14 +148,13 @@ wireAxiomsArea gui state axioms = do
     maybeMM' (askAddAxiom (mainWindow gui)) (execCommandInGUI gui state)
   onClicked (btnChangeAxiom axioms) $
     maybeMM'
-      (fmap join . fmap (fmap headMay) $
+      (fmap (fmap snd) . fmap headMay $
        selected (storeAxioms axioms) (treeSelAxioms axioms))
       ((askEditAxiom (mainWindow gui)) . toADC >=>
        maybeM (execCommandInGUI gui state))
   onClicked (btnRemoveAxiom axioms) $
-    maybeMM'
-      (selected (storeAxioms axioms) (treeSelAxioms axioms))
-      ((execCommandInGUI gui state . RemoveAxioms) . fmap fst)
+    selected (storeAxioms axioms) (treeSelAxioms axioms) >>=
+    execCommandInGUI gui state . RemoveAxioms . fmap (fst . snd)
   return ()
   where
     toADC :: AxItem -> AxDiaContent
@@ -180,12 +179,11 @@ wireThrmArea :: GUI -> IORef AppState -> TheoremsArea ThrmItem -> IO ()
 wireThrmArea gui state thrms = do
   onClicked (btnRefreshThrms thrms) (execCommandInGUI gui state RefreshTheorems)
   onClicked (btnCopyThrm thrms) $
-    selected (storeThrms thrms) (treeSelThrms thrms) >>=
-    maybeM (putThrm gui) . join . fmap headMay
+    selected (storeThrms thrms) (treeSelThrms thrms)
+    >>= maybeM (putThrm gui) . fmap snd . headMay
   onClicked (btnRemoveThrm thrms) $
-    maybeMM'
-      (selected (storeThrms thrms) (treeSelThrms thrms))
-      ((execCommandInGUI gui state . RemoveTheorems) . fmap fst)
+    selected (storeThrms thrms) (treeSelThrms thrms)
+    >>= execCommandInGUI gui state . RemoveTheorems . fmap (fst . snd)
   return ()
 
 --------------------------------------------------------------------------------
