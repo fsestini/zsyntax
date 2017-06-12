@@ -136,8 +136,6 @@ query q env thrms = flip (toUI' logUI) implsM $ \impls -> do
       goal <- liftParse (queryToGoal env thrms q)
       t <- liftSRVerbose goal (runSearch goal)
       return (transitions . term $ t)
-    -- implsM = fmap (transitions . term) $
-    --   liftParse (queryToGoal env thrms q) >>= liftSR . runSearch
 
 adjoinMsgEUI :: String -> EUI a -> EUI a
 adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
