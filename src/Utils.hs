@@ -28,3 +28,6 @@ discardResP m = m >> return mzero
 
 foldMap1 :: Semigroup s => (a -> s) -> NE.NonEmpty a -> s
 foldMap1 f = foldr1 (<>) . fmap f
+
+on' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+on' h f g x = h (f x) (g x)
