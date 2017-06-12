@@ -1,11 +1,13 @@
 module GUI.Elements where
 
-import Utils (discardResP)
+import Safe (headMay)
+import Utils (discardResP, on', maybe')
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
+import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef (IORef, newIORef, writeIORef, readIORef)
-import Control.Monad (forM_)
+import Control.Monad (forM_, liftM2)
 import Control.Monad.Free (foldFree)
 import Text.Parsec
 import Checking.ReactLists.Sets
@@ -51,6 +53,14 @@ ctrlDialog p ctxt = do
   boxPackStart upbox supsetBtn PackNatural 0
   toggleButtonSetActive regularBtn True
   e <- titledEntry upbox "Context: "
+  maybe' ctxt (return ()) $ \x ->
+    case x of
+      Regular c ->
+        toggleButtonSetActive regularBtn True >>
+        entrySetText e (asFoldable T.prettys c)
+      SupsetClosed c ->
+        toggleButtonSetActive supsetBtn True >>
+        entrySetText e (asFoldable T.prettys c)
   widgetShowAll upbox
   answer <- dialogRun dia
   result <-
@@ -97,15 +107,21 @@ axiomsDialog p title content = do
   entrySetText axFromE (maybe "" (T.pretty . from . adcRepr) content)
   axToE <- titledEntry upbox "Result aggregate: "
   entrySetText axToE (maybe "" (T.pretty . to . adcRepr) content)
-  list <- ctrlListView upbox
+  (sel, list) <- ctrlListView upbox
   forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
+  btnEditCtrl <- buttonNewWithLabel "Edit control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
+  boxPackStart upbox btnEditCtrl PackNatural 0
   onClicked btnAddCtrl $ do
-    res <- ctrlDialog dia
+    res <- ctrlDialog dia Nothing
     case res of
       Just ctxt -> listStoreAppend list ctxt >> return ()
       Nothing -> return ()
+  onClicked btnEditCtrl $
+    fmap headMay (selected list sel) >>= maybe (return ()) (\(i,c) ->
+      ctrlDialog dia (Just c)
+      >>= maybe (return ()) (listStoreSetValue list i))
   widgetShowAll upbox
   answer <- dialogRun dia
   result <-
