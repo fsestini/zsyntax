@@ -72,6 +72,16 @@ ctrlDialog p = do
   widgetDestroy dia
   return result
 
+--------------------------------------------------------------------------------
+
+selected :: ListStore t -> TreeSelection -> IO [(Int, t)]
+selected store treeSel =
+  treeSelectionGetSelectedRows treeSel >>=
+  mapM (on' (liftM2 (,)) (return) (listStoreGetValue store)) .
+  fmap (maybe (error "fatal error in ListStore selector") id) . fmap headMay
+
+--------------------------------------------------------------------------------
+
 axiomsDialog
   :: WindowClass w
   => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
