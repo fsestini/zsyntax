@@ -129,9 +129,8 @@ query
   => QueriedSeq frepr -> AxEnv axr ax -> ThrmEnv frepr ax -> UI ()
 query q env thrms = flip (toUI' logUI) implsM $ \impls -> do
   logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
-  forM_ impls (logUI . shower)
+  forM_ impls (logUI . pretty)
   where
-    shower = pretty
     implsM = do
       goal <- liftParse (queryToGoal env thrms q)
       t <- liftSRVerbose goal (runSearch goal)
