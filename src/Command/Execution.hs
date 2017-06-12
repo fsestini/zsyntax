@@ -17,7 +17,7 @@
 module Command.Execution where
 
 import TypeClasses (Pretty(..), PrettyK, prettys)
-import Utils (trim, (&&&), (.:))
+import Utils (trim, (&&&), (.:), on')
 
 import Command.Structures
 
@@ -93,14 +93,15 @@ addTheorem
      ( TransDerTerm (DerT ax axr frepr)
      , Search ax axr frepr
      , SrchConstr ax axr frepr
-     , Eq ax
+     , Eq ax, Pretty frepr
      )
   => Name
   -> (QueriedSeq frepr)
   -> (AxEnv axr ax)
   -> ThrmEnv frepr ax
   -> Free UIF (ThrmEnv frepr ax)
-addTheorem nm q env thrms =
+addTheorem nm q env thrms = do
+  logUI ("Query: " ++ pretty q)
   flip (toUI' ((>> return thrms) . logUI)) res $ \(impls, newThrms) -> do
     logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
     forM_ impls (logUI . pretty)
@@ -125,16 +126,19 @@ query
   :: ( TransDerTerm (DerT ax axr frepr)
      , Search ax axr frepr
      , SrchConstr ax axr frepr
+     , Pretty frepr
      )
   => QueriedSeq frepr -> AxEnv axr ax -> ThrmEnv frepr ax -> UI ()
-query q env thrms = flip (toUI' logUI) implsM $ \impls -> do
-  logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
-  forM_ impls (logUI . pretty)
+query q env thrms = do
+  logUI ("Query: " ++ pretty q)
+  flip (toUI' logUI) implsM $ \impls -> do
+    logUI ("provable with " ++ (show . length $ impls) ++ " transitions")
+    forM_ impls (logUI . pretty)
   where
-    implsM = do
-      goal <- liftParse (queryToGoal env thrms q)
-      t <- liftSRVerbose goal (runSearch goal)
-      return (transitions . term $ t)
+    implsM =
+      liftParse (queryToGoal env thrms q)
+      >>= on' liftSRVerbose id runSearch
+      >>= return . transitions . term
 
 adjoinMsgEUI :: String -> EUI a -> EUI a
 adjoinMsgEUI str = ExceptT . fmap (adjoinMsgE str) . runExceptT
@@ -327,7 +331,7 @@ saveToFile path axEnv thrms =
 type MegaConstr axr ax frepr =
   (CParse axr frepr, TransDerTerm (DerT ax axr frepr),
   CommAx axr ax, Search ax axr frepr,
-  SrchConstr ax axr frepr, CPrint axr frepr, Eq ax)
+  SrchConstr ax axr frepr, CPrint axr frepr, Eq ax, Pretty frepr)
 
 liftUITrans
   :: (AxEnv axr ax -> ThrmEnv frepr ax -> UI (AxEnv axr ax, ThrmEnv frepr ax))
