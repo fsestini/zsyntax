@@ -111,8 +111,12 @@ axiomsDialog p title content = do
   forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   btnEditCtrl <- buttonNewWithLabel "Edit control context"
-  boxPackStart upbox btnAddCtrl PackNatural 0
-  boxPackStart upbox btnEditCtrl PackNatural 0
+  btnRemoveCtrl <- buttonNewWithLabel "Remove control context"
+  h <- hBoxNew True 0
+  boxPackStart h btnAddCtrl PackGrow 0
+  boxPackStart h btnEditCtrl PackGrow 0
+  boxPackStart h btnRemoveCtrl PackGrow 0
+  boxPackStart upbox h PackNatural 0
   onClicked btnAddCtrl $ do
     res <- ctrlDialog dia Nothing
     case res of
@@ -122,6 +126,9 @@ axiomsDialog p title content = do
     fmap headMay (selected list sel) >>= maybe (return ()) (\(i,c) ->
       ctrlDialog dia (Just c)
       >>= maybe (return ()) (listStoreSetValue list i))
+  onClicked btnRemoveCtrl $
+    fmap headMay (selected list sel) >>= maybe (return ()) (\(i,_) ->
+      listStoreRemove list i)
   widgetShowAll upbox
   answer <- dialogRun dia
   result <-
