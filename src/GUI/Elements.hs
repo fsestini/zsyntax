@@ -25,26 +25,20 @@ data AxDiaContent = ADC
 parseAggregate = parse (aggregate1' <* eof) ""
 parseCtxt = parse (neCtxt <* eof) ""
 
-ctrlListView :: VBox -> IO (ListStore (CtrlSetCtxt BioAtoms))
+ctrlListView :: VBox -> IO (TreeSelection, ListStore (CtrlSetCtxt BioAtoms))
 ctrlListView vbox = do
-  list <- listStoreNew []
-  tree <- treeViewNewWithModel list
-  treeViewSetHeadersVisible tree True
-  col <- treeViewColumnNew
-  renderer <- cellRendererTextNew
-  cellLayoutPackStart col renderer True
-  cellLayoutSetAttributes col renderer list $
-     \row -> [cellText := shower row]
-  _ <- treeViewAppendColumn tree col
-  treeViewColumnSetTitle col "Control context"
-  boxPackStart vbox tree PackGrow 0
-  return list
+  (tree, list) <-
+    buildListView vbox (("Control context", shower) NE.:| []) PackGrow
+  sel <- treeViewGetSelection tree
+  return (sel, list)
   where
     shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
     shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
-ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog p = do
+ctrlDialog
+  :: WindowClass w
+  => w -> Maybe (CtrlSetCtxt BioAtoms) -> IO (Maybe (CtrlSetCtxt BioAtoms))
+ctrlDialog p ctxt = do
   dia <- dialogNew
   windowSetTransientFor dia p
   set dia [windowTitle := "Add control context..."]
