@@ -1,0 +1,595 @@
+\section{The Inverse Method}
+
+Backwards proof search for linear logic suffers from a resource management
+problem, which stems from the lack of structural rules that makes even the
+propositional fragment undecidable. One such problem is given by multiplicative
+connectives, that exibit rules characterized by \emph{multiplicative
+  non-determinism}. Consider, for example, the $\otimes R$ rule
+
+\[
+  \begin{prooftree}
+    \Delta_1 \Longrightarrow A
+    \qquad
+    \Delta_2 \Longrightarrow B
+    \justifies
+    \Delta_1, \Delta_2 \Longrightarrow A \otimes B
+  \end{prooftree}
+\]
+
+Suppose the rule above is used for backwards proof search. Without weakening,
+the search procedure must infer a division of the linear resources of the
+conclusion in order to distribute it among the premises. To guarantee
+completeness, a backwards proof search procedure must either support
+backtracking, or implement resource management in other ways.
+
+Suppose now that the inference rules are read in the forward direction, that is
+by using them to derive new sequents from previously established ones.
+Multiplicative non-determinism does not exist in a forward reading, as we simply
+conjoin the resources of the premises to construct the conclusion.  Proof search
+in the forward direction thus starts from some initially known facts (usually,
+some instantiation of the axioms), and then repeatedly applies the rules of the
+calculus to accumulate new sequents until one of them is found to subsume the
+goal (that is, validity of such sequents entails validity of the goal).
+
+Given that in our case the main source of computational complexity is
+multiplicative non-determinism, forward proof search seems to be the ideal
+candidate to implement an automated theorem prover.  However, one advantage of
+backwards proof search that the forward direction lacks is its goal-orientation:
+we start from a goal sequent and then break the problem into subgoals, knowing
+that validity of the latter implies validity of the former. In other words, a
+goal-oriented search like the backwards one only considers sequents that are
+directly useful to prove the initial goal. In the forward direction, the
+application of the rules to already known sequents may generate new sequents
+that are not at all useful to derive, or even related to, the goal. That is,
+naive forward search is not goal-directed and therefore very inefficient.
+
+Fortunately, there are ways to make forward reasoning more goal-directed, so
+that one can have some of the advantages of backward reasoning which enjoying
+the good resourse management properties of forward search.  The particular
+forward search strategy we use is the Inverse Method. The Inverse Method is a
+very general technique that can be applied to any sequent calculus enjoying the
+subformula property. The method works as follows: first, a goal sequent of which
+validity is to be decided is fixed. Then, the axioms and inference rules of the
+logic are \emph{specialized} to the subformulas of the goal sequent, such that
+the principal formula in all inference rules is a subformula of the goal
+sequent. The search then proceeds by starting from the axioms and applying these
+rules to construct new sequents by matching the premises against previously
+derived sequents. New sequents that are not simply instances of sequents derived
+earlier are themselves then used in the inference rules to derive newer
+sequents. Eventually, assuming the search strategy is complete, either the goal
+sequent is derived, or the search space is saturated and the goal sequent is
+found to be unprovable.
+
+The fundamental idea behing the inverse method is therefore to specialize the
+entire logical calculus to the particular goal sequent, so that the only
+sequents that get generated during forward proof search are subsequents of the
+goal. This is sufficient to guarantee completeness in calculi with the
+subformula property, and it also provides an efficient decision procedure for
+calculi such as multiplicative linear logic, where the set of subsequents of any
+goal sequent (and thus the search space) is finite.
+
+In our calculus \zss{}, the possibility of introducing axioms in the proof
+\emph{ad libitum} represented by the presence of the unrestricted context and
+the $\copyrule$ rule ruins the properties that make plain multiplicative
+intuitionistic linear logic decidable. In particular, in any derivation there is
+no limit to the number of uses of the biological axioms, and since each use may
+generate a sequent that is structurally different from all the others, there is
+no way to easily deduce a height bound for all the derivations of a goal sequent
+from the sequent alone, as it is the case for multiplicative linear logic. It
+follows that it is not true, in general, that a naive application of the inverse
+method would terminate for every goal sequent. Another interpretation of the
+problem is to be found in the fact that the unrestricted context in our sequents
+basically corresponds to a form of linear logic ! (``of course'')
+exponentiation. Decidability of MELL (multiplicative exponential linear logic)
+was an open problem until recently, and has been proved decidable using ideas
+that go back to Curry and Kleene by constructing a sequent calculus which
+absorbes contraction for exponentiated formulas in the rules of the other
+logical connectives \cite{mell-dec}. Of course, the adaptation of those ideas to
+a forward focused calculus is outside the scope of this work.
+
+Nevertheless, even in the presence of our unrestricted contexts, the search
+space is in most cases finite, exception made for some particularly bad
+sequents. Consider, as an example, the following goal sequent
+
+\[
+  \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+\]
+
+It is of course not provable, but a an attempt to find a backward proof (the
+problem is identical in the forward direction) may lead to a loop
+
+\[
+  \begin{prooftree}
+    \[
+      \[
+        \justifies
+        \bkwseq{A \rightarrow B, B \rightarrow A}{A}{A}
+      \]
+      \quad
+      \[
+        \[
+          \[
+            \justifies
+            \bkwseq{A \rightarrow B, B \rightarrow A}{B}{B}
+          \]
+          \quad
+          \[
+            \justifies
+            \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+          \]
+          \justifies
+          \bkwseq{A \rightarrow B, B \rightarrow A}{B \rightarrow A, B}{C}
+        \]
+        \justifies
+        \bkwseq{A \rightarrow B, B \rightarrow A}{B}{C}
+      \]
+      \justifies
+      \bkwseq{A \rightarrow B, B \rightarrow A}{A \rightarrow B, A}{C}
+    \]
+    \justifies
+    \bkwseq{A \rightarrow B, B \rightarrow A}{A}{C}
+  \end{prooftree}
+\]
+
+We conjecture that these bad cases are not as frequent as it might seem, so that
+it should not be necessary, at least in its early stages, to complicate the
+development of a theorem prover to avoid as many such cases as possible. For our
+implementation, we just decided to fix an upper bound to the size of the search
+space. If the derivation fails due to a violation of this upper bound, the error
+can be reported to the user who may then decide to retry with a bigger upper
+bound.
+
+\subsection{Forward calculus}
+
+\subsubsection{Focusing}
+
+The key insight of \cite{chaudhuri-thesis} is to use focusing \emph{and} the
+inverse method together, by developing a focused forward calculus from which to
+extract an efficient proof search procedure.  We again follow Chaudhuri's work
+as a model and build a forward calculus for \zss{}. Since the idea is to
+implement focusing (and the derived rules) in the forward direction, we do not
+develop a forward calculus and then apply focusing techniques to it, but instead
+directly modify the backward focused calculus of derived rules defined in the
+previous section and adapt it for forward reasoning. The result will be the
+forward focused calculus of derived rules that we want.
+
+\subsubsection{Subformula property}
+
+The key technical property that makes the inverse method possible is the
+\emph{subformula property}. Logical calculi with the subformula property are
+such that derivations only contain subformulas of the conclusion formula. This
+means, in our case, that we only need to consider sequents composed of
+subformulas of the goal sequent when searching for a cut-free proof.
+
+When we derived the rules of the sequent calculus, we paid particular attention
+in putting them in a form that allowed us to have a calculus with subformula
+property. We do not show directly that such property holds for our forward
+calculus of derived rules, but we limit ourselves to observe that every
+derivation in our calculus corresponds to a structurally identical derivation of
+the calculus in \cite{chaudhuri-thesis}. It is then easy to convince ourselves
+that our calculus has the subformula property.
+
+\subsection{Forward derived rules}
+
+In Section~\ref{sec:focusing} we added a light form of focusing to our backward
+calculus that allows us to generate derived rules that speed up the proof search
+process. At the beginning of this section we introduced the inverse method,
+another technique for automated deduction that is particularly useful in logics
+(as the one we are using) with multiplicative connectives since it perform proof
+search in the forward direction to eliminate multiplicative non-determinism. As
+the final objective is to use forward search and the inverse method in
+conjunction with (lightweight) focusing for Zsyntax, we need to adapt the
+backward calculus of derived rules of the previous section to the forward
+direction. Again, we follow \cite{chaudhuri-thesis} as a model.
+
+\begin{definition}[Forward pre-sequent]
+  A forward presequent is a term of the form
+  $\zfneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$, where either
+
+  \begin{enumerate}
+  \item $\zeta = \gamma = \cdot$, or
+  \item $\zeta = \reactlist{}$ and $\gamma = C$, for some reaction list
+    $\reactlist{}$ and formula $C$.
+  \end{enumerate}
+\end{definition}
+
+\begin{definition}[Forward relation]
+  Forward relations are inductively defined as follows:
+
+  \begin{enumerate}
+  \item $\relj{\frfrel{A}}{\Sigma}{s}$, where $A$ is a formula, $\Sigma$ is a
+    list of forward neutral sequents, and $s$ is a forward presequent.
+  \item $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}} }{\Sigma}{s}$,
+    where $\Delta$, $\Omega$, $\Sigma$ and $s$ are as before, and either
+    \begin{enumerate}
+    \item $\zeta = \gamma = \cdot$, or
+    \item $\zeta = \reactlist{}$ and $\xi = C$, for some reaction list
+      $\reactlist{}$ and formula $C$.
+    \end{enumerate}
+  \end{enumerate}
+\end{definition}
+
+Figure~\ref{fig:fwdderrulecalculus} show the calculus to derived forward
+relations as judgements. the intuitive interpretation of a forward relation is
+the same as the backwards case, with the only difference that now we consider
+the forward direction, hence we go from a list of known premise sequents
+$\Sigma$ to the conclusion $s$ that follows from them with a single pair of
+phases composed (top-down) of an active phase starting from the premises
+followed by a focused phase ending in the conclusion sequent.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{p}}{\cdot}{\zfneuseqempty{\cdot}{p}}
+        \using{\init}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}}{
+          \zfneuseqempty{\Gamma}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\zfneuseqempty{\Gamma_2}{\Delta_2}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{
+          \zfneuseqempty{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A, B}{\zeta}{\xi}}
+        }{\Sigma}{s}
+        \justifies
+        \relj{\factrel{
+            \zsyseq{\Delta}{\Omega, A \otimes B}{\zeta}{\xi}}
+        }{\Sigma}{s}
+        \using{\otimes A}
+      \end{prooftree}
+      \qquad
+      \begin{prooftree}
+        \relj{\factrel{\zsyseq{\Delta, P}{\Omega}{\zeta}{\xi}}}{\Sigma}{s}
+        \justifies
+        \relj{\factrel{\zsyseq{\Delta}{\Omega, P}{\zeta}{\xi}}}{\Sigma}{s}
+        \using{\actrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\cdot}{\cdot}}
+        }{
+          \zfneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{C}
+        }{
+          \zfneuseq{\Gamma}{\Delta'}{\reactlist{}}{C}
+        }
+        \using{\matchrule}
+      \end{prooftree}
+    \]
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{
+          \factrel{\zsyseq{\Delta}{\cdot}{\reactlist{}}{C}}
+        }{
+          \zfneuseq{\Gamma}{\Delta, \Delta'}{\reactlist{}}{C}
+        }{
+          \zfneuseqempty{\Gamma}{\Delta'}
+        }
+        \using{\matchprimerule}
+      \end{prooftree}
+    \]
+
+  \end{mdframed}
+  \caption{Forward focused relations calculus}
+  \label{fig:fwdrulescalculus}
+\end{figure}
+
+As in the backward case, we use the forward relations to build a calculus of
+derived rules that has neutral (forward) sequents as premises and
+conclusions. The full calculus is shown in Figure~\ref{fig:fwdderrulecalculus}.
+
+\begin{figure}[h]
+  \begin{mdframed}
+\[
+  \begin{prooftree}
+    s_1 \quad \dots \quad s_n \quad
+    (\relj{\frfrel{Q}}{s_1 \dots s_n}{\fneuseq{\Gamma}{\Delta}{\cdot}})
+    \justifies
+    \zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{Q}
+    \using{\focplusrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \[
+      \relj{\frfrel{A}}{s_1, \dots, s_n}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      \relj{\factrel{
+            \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+        }{s}{\zfneuseq{\Gamma_2}{\Delta_2}{\reactlist{}'}{C}}
+    \]
+    \quad
+    \[
+      \resplist{\Delta_2}{\reactlist{}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      s_1 \quad \dots \quad s_n \quad s
+    \]
+    \justifies
+    \zfneuseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2,
+      A \rightarrow_{\reactlist{}}^S B}{
+      \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+    }{C}
+    \using{\rightarrow L}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    \[
+      \relj{\frfrel{A}}{s_1, \dots, s_n}{\zfneuseqempty{\Gamma_1}{\Delta_1}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      \relj{\factrel{
+            \zsyseq{\cdot}{B}{\cdot}{\cdot}}
+        }{s}{\zfneuseq{\Gamma_2}{\Delta_2}{\reactlist{}'}{C}}
+    \]
+    \quad
+    \[
+      \resplist{\Delta_2}{\reactlist{}}
+      \proofdotseparation=1.2ex
+      \proofdotnumber=0
+      \leadsto
+      s_1 \quad \dots \quad s_n \quad s
+    \]
+    \justifies
+    \zfneuseq{\Gamma_1, \Gamma_2, A \rightarrow_{\reactlist{}}^{\emptyset} B
+    }{\Delta_1, \Delta_2,
+    }{
+      \baseandplus{\Delta_2}{\reactlist{}}{\reactlist{}'}
+    }{C}
+    \using{\copyrule}
+  \end{prooftree}
+\]
+
+\[
+  \begin{prooftree}
+    s \qquad
+    \relj{\factrel{\zsyseq{\cdot}{A}{\reactlist{}}{B}}}{s}{
+      \zfneuseqempty{\Gamma}{\Delta}}
+    \justifies
+    \zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{A
+      \rightarrow_{\reactlist{}}^{\elembases{\Delta}} B}
+    \using{\rightarrow R}
+  \end{prooftree}
+\]
+  \end{mdframed}
+  \caption{Forward focused derived rule calculus}
+  \label{fig:fwdderrulecalculus}
+\end{figure}
+
+\begin{definition}
+  The sequent $\zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$ is sound if
+  $\ztriseq{\Gamma}{\Delta}{\cdot}{\reactlist{}}{Q}$.
+\end{definition}
+
+\begin{lemma}\label{fsoundnesslemma}
+  If all sequents in $\Sigma$ are sound, then
+
+  \begin{enumerate}
+  \item If $\relj{\frfrel{A}}{\Sigma}{\zfneuseqempty{\Gamma}{\Delta}}$,
+    then, $\zfocseq{\Gamma}{\Delta}{A}$;
+  \item If
+    $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\cdot}{\cdot}}}{\Sigma}
+    {\zfneuseq{\Gamma}{\Delta'}{\reactlist{}}{C}}$, then
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\reactlist{}}{C}$;
+  \item If
+    $\relj{\factrel{\zsyseq{\Delta}{\Omega}{\reactlist{}}{C}}}{\Sigma}
+    {\zfneuseqempty{\Gamma}{\Delta'}}$, then
+    $\ztriseq{\Gamma}{\Delta, \Delta'}{\Omega}{\reactlist{}}{C}$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved by simultaneous induction on the height of the
+  derivation. We distinguish cases on the last rule used in the derivation:
+
+  \begin{itemize}
+  \item Case $\init$. Immediate.
+
+  \item Case $\faplus{}$.
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}}{
+          \zfneuseqempty{\Gamma}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    By hypothesis $\zfneuseq{\Gamma}{\Delta}{\emptyctrl{}}{R}$ is sound, therefore
+    $\ztriseq{\Gamma}{\Delta}{\cdot}{\emptyctrl{}}{R}$. Then,
+
+    \[
+      \begin{prooftree}
+        \ztriseq{\Gamma}{\Delta}{\cdot}{\emptyctrl{}}{R}
+        \justifies
+        \zfocseq{\Gamma}{\Delta}{R}
+        \using{blur}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes F$.
+
+    \[
+      \begin{prooftree}
+        \relj{\frfrel{A}}{\Sigma_1}{\fneuseq{\Gamma_1}{\Delta_1}{\cdot}}
+        \qquad
+        \relj{\frfrel{B}}{\Sigma_2}{\fneuseq{\Gamma_2}{\Delta_2}{\cdot}}
+        \justifies
+        \relj{\frfrel{A \otimes B}}{\Sigma_1 \cdot \Sigma_2}{\fneuseq{\Gamma_1,
+            \Gamma_2}{\Delta_1, \Delta_2}{\cdot}}
+        \using{\otimes F}
+      \end{prooftree}
+    \]
+
+    Then, by inductive hypothesis, weakening and $\otimes R$:
+
+    \[
+      \begin{prooftree}
+        \[
+          \zfocseq{\Gamma_1}{\Delta_1}{A}
+          \justifies
+          \zfocseq{\Gamma_1, \Gamma_2}{\Delta_1}{A}
+        \]
+        \qquad
+        \[
+          \zfocseq{\Gamma_2}{\Delta_2}{B}
+          \justifies
+          \zfocseq{\Gamma_1, \Gamma_2}{\Delta_2}{B}
+        \]
+        \justifies
+        \zfocseq{\Gamma_1, \Gamma_2}{\Delta_1, \Delta_2}{A \otimes B}
+      \end{prooftree}
+    \]
+
+  \item Case $\otimes A$ and act: we thesis follows immediately by inductive
+    hypothesis and an application of the corresponding rule of the focused calculus.
+
+  \item Case $\matchrule$ and $\matchprimerule$: the thesis follows immediately
+    from the hypothesis that $\Sigma$ are sound.
+  \end{itemize}
+\end{proof}
+
+\begin{theorem}[Soundness]
+  If $\zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$, then it is sound.
+\end{theorem}
+\begin{proof}
+  By induction on the height of the derivation of
+  $\zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$.
+
+  \begin{enumerate}
+  \item Case $focus$.
+    If $Q$ is an implication, the rule is just an identity. Otherwise, by
+    Lemma~\ref{fsoundnesslemma}, $\zfocseq{\Gamma}{\Delta}{Q}$. The thesis
+    follows by an application of the $focus$ rule.
+
+  \item Case $\rightarrow L$.
+    The thesis follows by Lemma~\ref{fsoundnesslemma}, weakening, and
+    $\rightarrow L$ of the focused calculus.
+
+  \item Case $\copyrule$ is the same as $\rightarrow L$, with the addition of a
+    concluding $\copyrule$ rule of the focused calculus.
+
+  \item Case $\rightarrow R$.
+    The thesis follows easily by Lemma~\ref{fsoundnesslemma}, and an application
+    of $\rightarrow R$ of the focused calculus.
+
+  \end{enumerate}
+\end{proof}
+
+Completeness is established with respect to the backward calculus of derived
+rules. All proofs go through smoothly as expected, since the forward calculus is
+structurally identical to the backward one.
+
+\begin{definition}[Stronger forms]
+  A forward sequent $\zfneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$ is said to be
+  stronger than a backward sequent
+  $\zbneuseq{\Gamma}{\Delta}{\zeta}{\gamma}$, written as a relation
+  $\preceq$, if $\Gamma \subseteq \Gamma'$, where $\zeta = \cdot$ or
+  $\reactlist{}$ for some $\reactlist{}$, and $\gamma = \cdot$ or $C$ for some $C$.
+\end{definition}
+
+The above relation is assumed to be extended point-wise to ordered sequences of
+sequents.
+
+\begin{lemma}\label{fdercompllemma}
+  \begin{enumerate}
+  \item If $\brfrelj{A}{s}{\Sigma}$ and there exists a derivable sequence of
+    sequents $\Sigma' \preceq \Sigma$, then $\frfrelj{A}{\Sigma'}{s'}$ for some
+    $s' \preceq s$;
+  \item If $\bactrelj{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}}{s}{\Sigma}$ and
+    there exists a derivable sequence $\Sigma' \preceq \Sigma$, then
+    $\factrelj{\zsyseq{\Delta}{\Omega}{\zeta}{\xi}}{\Sigma'}{s'}$ for some
+    $s' \preceq s$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}
+  All points proved simultaneously by an easy induction on the height of the
+  backward relation derivation. We sketch a few cases below.
+
+  \begin{enumerate}
+  \item Case $\faplus$. Then
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\brfrel{R}}{\bkwseq{\Gamma}{\Delta}{\cdot}}{\zsyseq{\Gamma}{\Delta}{\emptyctrl{}}{R}}
+        \using{FA^+}
+      \end{prooftree}
+    \]
+
+    Suppose there are $\Sigma' \preceq \Sigma$.
+    Then, it must be that $\Sigma' \equiv
+    \zfneuseq{\Gamma'}{\Delta}{\emptyctrl{}}{R}$, with $\Gamma' \subseteq \Gamma$.
+    But then
+
+    \[
+      \begin{prooftree}
+        \justifies
+        \relj{\frfrel{R}}{\zfneuseq{\Gamma'}{\Delta}{\emptyctrl{}}{R}}{
+          \zfneuseqempty{\Gamma'}{\Delta}}
+        \using{\faplus}
+      \end{prooftree}
+    \]
+
+    with $s' \equiv \zfneuseqempty{\Gamma'}{\Delta}$, which clearly satisfies
+    the thesis as wanted.
+
+  \item Case $\otimes A$.
+    Suppose $\Sigma' \preceq \Sigma$. Then, the thesis follows by inductive
+    hypothesis and an application of $\otimes A$ in the forward derived rule
+    calculus.
+
+  \item The other cases are treated similarly.
+  \end{enumerate}
+\end{proof}
+
+\begin{theorem}[Completeness]
+  If $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$, then
+  $\zfneuseq{\Gamma'}{\Delta}{\reactlist{}}{Q}$ for some
+  $\Gamma' \subseteq \Gamma$.
+\end{theorem}
+\begin{proof}
+  Easy induction on the derivation of
+  $\zbneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}$ and application of
+  Lemma~\ref{fdercompllemma} on the premises.
+\end{proof}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:

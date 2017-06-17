@@ -1,0 +1,400 @@
+\section{Implementation details}
+
+\subsection{Sequent representation}
+
+During the preliminary rule generation phase, as well as during proof search, we
+need to refer to subformulas of the goal sequent. It is important to remark that
+we need to differentiate between two syntactically identical subformulas of
+different formulas. Consider the following forward neutral sequent:
+
+\[
+  \zfneuseq{\cdot}{(p \otimes q) \otimes (p \otimes q),
+    r \rightarrow (p \otimes q)}{\reactlist{}}{p}
+\]
+
+Here, the \emph{same} formula $p \otimes q$ occurs three times as three
+\emph{different} subformulas. To make this distinction clear during proof
+search, as well as to have a way to easily refer and efficiently compare
+subformulas of the goal sequent, we follow \cite{chaudhuri-thesis} and
+\emph{label} every subformula with a unique label.
+
+% We write $l \# A$ to denote that $l$ is the label for the formula $A$.
+Given a goal sequent $\fneuseq{\Gamma}{\Delta}{Q}$, we label every
+\emph{non-atomic} subformula using a unique label (we consider atoms to be their
+own labels). During proof search, we refer to labels only. In particular, all
+derived rules refer to labelled sequents only.
+
+\begin{definition}[Labelled sequents]
+  A labelled sequent is a sequent of the form
+
+  \[
+    u_1, \dots, u_m ; l_1^{k_1}, \dots, l_n^{k_n} \fneuseqsymb_{\ctrlset{}} \gamma
+  \]
+
+  where $u_1, \dots, u_m$ are labels for unrestricted formulas, $l_1, \dots,
+  l_n, \gamma$ are labels for linear formulas, and the $k_i$ in $l_i^{k_i}$ is
+  the multiplicity of that label in the linear context.
+\end{definition}
+
+\subsection{Rules and rule application}
+
+Derived rules are precomputed to the frontier formulas of the goal sequent, or
+rather, to the labels associated to the frontier subformulas. Given that our
+derived inference rules are actually rule schemas, they can be applied to input
+sequents in different ways, as long as the input sequents satisfy the sufficient
+requirements in order to be used with that rule. That is, to apply a rule to an
+input sequent, we have to first \emph{match} a premise of the rule to the input
+sequent. We formalize this with the notion of \emph{sequent schema}.
+
+\begin{definition}[Sequent schema]
+  A sequent schema is of the form
+
+  \[
+    u_1, \dots, u_m ; l_1^{k_1}, \dots, l_n^{k_n} \fneuseqsymb_{\zeta} \gamma
+  \]
+
+  where $\gamma$ is either a label $r$ or $\cdot$, and $\zeta$ is either a
+  reaction list $\reactlist{}$ or $\cdot$.
+\end{definition}
+
+\begin{definition}[Matching]
+  We say that a schema $\sigma = \zfneuseq{\Gamma_s}{\Delta_s}{\zeta}{\gamma_s}$ matches
+  an input sequent $s = \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{r}$ if
+
+  \begin{enumerate}
+  \item $\Gamma_s \subseteq \Gamma$;
+  \item $\Delta_s \subseteq \Delta$;
+  \item $\gamma_s = \cdot$ or $\gamma_s = r$;
+  \item $\zeta = \cdot$ or $\zeta = \reactlist{}$.
+  \end{enumerate}
+\end{definition}
+\begin{definition}[Match result]
+  A result of the match, written $\sigma | s$, is a sequent-like structure
+  $\zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}$, for which
+
+  \begin{enumerate}
+  \item $\Gamma_r = \Gamma \setminus \Gamma_s$;
+  \item $\Delta_r = \Delta \setminus \Delta_s$;
+  \item $\gamma_r =
+    \begin{cases}
+      \cdot, & \text{if } \gamma_s = r \\
+      r,     & \text{if } \gamma_s = \cdot
+    \end{cases}$
+  \item $\zeta_r =
+    \begin{cases}
+      \cdot, & \text{if } \zeta = r \\
+      \reactlist{},     & \text{if } \zeta = \cdot
+    \end{cases}$
+    % \item Like this in the thesis: $\gamma_r = \gamma$.
+  \end{enumerate}
+\end{definition}
+
+\begin{example}
+  Suppose we are deriving the rule associated to the formula $q \limp d \otimes
+  d \otimes n$. The derivation can be expressed with the help of schematic
+  variables as follows:
+
+  {
+    \scriptsize{
+      \[
+        \begin{prooftree}
+          s
+          \quad
+          \[
+            \justifies
+            \frfrelj{q}{\cdot}{\fneuseq{\cdot}{q}{\cdot}}
+          \]
+          \,
+          \[
+            \[
+              \justifies
+              \factrelj{
+                \bkwseq{d,d,n}{\cdot}{\cdot}
+              }{
+                s
+              }{
+                \zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}
+              }
+            \]
+            \justifies
+            \factrelj{
+              \bkwseq{\cdot}{d \otimes d \otimes n}{\cdot}
+            }{
+              s
+            }{
+              \zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}
+            }
+          \]
+          \justifies
+          \zfneuseq{\Gamma_r, A_1}{\Delta_r, q}{\zeta_r}{\gamma_r}
+        \end{prooftree}
+      \]
+    }
+  }
+
+  The sequent-like structure $\bkwseq{d,d,n}{\cdot}{\cdot}$ of the active
+  relation acts as our sequent schema for the resulting derived rule.  It tells
+  us that the premise sequent $s$ is required to include $d, d, n$ in its linear
+  context. The goal $\gamma_r$ of the premise, whatever that is, then becomes
+  the goal of the conclusion sequent of the derived rule. All this can be
+  expressed in terms of sequent schemas, by saying that the premises of the
+  above rule must be matched agains the schema
+
+  \[
+    \zfneuseq{\cdot}{d,d,n}{\cdot}{\cdot}
+  \]
+
+  Matching (with success) an input sequent $s$ against this schema will produce
+  a result $\zfneuseq{\Gamma_r}{\Delta_r}{\zeta_r}{\gamma_r}$, from
+  which the the conclusion sequent of the entire rule can be assembled:
+
+  \[
+    \zfneuseq{\Gamma_r, A_1}{\Delta_r, q}{\zeta_r}{\gamma_r}
+  \]
+\end{example}
+
+\subsection{Search procedure}\label{srch-procedure}
+
+We can now outline the search procedure that, given a goal sequent, tries to
+determine its theoremhood. The steps for an input goal sequent
+$\zsyseq{\Gamma}{\Delta}{\reactlist{}}{C}$ are summarized below:
+
+\begin{enumerate}
+\item All subformulas of the goal sequent are labelled with unique label
+  symbols, and decorate using signs and availabilities;
+\item The frontier subformulas are computed and derived rules are generated from
+  them. All derived rules with zero premises are treated as initial sequents;
+\item Starting from the initial sequents, the derived inference rules are
+  applied in any order that is guaranteed to saturate the search
+  space. Conclusion sequents that are generated during these applications are
+  stored and used as premises during the next iterations;
+\item If a conclusion sequent $\zfneuseq{\Gamma'}{\Delta}{\reactlist{}}{C}$ is
+  found that subsumes the goal, that is $\Gamma' \subseteq \Gamma$, exit with
+  success.
+\item If the search space is saturated before finding a sequent that subsumes
+  the goal, exit with failure.
+\end{enumerate}
+
+The procedure maintains two continually updated sequent databases:
+
+\begin{enumerate}
+\item The \strong{kept sequents} database, that contains new sequents that have not
+  been encountered during previous iterations, but that are still to be
+  considered for rule applications;
+\item The \strong{active sequents} database, that contains all sequents that
+  should be considered for rule applications.
+\end{enumerate}
+
+We follow the approach of \cite{chaudhuri-thesis} and ``currify'' inference
+rules with multiple premises. More precisely, we treat all rules as essentially
+unary rules that produce either a conclusion sequent or a new, partially
+instantiated rule. At the end of each iteration, all rules that have been
+partially but not fully applied are added to the database of available rules for
+the next iterations, which is therefore dynamically growing.
+
+The loop of the search procedure repeats the following \emph{activation}
+step until either the goal sequent is subsumed (in which case the search is
+successful), or no further rules are applicable to the sequents in the acitve
+set and the inactive set is exhausted (in which case the search saturates).
+
+\begin{definition}[Activation]
+  To activate the sequent $s$, i.e., to transfer it from the inactive to the
+  active set, the following steps are performed:
+
+  \begin{enumerate}
+  \item The sequent $s$ is inserted into the active set;
+  \item All available rules are applied to $s$. If these applications produce
+    new rules, say a set $R$, then the following two steps are performed in a
+    loop until there are no additions to $R$:
+
+    \begin{enumerate}
+    \item For every sequent $s'$ in the active set, every rule in $R$ is applied
+      to $s'$;
+    \item any new rules generated are added to $R$.
+    \end{enumerate}
+
+    Borrowing terminology from \cite{chaudhuri-thesis}, we call this two-steps
+    loop the \emph{percolation} phase.
+  \item The collection of rules $R$ is added to the set of rules;
+  \item All sequents generated during the above applications are tested for
+    subsumption against all previously generated sequents. All new
+    sequents are then added to the inactive set.
+  \end{enumerate}
+\end{definition}
+
+This search loop procedure is not new, and comes from the Otter theorem prover
+\cite{otter}. Its completeness is a known result, but we nevertheless give a
+proof below.
+
+\begin{theorem}[Completeness of the search loop]
+  Let $S_a, S_i$ be the active and inactive sets and $R$ the collection of rules
+  of the search procedure before initiating iteration $i$. Suppose $r$ is a rule
+  in $R$ and $s_1, s_2, \dots, s_n$ is an ordered list of sequents from
+  $S_a \cup S_i$ that would, if matched agains $r$ in this order, produce a
+  successful result. Then this match actually occurs, and the result of it added
+  to the state of the search, during some iteration $j \geq i$.
+\end{theorem}
+\begin{proof}
+  By induction on $n$. If $n = 0$, then the match occurs vacuously during any
+  iteration from $i$ on. If the list is instead $n+1$ elements long, then
+  clearly the first $n$ sequents in the list potentially match $r$ successfully,
+  and by inductive hypothesis they are eventually matched agains $r$ producing a
+  partially applied rule $r'$ during some iteration $j \geq i$. We split cases
+  depending on whether $s_{n+1} \in S_a$ or $s_{n+1} \in S_i$ during such
+  iteration $j$.
+
+  \begin{itemize}
+  \item If $s_{n+1} \in S_a$ during iteration $j$ (whether because it is added
+    at the beginning of it or because it is in $S_a$ already), then the
+    percolation phase ensures that $r'$ is also matched against
+    $s_{n+1}$. Therefore, $r$ is fully applied to $s_1, \dots, s_{n+1}$ during
+    iteration $j$, where $j \geq i$ by hypothesis;
+
+  \item If $s_{n+1} \in S_i$ during iteration $j$, then $s_{n+1}$ is eventually
+    selected for activation during some iteration $k > j$ and matched against
+    all rules in the collection of rules at that moment. From the inductive
+    hypothesis it follows that $r'$ is added in the collection of rules during
+    iteration $j$, so it certainly is in this collection during iteration
+    $k$. Therefore, $r'$ is matched agains $s_{n+1}$ during some iteration
+    $k \geq i$, hence producing the result of matching $r$ against
+    $s_1, \dots, s_{n+1}$ during such iteration.
+  \end{itemize}
+\end{proof}
+
+\subsubsection{Caveat: diverging search spaces}
+
+As noted before, the presence of axioms renders our logic not easily decidable
+\cite{mell-dec}. In particular, there are some cases of goal sequents where the
+search loop described above, if used on such sequents, may continue generating
+new conclusion sequents and neither stop successfully nor saturate the search
+space and stop with a negative answer. To avoid such cases, our particular
+implementation uses a simple countermeasure: limit the number of sequents that
+can be generated during a single search, and stop with failure if such limit is
+reached.
+
+Stopping when the size limit is reached is an obvious and natural thing to do
+when the diverging goal sequent is \emph{not provable}.
+There are, however, cases where the goal sequent is both provable \emph{and}
+a potential source for divergence of the search space. In other words, unlimited
+search on such sequents may generate an infinite number of sequents, including
+one that subsumes it and that would make the search successful if found by the
+search procedure.
+
+It is therefore important that our search procedure is not only complete for
+finite search spaces, but that is also guaranteed to stop with a successful
+answer if a sequent is provable, but may potentially generate an infinite search
+space. In the general setting of search algorithms, this property is usually
+enjoyed by algorithms operating in a breadth-first way. Breadth-first search may
+not be always space-efficient, but it is guaranteed to find a solution in finite
+time over an infinite search space (if one exists, of course).
+
+It is easy to see that the Otter loop described above operates in a
+breadth-first way, as it is guaranteed to eventually apply all available rules
+to every sequent that is inserted in the inactive set. It follows that our
+technique of imposing a limit of the number of sequents actually corresponds to
+employing a breadth-first search with a fixed, maximum limit to the height of
+the search space. All solutions that can be reached within that limit are thus
+guaranteed to be found in finite time. We conjecture that a limit can be found
+so that search is always guaranteed to end with success for valid (but
+potentially diverging) sequents, and fail within a reasonable amount of time for
+invalid diverging sequents.  \footnote{Our current implementation uses a limit
+  of 2000 sequents, which turned our to be more than enough in all our tests.}
+
+\subsection{Theorem prover}
+
+The following sections describe how the logical calculus described so far has
+been implemented in an automated theorem proving software for Zsyntax.
+
+The software has been written in the Haskell programming language.
+Haskell is a non-strict, purely functional strongly typed programming language
+\cite{a-history-of-haskell}
+with an advanced, state-of-the-art type system that allowed the production of
+software with high levels of correctness guarantees.
+The abstraction facilities typical of polymorphic functional programming allowed
+the program to be developed in a modular way, and the advanced type system
+(\cite{gadts}, \cite{dependent-haskell})
+made possible to encode several properties and invariants of the search
+procedure and the logical calculus in the types, making a good part of their
+implementation correct by costruction.
+
+\subsubsection{Implemented features}
+
+The logical calculus that has been implemented is the full calculus of forward
+derived rules. The search procedure is the one described in
+Section~\ref{srch-procedure}, with no significant differences.  As already said,
+the possibility of adding axioms to the proof \emph{ad libitum} may lead to
+combinatorial explosion in some particularly bad cases.  The theorem prover
+employs a simple counter measure, which consists of enforcing an upper bound to
+the size of the search space, that is limiting the number of sequents that can
+be generated during proof search for a particular goal sequent.  It is our
+opinion that this simple counter measure should be enough, given that
+
+\begin{enumerate}
+\item the search procedure operates in a breadth-first way. This means that if a
+  sequent is provable and there is also the potential to generate too many
+  sequents, the search procedure is very likely to find its proof before reaching
+  the upper bound;
+\item combinatorial explosion is caused by the presence of axioms that can be
+  repeatedly applied. Most axioms are not of this kind, so reaching the upper
+  bound is not a problem for most goal sequents. In case proving a goal sequent
+  fails for this reason, it is always possible to reformulate the query to avoid
+  looping axioms, or break the goal into separate lemmas that do not individualy
+  cause problems, and then assembling the whole theorem from them.
+\end{enumerate}
+
+The proving features that are offered by the software can be summarized as
+follows. The session starts with the system in an initial, empty state, from
+which the following actions are allowed:
+
+\begin{itemize}
+\item Insertion of biological axioms, and modification and/or removal of
+  already existing ones;
+\item Querying about validity (theoremhood) of a goal sequent.
+  Theorems can be named and saved for future use as additional axioms.
+\item Saving the state of the system in a file, and restoring a previous session
+  from a file.
+\end{itemize}
+
+Axioms must be specified as named transitions from an initial aggregate to a
+final aggregate, both made out of atomic formulas (formulas of the bonding
+language). Axioms can be specified with a control set, which is composed of zero
+or more elementary contexts, as defined in the previous sections and in
+\cite{adding-logic}. Contexts can be of two kinds: regular and superset-closed.
+Regular contexts are as usual, whereas superset-closed context are such that if
+one of them, say $\Delta$, is specified for some control set $\ctrlset{}$, then
+$\ctrlset{}$ is assumed to contain also all supersets of $\Delta$. This is the
+only way to specify infinite control sets.
+
+Queries are analogously specified by giving an initial elementary aggregate and
+a final elementary aggregate, together with a set of axioms that should be used
+during proof search. The user does not specify any reaction list for the goal
+sequent: any sequent that is found to logically subsume the goal is returned,
+regardless of its reaction list. Moreover, the set of axioms specified by the
+user is just an indication of the axioms that \emph{can} be used during search,
+not that \emph{should} be used. In particular, proof search ends successfully
+even if the goal is found using less axioms than those initially specified. In
+contrast, the prover does not attempt to use more axioms than indicated.
+
+To summarize, queries are specified by the user in terms of an initial
+elementary aggregate $\Delta_1$ and a final elementary aggregate $\Delta_2$,
+together with a (possibly empty) set of axioms $\Gamma$. The theorem prover then
+attempts to determine the validity of the following statement:
+
+\[
+  \text{there exists } l \text{ such that }
+  \zsyseq{\Gamma'}{\Delta_1}{l}{\Delta_2^{\otimes}}
+\]
+
+for some $\Gamma' \subseteq \Gamma$. Theorems that turn up to be valid can be
+named and stored for future use. As an example, suppose the query given above
+has a positive answer. It clearly follows that
+$\Gamma' ; \cdot \Longrightarrow \Delta_1 \rightarrow^{\emptyset}_l
+\Delta_2^{\otimes}$ is valid, so this fact can be added to the current
+``knowledge'' of the system as a new axiom
+$\Delta_1^{\otimes} \rightarrow_l^{\emptyset} \Delta_2^{\otimes}$, which can then
+used in subsequent queries.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:

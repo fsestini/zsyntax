@@ -1,0 +1,392 @@
+\section{Focused inverse method}
+
+The last crucial step in building an automated deduction procedure for \zss{} is
+to think of how to use our forward derived rule calculus with the inverse method
+described in the preceding sections. On a more technical level, the primary
+issue in the implementation of the inverse method is to enumerate the formulas
+for which we need to derive inference rules. As the calculus of derived rules
+has only neutral sequents as premises and conclusions, we only need to generate
+rules for formulas that occur in neutral sequents; we call those \emph{frontier
+  formulas} as in \cite{chaudhuri-thesis}. To find the frontier formulas in a
+goal sequent, we abstractly replay the focusing and active phases to identify
+the phase transitions: each transition produces a frontier formula.
+
+To generate the frontier, we use \emph{decorated formulas} to keep track of the
+polarity as well as the linearity of the formula. A positive polarity marks
+formulas that will occur on the right of the sequent symbol, whereas a negarive
+polarity marks those that will occur on the left. Moreover, formulas marked with
+a dot are linear, whereas those marked with an exclamation mark are part of the
+unrestricted context.
+
+\[
+  \textsf{DecFormula} ::= \decplus{\declinear{A}} \, | \,
+    \decminus{\declinear{A}} \, | \,
+    \decunrestr{A}
+\]
+
+where $A$ is a formula. Notice that we do not distinguish the polarity of
+unrestricted formulas, as they are all negative.
+
+\begin{definition}
+  The auxiliary fuctions \textsf{fr}, \textsf{foc}, and \textsf{act} are
+  inductively defined as follows:
+
+  \[
+    \begin{array}{c}
+      \decminus{\textsf{fr}(p)} = \{\decminus{\declinear{p}}\} \qquad
+      \decplus{\textsf{fr}(p)} = \emptyset \qquad
+      \textsf{foc}(p) = \emptyset \qquad
+      \textsf{act}(p) = \{\decminus{\declinear{p}}\} \\
+
+      \decplus{\textsf{fr}(A \otimes B)} = \textsf{foc}(A \otimes B) \qquad
+      \textsf{foc}(A \otimes B) = \textsf{foc}(A) \cup \textsf{foc}(B) \\
+
+      \textsf{act}(A \otimes B) = \textsf{act}(A) \cup \textsf{act}(B) \\
+
+      \decminus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} =
+      \textsf{foc}(A) \cup \textsf{act}(B) \\
+      \decplus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} =
+      \textsf{act}(A) \cup \{ \decplus{\declinear{B}} \} \cup \textsf{fr}(B) \\
+
+      \textsf{foc}(A \rightarrow_{\reactlist{}}^S B) =
+      \decplus{\declinear{(A \rightarrow_{\reactlist{}}^S B)}} \cup
+      \decplus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)} \\
+
+      \textsf{act}(A \rightarrow_{\reactlist{}}^S B) =
+      \decminus{\declinear{(A \rightarrow_{\reactlist{}}^S B)}} \cup
+      \decminus{\textsf{fr}(A \rightarrow_{\reactlist{}}^S B)}
+    \end{array}
+  \]
+\end{definition}
+
+% \[
+%   \decplus{f(p)} = \emptyset \qquad
+%   \decminus{f(p)} = \decminusplus{a(p)} = \{
+%   \decminusplus{\declinear{p}} \} \qquad \text{if $p$ left-biased}
+% \]
+% \[
+%   \decminus{f(A \otimes B)} = \decminus{a(A \otimes B)} \qquad
+%   \decplus{f(A \otimes B)} = \decplus{f(A)}, \decplus{f(B)}
+% \]
+% \[
+%   \decminus{a(A\otimes B)} = \decminus{a(A)}, \decminus{a(B)} \qquad
+%   \decplus{a(A\otimes B)} = \decplus{f(A \otimes B)}, \decminuslinear{(A \otimes B)}
+% \]
+% \[
+%   \decminus{f(A \limp B)} = \decplus{f(A)}, \decminus{f(B)} \qquad
+%   \decplus{f(A \limp B)} = \decplus{a(A \limp B)}
+% \]
+% \[
+%   \decminus{a(A \limp B)} = \decminus{f(A \limp B)}, \decminuslinear{(A \limp
+%     B)}
+%   \qquad
+%   \decplus{a(A\limp B)} = \decminus{a(A)}, \decplus{a(B)}
+% \]
+
+\begin{definition}[Frontier]
+  Given a goal sequent $\Gamma;\Delta \Longrightarrow Q$, its frontier is the
+  set union of the following:
+
+  \begin{enumerate}
+  \item All top-level formulas in $\decunrestr{\Gamma},
+    \decminuslinear{\Delta}$, and $\decpluslinear{Q}$;
+  \item For any $A \in \Gamma, \Delta$, the set $\decminus{\textsf{fr}(A)}$;
+  \item The set $\decplus{\textsf{fr}(Q)}$.
+  \end{enumerate}
+\end{definition}
+
+In the preparatory phase for the inverse method, we calculate the frontier
+formulas of the goal sequent. There is no need to compute the initial sequents
+separately, as the generation of the derived rules on the frontier formulas
+already does that. In particular, we just take as initial sequents all rules
+with zero premises among those generated from the frontier formulas.
+
+The generation proceeds as follows: for each formula $A$ in the frontier
+
+\begin{itemize}
+\item If $A$ is a positive linear atom or a positive linear conjunction, we
+  generate the corresponding $focus$ derived rule;
+\item If $A$ is a positive linear implication, we generate the corresponding
+  $\rightarrow R$ derived rule;
+\item If $A$ is a negative linear implication, we generate the corresponding
+  $\rightarrow L$ derived rule;
+\item If $A$ is a negative unrestricted implication, we generate the
+  corresponding $\copyrule$ derived rule.
+\end{itemize}
+
+\begin{example}
+  Consider the goal sequent
+  $\zsyseq{A_1, A_2}{q,n}{ [(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}$,
+  and $A_1, A_2$ are axioms defined as follows:
+
+  \begin{align*}
+    A_1 & \equiv q \rightarrow_{[]}^{\emptyset} d \otimes d \otimes n \\
+    A_2 & \equiv n \otimes n \rightarrow_{[(\emptyset, \ctrlset{})]}^{\emptyset} d
+  \end{align*}
+
+  where $[(\emptyset, \ctrlset{})]$ is just a shorthand for
+  $(\emptyset, \ctrlset{}):[]$, and $\ctrlset{}$ is defined such that for any
+  $\Delta$, $\respects{\Delta}{\ctrlset{}}$ iff $q \notin \Delta$.  A derivation
+  of such sequent in $\zss$ is as follows:
+
+  {\scriptsize{\[
+    \begin{prooftree}
+      \[
+        \[\justifies\zsyseq{A_1, A_2}{q}{\emptyctrl{}}{q}\] \,
+        \[
+          \[
+            \[
+              \[
+                \[
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyctrl{}}{n}\]
+                  \quad
+                  \[\justifies \zsyseq{A_1, A_2}{n}{\emptyctrl{}}{n}\]
+                  \justifies
+                  \zsyseq{A_1, A_2}{n,n}{\emptyctrl{}}{n \otimes n}
+                \]
+                \,
+                \[
+                  \[
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
+                    \quad
+                    \[\justifies \zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
+                    \justifies
+                    \zsyseq{A_1, A_2}{d, d}{\emptyctrl{}}{d \otimes d}
+                  \]
+                  \quad
+                  \[\justifies\zsyseq{A_1, A_2}{d}{\emptyctrl{}}{d}\]
+                  \justifies
+                  \zsyseq{A_1, A_2}{d, d, d}{\emptyctrl{}}{d \otimes d \otimes d}
+                \]
+                \justifies
+                \zsyseq{A_1, A_2}{n \otimes n \rightarrow_{[(\emptyset,\ctrlset{})]}^{\emptyset{}} d,
+                  d, d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
+              \]
+              \justifies
+              \zsyseq{A_1, A_2}{d, d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
+                \otimes d}
+              \using{\copyrule}
+            \]
+            \justifies
+            \zsyseq{A_1, A_2}{d \otimes d, n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
+              \otimes d}
+            \using{\otimes L}
+          \]
+          \justifies
+          \zsyseq{A_1, A_2}{d \otimes d \otimes n,n}{[(\emptyset,\ctrlset{})]}{d \otimes d
+            \otimes d}
+          \using{\otimes L}
+        \]
+        \justifies
+        \zsyseq{A_1, A_2}{q \rightarrow_{\emptyctrl{}}^{\emptyset{}} d \otimes d
+          \otimes n, q,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
+      \]
+      \justifies
+      \zsyseq{A_1, A_2}{q,n}{[(\emptyset,\ctrlset{})]}{d \otimes d \otimes d}
+      \using{\copyrule}
+    \end{prooftree}
+  \]}}
+
+Let us see now how to derive the same goal sequent in the forward derived rule
+calculus. The frontier of the full goal sequent
+
+\[
+  \zfneuseq{q \rightarrow d\otimes d\otimes n, n \otimes n \rightarrow d}{q,n}{[(\emptyset,\ctrlset{})]}
+  {d \otimes d \otimes d}
+\]
+
+is given by the top-level decorations
+
+\[
+  \decunrestr{(q \rightarrow d \otimes d \otimes n)},
+  \decunrestr{(n \otimes n \rightarrow d)},
+  \decminuslinear{q}, \decminuslinear{n},
+  \decpluslinear{(d \otimes d \otimes d)}
+\]
+
+together with the additionally computed subformulas
+$\decminuslinear{d}, \decminuslinear{n}$. The frontier
+formulas give rise to the derived rules as follows
+
+\begin{itemize}
+\item $\decminuslinear{q}$ is a negative atom, hence it is ignored.
+  Same for $\decminuslinear{n}$ and $\decminuslinear{d}$;
+
+\item The unrestricted formula $q \rightarrow d \otimes d \otimes d$ gives
+  rise to a derived rule as follows
+
+  {
+    \scriptsize{
+      \[
+        \begin{prooftree}
+          \zfneuseq{\Gamma}{\Delta, d, d, n}{\reactlist{}}{Q}
+          \quad
+          \[
+            \justifies
+            \frfrelj{q}{\cdot}{\fneuseq{\cdot}{q}{\cdot}}
+          \]
+          \,
+          \[
+            \[
+              \justifies
+              \factrelj{
+                \bkwseq{d,d,n}{\cdot}{\cdot}
+              }{
+                \zfneuseq{\Gamma}{\Delta,d,d,n}{\reactlist{}}{Q}
+              }{
+                \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
+              }
+            \]
+            \justifies
+            \factrelj{
+              \bkwseq{\cdot}{d \otimes d \otimes n}{\cdot}
+            }{
+              \zfneuseq{\Gamma}{\Delta,d,d,n}{\reactlist{}}{Q}
+            }{
+              \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
+            }
+          \]
+          \justifies
+          \zfneuseq{\Gamma, A_1}{\Delta, q}{\reactlist{}}{Q}
+        \end{prooftree}
+      \]
+    }
+  }
+
+  that is
+
+  \[
+    \begin{prooftree}
+      \zfneuseq{\Gamma}{\Delta, d, d, n}{\reactlist{}}{Q}
+      \justifies
+      \zfneuseq{\Gamma, A_1}{\Delta, q}{\reactlist{}}{Q}
+    \end{prooftree}
+  \]
+
+\item The negative unrestricted formula $n \otimes n \rightarrow d$ gives rise
+  to a derived rule as follows
+
+  {\scriptsize{\[
+    \begin{prooftree}
+      \[
+        \[
+          \justifies
+          \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
+        \]
+        \[
+          \justifies
+          \frfrelj{n}{\cdot}{\fneuseq{\cdot}{n}{\cdot}}
+        \]
+        \justifies
+        \frfrelj{n \otimes n}{\cdot}{\fneuseq{\cdot}{n,n}{\cdot}}
+      \]
+      \[
+        \[
+          \justifies
+          \factrelj{
+            \bkwseq{d}{\cdot}{\cdot}
+          }{
+            \zfneuseq{\Gamma}{\Delta,d}{\reactlist{}}{Q}
+          }{
+            \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
+          }
+        \]
+        \justifies
+        \factrelj{
+          \bkwseq{\cdot}{d}{\cdot}
+        }{
+          \zfneuseq{\Gamma}{\Delta,d}{\reactlist{}}{Q}
+        }{
+          \zfneuseq{\Gamma}{\Delta}{\reactlist{}}{Q}
+        }
+      \]
+      \quad
+      \[
+        \resplist{\Delta}{[(\emptyset, \ctrlset{})]}
+        \proofdotseparation=0ex
+        \proofdotnumber=0
+        \leadsto
+        \zfneuseq{\Gamma}{\Delta, d}{\reactlist{}}{Q}
+      \]
+      \justifies
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{
+        \baseandplus{\Delta}{[(\emptyset,\ctrlset{})]}{\reactlist{}}
+      }{Q}
+    \end{prooftree}
+  \]}}
+
+  that is
+
+  \[
+    \begin{prooftree}
+      \zfneuseq{\Gamma}{\Delta, d}{\reactlist{}}{Q}
+      \justifies
+      \zfneuseq{\Gamma, A_2}{\Delta, n, n}{
+        \baseandplus{\Delta}{[(\emptyset,\ctrlset{})]}{\reactlist{}}
+      }{Q}
+      \using{\respects{\Delta}{\ctrlset{}}}
+    \end{prooftree}
+  \]
+
+\item The positive linear formula $d \otimes d \otimes d$ gives rise to a
+  derived rule as follows
+
+  \[
+    \begin{prooftree}
+      \[
+        \[
+          \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
+          \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
+          \justifies
+          \frfrelj{d \otimes d}{\cdot}{\fneuseq{\cdot}{d,d}{\cdot}}
+        \]
+        \[\justifies \frfrelj{d}{\cdot}{\fneuseq{\cdot}{d}{\cdot}} \]
+        \justifies
+        \frfrelj{d \otimes d \otimes d}{\cdot}{\fneuseq{\cdot}{d,d,d}{\cdot}}
+      \]
+      \justifies
+      \zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}
+    \end{prooftree}
+  \]
+
+  therefore, simply
+
+  \[
+    \begin{prooftree}
+      \justifies
+      \zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}
+    \end{prooftree}
+  \]
+
+\end{itemize}
+
+Then, the goal sequent can be fully derived with just two rule applications as
+follows:
+
+\[
+  \begin{prooftree}
+    \[
+      \[\justifies\zfneuseq{\cdot}{d,d,d}{\emptyctrl{}}{d \otimes d \otimes d}\]
+      \justifies
+      \zfneuseq{A_2}{d,d,n,n}{[(\emptyset, \ctrlset{})]}{d \otimes d \otimes d}
+    \]
+    \justifies
+    \zfneuseq{A_1, A_2}{q, n}{[(\emptyset, \ctrlset{})]}{d \otimes d \otimes d}
+  \end{prooftree}
+\]
+
+\end{example}
+
+The example above shows the power of combining the forward search of the inverse
+method with the use of big-step derived rules from the focused calculus.  The
+good proof-theoretical properties of our original sequent calculus allow us to
+derive many properties and do a lot of automatic work in the phase preliminary
+to proof-search, from the structure of the goal sequent only. This has the
+effect that many redundant and inessential steps are eliminated from the actual
+proof-search phase, where they would otherwise badly affect its computational
+complexity.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../docs"
+%%% End:

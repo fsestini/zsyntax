@@ -1,50 +1,76 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
 
 module Prover.Class where
 
-import Control.Monad (forM_)
-import Formula
-import Rule
-import qualified Data.Set as S
+import Data.Foldable
+import TypeClasses
+import Control.Monad hiding (fail)
+import Prelude hiding (fail)
+import Control.Applicative
 
-class HasProverState l a m where
-  getRules :: m ([Rule l a])
-  addRule :: Rule l a -> m ()
-  addInactive :: LabelledSequent l a -> m ()
-  popInactive :: m (Maybe (LabelledSequent l a))
-  getActives :: m (S.Set (LabelledSequent l a))
-  addActive :: LabelledSequent l a -> m ()
-  isNotSubsumed :: LabelledSequent l a -> m Bool
-  removeSubsumedBy :: LabelledSequent l a -> m ()
+import Prover.Structures
+       (SearchSequent, Stage(..), ActiveSequent, ActiveSequents,
+        ConclSequent, Rule, InactivesResult)
 
-class HasProverEnvironment l a m where
-  subsumesGoal :: LabelledSequent l a -> m Bool
+-- The prover state must include a global index of all sequents that have been
+-- added to the inactive set.
+class HasProverState seqty m where
+  getRules :: m ([Rule seqty])
+  addRule :: Rule seqty -> m ()
+  addInactive :: SearchSequent BSChecked seqty -> m ()
+  popInactive :: m (InactivesResult (ActiveSequent seqty))
+  getActives :: m (ActiveSequents seqty)
+  isNotFwdSubsumed :: ConclSequent seqty
+                   -> m (Maybe (SearchSequent FSChecked seqty))
+  removeSubsumedBy :: SearchSequent FSChecked seqty
+                   -> m (SearchSequent BSChecked seqty)
 
-addActives
-  :: (Traversable t, Monad m, HasProverState l a m)
-  => t (LabelledSequent l a) -> m ()
-addActives = mapM_ addActive
+class HasProverEnvironment seqty proof m where
+  subsumesGoal
+    :: (MonadPlus mf)
+    => SearchSequent FSChecked seqty -> m (mf proof)
+
+haveGoal
+  :: ( Monad m
+     , MonadPlus mf
+     , HasProverEnvironment seqty proof m
+     , Foldable f
+     -- , SearchTriple seqty goalty proof
+     )
+  => f (SearchSequent FSChecked seqty) -> m (mf proof)
+haveGoal = fmap (foldr (<|>) mzero) . mapM subsumesGoal . toList
 
 addInactives
-  :: (Traversable t, Monad m, HasProverState l a m)
-  => t (LabelledSequent l a) -> m ()
+  :: (Traversable t, Monad m, HasProverState seqty m)
+  => t (SearchSequent BSChecked seqty) -> m ()
 addInactives = mapM_ addInactive
 
 addRules
-  :: (Traversable t, Monad m, HasProverState l a m)
-  => t (Rule l a) -> m ()
+  :: (Traversable t, Monad m, HasProverState seqty m)
+  => t (Rule seqty) -> m ()
 addRules = mapM_ addRule
 
-filterM :: (Monad m) => (a -> m Bool) -> [a] -> m [a]
-filterM p [] = return []
-filterM p (x : xs) = do
-  result <- p x
-  rest <- filterM p xs
-  if result
-     then return $ x : rest
-     else return rest
+removeSubsumedByAll
+  :: (Monad m, Traversable t, HasProverState seqty m)
+  => t (SearchSequent FSChecked seqty) -> m (t (SearchSequent BSChecked seqty))
+removeSubsumedByAll = mapM removeSubsumedBy
 
 filterUnsubsumed
-  :: (HasProverState l a m, Monad m)
-  => [LabelledSequent l a] -> m [LabelledSequent l a]
-filterUnsubsumed = filterM isNotSubsumed
+  :: (HasProverState seqty m, Monad m, Foldable t)
+  => t (ConclSequent seqty) -> m [SearchSequent FSChecked seqty]
+filterUnsubsumed = fmap filterOut . mapM isNotFwdSubsumed . toList
+
+-- filterSubsequents
+--   :: ( HasProverEnvironment seqty goalty m
+--      , Monad m
+--      , Traversable t
+--      , Foldable t
+--      , CanPartitionEithers t
+--      )
+--   => t (ConclSequent seqty) -> m [SearchSequent SSChecked seqty]
+-- filterSubsequents = fmap filterOut . mapM isSubsequent

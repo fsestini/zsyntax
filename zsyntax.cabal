@@ -2,21 +2,34 @@ name:                zsyntax
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/zsyntax#readme
+homepage:            https://github.com/fsestini/zsyntax
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2017 Author name here
-category:            Web
+author:              Filippo Sestini
+maintainer:          sestini.filippo@gmail.com
+copyright:           2017 Filippo Sestini
+category:            Logic
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, Formula
-  build-depends:       base >= 4.7 && < 5, containers, transformers
+  exposed-modules:     CLI, GUI
+  other-modules:       Prover.Class, Prover.Structures, Prover.Transformer, Rel
+                     , TypeClasses, SFormula, LFormula, TH, Prover
+                     , Prover.Search, Checking, Context, LinearContext
+                     , LinearContext.LinearCtxt, LinearContext.PosInt
+                     , UnrestrContext, SimpleDerivationTerm, ForwardSequent
+                     , Parser, Command.Structures, Command.Execution
+                     , CLI.Command, CLI.App
+                     , Checking.ReactLists.RList, Checking.ReactLists.Sets
+                     , GUI.Elements , GUI.Control, GUI.Command
+                     , Rules.Relation, Rules.Interface, Rules.Frontier, Rules
+  build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
+                     , profunctors, parsec, split, free, mmorph, constraints
+                     , dequeue, gtk, template-haskell, safe, non-empty
+                     --, unordered-containers
   default-language:    Haskell2010
 
 executable zsyntax-exe
@@ -31,8 +44,7 @@ test-suite zsyntax-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  build-depends:       base
-                     , zsyntax
+  build-depends:       base, zsyntax, QuickCheck
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 

@@ -4,12 +4,18 @@
 module Rule where
 
 import Formula
+import LabelledSequent
 import Relation
 import Rel
 
-type Rule l a = (LabelledSequent l a) -> RuleRes l a
+{-
 
-type RuleRes l a = Rel (LabelledSequent l a) (LabelledSequent l a)
+We do not consider negative left-biased atoms (or positive right-biased atoms)
+when constructing derived rules from the formulas in the frontier.
+
+-}
+
+
 
 -- genRule
 --   :: (Eq a, Eq l)
@@ -23,7 +29,7 @@ type RuleRes l a = Rel (LabelledSequent l a) (LabelledSequent l a)
 -- genRule (LinearPositiveDLF formula) = do
 --   (MRes gamma delta _) <- positiveFocalDispatch formula
 --   return $ LS gamma delta (label formula)
-  
+
 -- TODO !!!!!!!!!!!
 
 -- Prove that there is no risk that a rule is inserted in the rule pool more

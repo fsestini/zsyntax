@@ -1,103 +1,164 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DataKinds, KindSignatures, GADTs #-}
 
+{-# OPTIONS_GHC -Wall -Wno-unticked-promoted-constructors #-}
+
+{-| Formulae of Zsyntax. -}
 module Formula where
 
-import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 
+{-| The type of biological (and non-logical) formulas, which constitute
+    the logical atoms.
+    It is parameterized over the type of biological atoms. -}
 data BioFormula a  =  BioAtom a
                    |  BioInter (BioFormula a) (BioFormula a)
-                   deriving(Eq, Ord, Show)
+                   deriving (Eq, Ord, Show)
 
+-- | Type of biases of logical atoms in the focused calculus.
 data Bias = LeftBias | RightBias
-data Pole  =  LSRA -- Left synch, right asynch
-           |  LARS -- Left asynch, right synch
+
+{-| Type of possible polarizations of formulas of the focused calculus.
+    Non-atomic formulas can either be left-synchronous (or, equivalently,
+    right-asynchronous), or left-asynchronous (or, equivalently,
+    right-synchronous). Atoms can be both left- or right- synchronous, hence
+    have a dedicated pole. -}
+data Pole  =  LSRA
+           |  LARS
            |  AtomPole
 
+{-| Type of logical atoms, which are biological formulas with a bias. -}
 data Atom :: Bias -> * -> * where
   LBAtom  ::  BioFormula a  ->  Atom LeftBias a
   RBAtom  ::  BioFormula a  ->  Atom RightBias a
 
--- | Type of labelled formulae.
---   An atom does not have a label, since it is its own label.
+{-| Type of labelled formulas.
+    It is parameterized by the pole of the formula, which depends on the
+    constructor used, and type of labels and the type of biological atoms.
+    An atom does not have an explicit label, since it is its own label. -}
 data LFormula :: Pole -> * -> * -> * where
   FAtom :: Atom b a -> LFormula AtomPole l a
   FConj :: LFormula p l a -> LFormula q l a -> l -> LFormula LARS l a
-  FImpl :: LFormula p l a -> LFormula q l a -> l -> LFormula LSRA l a
+  FImpl
+    :: LFormula p l a
+    -> LFormula q l a
+    -> l
+    -> LFormula LSRA l a
 
+-- | Class of right-synchronous poles, used as a predicate over poles.
 class IsRightSynchronous (p :: Pole) where
+  decideRS :: LFormula p l a -> Either (OAtom a) (LFormula LARS l a)
 
+-- | A formula which is left-asynchronous/right-synchronous is indeed
+-- right-synchronous.
 instance IsRightSynchronous LARS where
+  decideRS = Right
+
+-- | A formula with atomic pole is an atom, hence both a left- and right-
+-- synchronous formula by definition.
 instance IsRightSynchronous AtomPole where
+  decideRS (FAtom a) = Left (OA a)
 
+-- | Class of left-synchronous poles, used as a predicate over poles.
 class IsLeftSynchronous (p :: Pole) where
+  decideLS :: LFormula p l a -> Either (OAtom a) (LFormula LSRA l a)
 
+-- | A formula which is left-synchronous/right-asynchronous is indeed
+-- left-synchronous.
 instance IsLeftSynchronous LSRA where
+  decideLS = Right
+
+-- | A formula with atomic pole is an atom, hence both a left- and right-
+-- synchronous formula by definition.
 instance IsLeftSynchronous AtomPole where
+  decideLS (FAtom a) = Left (OA a)
 
-data Label l a = L l | A (BioFormula a) deriving (Eq)
+{-| Type of labels, which can either be pure labels of atomic formulas. -}
+data Label l a = L l | A (BioFormula a) deriving (Eq, Ord, Show)
 
+-- | Returns the label of a given labelled formula.
 label :: LFormula p l a -> Label l a
 label (FAtom (LBAtom bf)) = A bf
 label (FAtom (RBAtom bf)) = A bf
 label (FConj _ _ l) = L l
 label (FImpl _ _ l) = L l
 
-type UnrestrCtxt l a = S.Set (Label l a)
+--------------------------------------------------------------------------------
+-- Opaque formulas
 
-emptyUnrestrCtxt = S.empty
+-- | Type of opaque formulas.
+data OLFormula l a = forall p . OLF (LFormula p l a)
 
-data PosNat = One | Succ PosNat deriving(Eq, Show)
+instance (Ord a, Ord l) => Eq (OLFormula l a) where
+  (OLF f1) == (OLF f2) = compareLF f1 f2 == EQ
 
-toInt :: PosNat -> Int
-toInt One       =  1
-toInt (Succ n)  =  toInt n + 1
+instance (Ord a, Ord l) => Ord (OLFormula l a) where
+  compare (OLF f1) (OLF f2) = compareLF f1 f2
 
-type LinearCtxt l a = M.Map (Label l a) PosNat
+compareLF :: (Ord a, Ord l) => LFormula p l a -> LFormula q l a -> Ordering
+compareLF (FAtom atom1) (FAtom atom2) =
+  compare (OA atom1) (OA atom2)
+compareLF (FConj f1 f2 l1) (FConj g1 g2 l2) =
+  case compareLF f1 g1 of
+    EQ ->
+      case compareLF f2 g2 of
+        EQ -> compare l1 l2
+        x -> x
+    x -> x
+compareLF (FImpl f1 f2 l1) (FImpl g1 g2 l2) =
+  case compareLF f1 g1 of
+    EQ ->
+      case compareLF f2 g2 of
+        EQ -> compare l1 l2
+        x -> x
+    x -> x
+compareLF (FAtom _) _ = LT
+compareLF (FConj _ _ _) (FAtom _) = GT
+compareLF (FConj _ _ _) (FImpl _ _ _) = LT
+compareLF (FImpl _ _ _) _ = GT
 
-emptyLinearCtxt = M.empty
+-- | Type of opaque left-synchronous labelled formulas.
+data OLSLFormula l a =
+  forall p. (IsLeftSynchronous p) =>
+            OLSLF (LFormula p l a)
 
-addToLinCtxt :: (Label l a) -> LinearCtxt l a -> LinearCtxt l a
-addToLinCtxt = undefined
+-- | Type of opaque right-synchronous labelled formulas.
+data ORSLFormula l a =
+  forall p. (IsRightSynchronous p) =>
+            ORSLF (LFormula p l a)
 
-addToUnrestrCtxt :: (Label l a) -> UnrestrCtxt l a -> UnrestrCtxt l a
-addToUnrestrCtxt = undefined
+data OAtom a = forall b . OA (Atom b a)
 
-mergeLinearCtxt :: LinearCtxt l a -> LinearCtxt l a -> LinearCtxt l a
-mergeLinearCtxt = undefined
+instance Ord a => Eq (OAtom a) where
+  (OA a1) == (OA a2) = compareAtom a1 a2 == EQ
 
-mergeUnrestrCtxt :: UnrestrCtxt l a -> UnrestrCtxt l a -> UnrestrCtxt l a
-mergeUnrestrCtxt = undefined
+instance Ord a => Ord (OAtom a) where
+  compare (OA a1) (OA a2) = compareAtom a1 a2
 
-singletonLinearCtxt :: Label l a -> LinearCtxt l a
-singletonLinearCtxt = undefined
+compareAtom :: Ord a => Atom b1 a -> Atom b2 a -> Ordering
+compareAtom atom1 atom2 = compare (getAtom atom1) (getAtom atom2)
+  where
+    getAtom :: Atom b a -> BioFormula a
+    getAtom (LBAtom atom) = atom
+    getAtom (RBAtom atom) = atom
 
-newtype SchemaUCtxt l a = SUC (UnrestrCtxt l a)
-newtype SchemaLCtxt l a = SLC (LinearCtxt l a)
 
-matchUnrestrCtxt :: SchemaUCtxt l a -> UnrestrCtxt l a -> Maybe (UnrestrCtxt l a)
-matchUnrestrCtxt (SUC suc) uc = undefined
+olfLabel :: OLFormula l a -> Label l a
+olfLabel (OLF f) = label f
 
-matchLinearCtxt :: SchemaLCtxt l a -> LinearCtxt l a -> Maybe (LinearCtxt l a)
-matchLinearCtxt (SLC slc) lc = undefined
-
-data LabelledSequent l a  =  LS (UnrestrCtxt l a) (LinearCtxt l a) (Label l a)
-
-instance Eq (LabelledSequent l a) where
-  (==) = undefined
-
-instance Ord (LabelledSequent l a) where
-  compare = undefined
+olsfLabel :: OLSLFormula l a -> Label l a
+olsfLabel (OLSLF f) = label f
 
 --------------------------------------------------------------------------------
--- Decorated formulas
+-- Neutral sequents.
+--
+-- Although the search procedure uses labelled sequents, here we give the type
+-- of fully specified sequents.
 
-data DecLFormula :: * -> * -> * where
-  UnrestrDLF :: LFormula p l a -> DecLFormula l a
-  LinearNegativeDLF
-    :: (IsLeftSynchronous p)
-    => LFormula p l a -> DecLFormula l a
-  LinearPositiveDLF
+data NeutralSequent l a where
+  NSQ
     :: (IsRightSynchronous p)
-    => LFormula p l a -> DecLFormula l a
+    => S.Set (OLFormula l a)
+    -> [OLSLFormula l a]
+    -> LFormula p l a
+    -> NeutralSequent l a
