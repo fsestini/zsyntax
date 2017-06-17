@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -21,15 +23,56 @@ import Data.Maybe (isJust)
 import Data.Foldable (toList, foldlM)
 import Data.Bifunctor (second)
 import Rules hiding (reprAx, AxRepr)
+import Parsing (Parser)
+import Control.Newtype
+import Data.Semigroup (Semigroup(..))
 
-newtype ThrmName = TN {unTN :: String} deriving (Eq, Ord, Show)
+--------------------------------------------------------------------------------
+-- Names
+
+newtype Name = NM String deriving (Eq, Ord, Show)
+
+instance Newtype Name String where
+  pack = NM
+  unpack (NM x) = x
+
+instance Pretty Name where
+  pretty = unpack
+
+
+data AxName = AxNm Name | AxCombine AxName AxName
+  deriving (Eq, Ord, Show)
+
+instance Pretty AxName where
+  pretty (AxNm name) = pretty name
+  pretty (AxCombine nm1 nm2) = pretty nm1 ++ " + " ++ pretty nm2
+
+instance Semigroup AxName where
+  n1 <> n2 = AxCombine n1 n2
+
+--------------------------------------------------------------------------------
+-- Query axioms
+
 data AddedAxiom axr = AAx { unAAx :: axr }
 
-instance Pretty ThrmName where
-  pretty = unTN
+data AxNames
+  = Some [AxName]
+  | AllOfEm
+  deriving (Eq, Ord, Show)
+data AxMode
+  = Normal
+  | Refine
+  deriving (Eq, Ord, Show)
+
+data QueryAxioms = QA
+  { names :: AxNames
+  , mode :: AxMode
+  } deriving (Eq, Ord, Show)
+
+--------------------------------------------------------------------------------
 
 data QueriedSeq frepr = QS
-  { qsAxioms :: [ThrmName]
+  { qsAxioms :: QueryAxioms
   , qsFrom :: frepr
   , qsTo :: frepr
   } deriving (Eq, Ord, Show)
@@ -40,30 +83,45 @@ instance Pretty frepr => Pretty (QueriedSeq frepr) where
 class CommAx axr ax where
   reprAx :: axr -> Either String ax
 
--- class CommFrml frepr frml | frml -> frepr where
---   reprFrml :: frepr -> Either String frml
+toAxNames :: Eq ax => AxEnv axr ax -> ThrmEnv frepr ax -> [ax] -> [AxName]
+toAxNames env thrms axs =
+  fmap (AxNm . fst) . filter (flip elem axs . snd) $ legitAxioms env thrms
 
 class CParse  axr frepr where
-  parseCommand :: String -> Either String (Command axr frepr)
+  pCommand :: Parser (Command axr frepr)
 
 class CPrint axr frepr | axr -> frepr, frepr -> axr where
-  printAx :: ThrmName -> AddedAxiom axr -> String
-  printThrm :: ThrmName -> QueriedSeq frepr -> String
+  printAx :: Name -> AddedAxiom axr -> String
+  printThrm :: Name -> QueriedSeq frepr -> String
 
 data Command axr frepr
-  = AddAxiom ThrmName axr
-  | ChangeAxiom ThrmName axr
-  | RemoveAxiom ThrmName
-  | AddTheorem ThrmName (QueriedSeq frepr)
+  = AddAxiom Name axr
+  | ChangeAxiom Name axr
+  | RemoveAxioms [Name]
+  | AddTheorem Name (QueriedSeq frepr)
+  | RefreshTheorems
+  | RemoveTheorems [Name]
   | Query (QueriedSeq frepr)
   | LoadFile FilePath
+  -- ^ Loading a file executes all commands in it, so that their effects act on
+  -- the state of the system at the moment the file is loaded.
+  | OpenFile FilePath
+  -- ^ Opening a file executes all commands in it, after having reset the system
+  -- to an initial, empty state.
   | SaveToFile FilePath
+  | Clear
+  -- ^ Clears the system, bringing it to an initial state.
   deriving (Eq, Show)
 
 type family DerT ax axr frepr :: *
 -- type family SrchF (frml :: *) :: FKind -> *
 
-class Search ax axr frepr where
+type MyGoalNSequent ax axr frepr =
+  GoalNSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr)
+type MyNSequent ax axr frepr =
+  NSequent (Ax (SrchF ax axr frepr)) (SrchF ax axr frepr) (Cty (SrchF ax axr frepr))
+
+class Search ax axr frepr | ax -> axr frepr where
   type SrchF ax axr frepr = (x :: FKind -> *) | x -> ax axr frepr --  :: FKind -> *
   fromRNS
     :: ResultNSequent
@@ -75,10 +133,13 @@ class Search ax axr frepr where
     :: AxEnv axr ax
     -> ThrmEnv frepr ax
     -> QueriedSeq frepr
-    -> Either String
-        (GoalNSequent
-          (Ax (SrchF ax axr frepr))
-          (SrchF ax axr frepr))
+    -> Either String (MyGoalNSequent ax axr frepr)
+  toAx :: Ax (SrchF ax axr frepr) -> ax
+  mergeAx :: ax -> ax -> ax
+
+class SearchDump ax axr frepr where
+  goalDiff :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> Int
+  pprintSeq :: MyNSequent ax axr frepr -> MyGoalNSequent ax axr frepr -> String
 
 -- class Search ax axr frepr | ax -> frml where
 --   fromNS :: NSequent (Ax (SrchF frml)) (SrchF frml) (Cty (SrchF frml)) -> ThrmShape ax
@@ -95,11 +156,14 @@ class (Pretty (TransRepr term)) => TransDerTerm term where
 --------------------------------------------------------------------------------
 
 newtype AxEnv axr ax =
-  AE (M.Map ThrmName (AddedAxiom axr, ax))
+  AE (M.Map Name (AddedAxiom axr, ax))
 newtype ThrmEnv frepr ax =
-  TE (D.BankersDequeue (ThrmName, (QueriedSeq frepr, Maybe (ThrmShape ax))))
+  TE (D.BankersDequeue (Name, (QueriedSeq frepr, Maybe (ThrmShape ax))))
 
-data ThrmShape ax = Axiomatic ax | NonAxiomatic
+data ThrmShape ax
+  = Axiomatic ax
+  | NonAxiomatic
+  deriving (Eq, Ord, Show)
 toMaybe :: ThrmShape ax -> Maybe ax
 toMaybe (Axiomatic ax) = Just ax
 toMaybe NonAxiomatic = Nothing
@@ -107,11 +171,11 @@ toMaybe NonAxiomatic = Nothing
 class FEnv env where
   type Elems env :: *
   feEmpty :: env
-  feInsert :: ThrmName -> Elems env -> env -> Maybe env
-  feRemove :: ThrmName -> env -> env
-  feReplace :: ThrmName -> Elems env -> env -> env
-  feLookup :: ThrmName -> env -> Maybe (Elems env)
-  feAsList :: env -> [(ThrmName, Elems env)]
+  feInsert :: Name -> Elems env -> env -> Maybe env
+  feRemove :: Name -> env -> env
+  feReplace :: Name -> Elems env -> env -> env
+  feLookup :: Name -> env -> Maybe (Elems env)
+  feAsList :: env -> [(Name, Elems env)]
 
 instance FEnv (ThrmEnv frepr ax) where
   type Elems (ThrmEnv frepr ax) = (QueriedSeq frepr, Maybe (ThrmShape ax))
@@ -121,7 +185,7 @@ instance FEnv (ThrmEnv frepr ax) where
       then Nothing
       else Just (TE (D.pushBack thrms (nm, (q, sa))))
   feRemove name (TE thrms) =
-    (TE (D.fromList . filter ((== name) . fst) . toList $ thrms))
+    (TE (D.fromList . filter ((/= name) . fst) . toList $ thrms))
   feReplace name x (TE thrms) =
     TE . D.fromList $ (replaceAssocL (name, x) (toList thrms))
   feLookup nm (TE thrms) = lookup nm (toList thrms)
@@ -145,7 +209,7 @@ printAxAll (AE axs) = fmap ((uncurry printAx) . second fst) . M.toList $ axs
 printThrmAll :: CPrint axr frepr => ThrmEnv frepr ax -> [String]
 printThrmAll (TE thrms) = fmap (uncurry printThrm . second fst) . toList $ thrms
 
-legitAxioms :: AxEnv axr ax -> ThrmEnv frepr ax -> [(ThrmName, ax)]
+legitAxioms :: AxEnv axr ax -> ThrmEnv frepr ax -> [(Name, ax)]
 legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
   where
     fromAxs = fmap (second snd) $ M.toList axs
@@ -154,16 +218,19 @@ legitAxioms (AE axs) (TE thrms) = fromAxs ++ fromThrms
     aux (x, y) = y >>= \yy -> return (x, yy)
 
 axsFromList
-  :: AxEnv axr ax -> ThrmEnv frepr ax -> [ThrmName] -> Either String [ax]
-axsFromList axs thrms names = do
-  mapM mmm names
+  :: Search ax axr frepr
+  => AxEnv axr ax -> ThrmEnv frepr ax -> [AxName] -> Either String [ax]
+axsFromList axs thrms axNms = mapM (axFromName axs thrms) axNms
+
+axFromName
+  :: Search ax axr frepr
+  => AxEnv axr ax -> ThrmEnv frepr ax -> AxName -> Either String ax
+axFromName axs thrms (AxCombine nm1 nm2) =
+  mergeAx <$> axFromName axs thrms nm1 <*> axFromName axs thrms nm2
+axFromName axs thrms (AxNm nm@(NM name)) = maybe
+    (Left $ "axiom '" ++ name ++ "' not in scope") Right (lookup nm axioms)
   where
     axioms = legitAxioms axs thrms
-    mmm nm@(TN str) =
-      maybe
-        (Left $ "axioms '" ++ str ++ "' not in scope")
-        Right
-        (lookup nm axioms)
 
 replaceAssocL
   :: Eq a
@@ -175,7 +242,7 @@ replaceAssocL (nm, x) ((nm', y):rest)
 
 processThrms
   :: (Monad m)
-  => (ThrmName
+  => (Name
         -> (QueriedSeq frepr, Maybe (ThrmShape ax))
         -> ThrmEnv frepr ax
         -> m (QueriedSeq frepr, Maybe (ThrmShape ax)))
@@ -190,10 +257,15 @@ processThrms f (TE env) = foldlM f' feEmpty (toList env)
 --------------------------------------------------------------------------------
 -- Free monad interface
 
+data ReplaceAnswer = Yes | No
+
 data UIF next
   = UILog String next
+  | UIError String next
+  | UIAskReplaceThrm Name (ReplaceAnswer -> next)
   | UILoadFile FilePath (String -> next)
   | UISaveFile FilePath String next
+  | UIStdErr String next
   deriving (Functor)
 
 type UI a = Free UIF a
@@ -201,8 +273,17 @@ type UI a = Free UIF a
 logUI :: String -> Free UIF ()
 logUI str = liftF (UILog str ())
 
+uiError :: String -> Free UIF ()
+uiError str = liftF (UIError str ())
+
+uiAskReplaceThrm :: Name -> Free UIF ReplaceAnswer
+uiAskReplaceThrm name = liftF (UIAskReplaceThrm name id)
+
 uiLoadFile :: FilePath -> Free UIF String
 uiLoadFile path = liftF (UILoadFile path id)
 
 uiSaveFile :: FilePath -> String -> Free UIF ()
 uiSaveFile path content = liftF (UISaveFile path content ())
+
+uiStdErr :: String -> Free UIF ()
+uiStdErr str = liftF (UIStdErr str ())

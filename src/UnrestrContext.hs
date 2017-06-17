@@ -16,11 +16,18 @@ import qualified TypeClasses as T
 
 newtype UnrestrCtxt a = UC (S.Set a) deriving (Eq, Ord, Monoid, Semigroup)
 
+instance Foldable UnrestrCtxt where
+  foldr f z (UC set) = foldr f z set
+
 instance Ord a => Context (UnrestrCtxt a) where
   type Elems (UnrestrCtxt a) = a
   add x (UC set) = UC (S.insert x set)
   singleton x = UC (S.singleton x)
-  subCtxtOf (UC s1) (UC s2) = S.isSubsetOf s1 s2
+  subCtxtOf (UC s1) (UC s2) =
+    if S.isSubsetOf s1 s2
+      then SC mempty (S.toList s1) -- []
+      else SC (S.toList diff) (S.toList (s1 S.\\ diff))
+        where diff = s1 S.\\ s2
   asFoldable f (UC set) = f set
 
 instance Show a => Show (UnrestrCtxt a) where

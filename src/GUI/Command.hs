@@ -2,6 +2,7 @@ module GUI.Command
   ( AxRepr(..)
   , FrmlRepr(..)
   , BioAtoms
+  , ReplaceAnswer(..)
   , GUIElemBase
   , GUICtrlSet
   , GUIControlType
@@ -11,17 +12,22 @@ module GUI.Command
   , GUIThrmEnv
   , GUICommand
   , Command(..)
-  , ThrmName(..)
+  , Name(..)
   , UIF(..)
   , UI
   , AddedAxiom(..)
   , FEnv(..)
   , QueriedSeq(..)
   , Aggregate(..)
+  , QueryAxioms(..)
+  , AxNames(..)
+  , AxName(..)
+  , AxMode(..)
   , execCommand
   , execCommand'
   , aggregate1'
-  , thrmName
+  , name
+  , axiom
   , comma
   , neCtxt
   , axiomList

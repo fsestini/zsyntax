@@ -23,14 +23,14 @@ import ForwardSequent
 import Data.Constraint hiding ((***))
 import Prover
 import Data.Foldable
-import TypeClasses (filterOut, partitionEithers)
+import TypeClasses (filterOut, partitionEithers, Pretty, PrettyK)
 -- import LabelledSequent
 -- import RelFormula
 import qualified Data.Set as S
 -- import Relation
 import Rel (unRel)
 import Control.Arrow ((***), (>>>))
-import Control.Monad (guard)
+import Control.Monad (guard, MonadPlus(..))
 -- import DerivationTerm
 -- import SFormula (fromLFormula)
 import LinearContext
@@ -63,8 +63,12 @@ data GoalNSequent ax fr =
   GNS (UCtxt ax) (GLCtxt fr) (Opaque fr)
   deriving (Eq, Ord)
 
-data ResultNSequent ax fr cty =
-  RNS (UCtxt ax) (GLCtxt fr) cty (Opaque fr)
+data ResultNSequent ax fr cty = RNS
+  { rnsUc :: UCtxt ax
+  , rnsLc :: GLCtxt fr
+  , rnsCty :: cty
+  , rnsConcl :: Opaque fr
+  }
 
 toGNSequent
   :: Formula fr
@@ -79,17 +83,20 @@ toRNSequent cty (GNS uc lc c) = RNS uc lc cty c
 toNSequent :: Formula fr => GoalNSequent ax fr -> NSequent ax fr ()
 toNSequent (GNS uc lc c) = NS uc (toLC lc) () c
 
-instance (Formula fr, Ord ax) =>
+instance (Formula fr, Ord ax, Pretty ax, PrettyK fr) =>
          ForwardSequent (GoalNSequent ax fr) where
   subsumes gns1 gns2 = toNSequent gns1 `subsumes` toNSequent gns2
 
-instance (Formula frml, Ord axs, Eq cty) =>
+instance (Formula frml, Ord axs, Pretty axs, PrettyK frml, Eq cty) =>
          SearchTriple (NSequent axs frml cty)
                       (GoalNSequent axs frml)
                       (ResultNSequent axs frml cty) where
   subsumesGoal ns@ (NS _ _ cty _) gns = do
-    goaled <- toGNSequent ns
-    guard (goaled `subsumes` gns) >> return (toRNSequent cty goaled)
+    case toGNSequent ns of
+      Nothing -> return mzero
+      Just goaled -> do
+        b <- goaled `subsumes` gns
+        return $ guard b >> return (toRNSequent cty goaled)
 
 type GNS fr = GoalNSequent (Ax fr) fr
 type DecF fr = DecFormula (Ax fr) fr

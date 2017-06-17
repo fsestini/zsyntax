@@ -6,6 +6,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 -- {-# LANGUAGE TypeSynonymInstances #-}
 
+{-# OPTIONS_GHC -Wall #-}
+
 module CLI.Command where
 
 import Text.Parsec.Char
@@ -21,31 +23,38 @@ import Checking.ReactLists.RList
 import Checking.ReactLists.Sets
 import qualified SFormula as S
 import LFormula
-       (BioFormula(..), SrchFormula, LGoalNSequent, BFormula, decideN,
-        decideOF)
+       (BioFormula(..), SrchFormula, LGoalNSequent, decideN,
+        decideOF, LAxiom(..), bConj)
 import Rules hiding (AxRepr, AR)
 import Parser
-import Control.Monad (join)
-import Data.List (intersperse)
-import Data.List.Split (splitOn)
 import Data.Char (isSpace)
-import Data.List (dropWhileEnd)
+import Data.List (dropWhileEnd, intersperse)
 import Data.Foldable (toList)
 import Data.Bifunctor (bimap)
-import Context
 import qualified TypeClasses as T
 import qualified SimpleDerivationTerm as SDT
+import Control.Newtype
+import Utils (foldMap1)
+import Parsing (sepBy1')
 
-newtype Aggregate = Aggr { unAggr :: NE.NonEmpty (BioFormula BioAtoms) }
+newtype CLI a = CLI a deriving (Eq, Ord, Show, T.Pretty)
+
+instance Newtype (CLI a) a where { pack = CLI ; unpack (CLI x) = x }
+
+newtype Aggregate = Aggr (NE.NonEmpty (BioFormula BioAtoms))
+  deriving (Eq, Ord, Show)
+
+instance Newtype Aggregate (NE.NonEmpty (BioFormula BioAtoms))
+  where { pack = Aggr ; unpack (Aggr a) = a }
 
 instance T.Pretty Aggregate where
-  pretty = T.prettys . unAggr
+  pretty = T.prettys . unpack
 
 data AxRepr = AR
   { from :: Aggregate
   , ctrl :: CtrlSet BioAtoms
   , to :: Aggregate
-  }
+  } deriving (Eq, Ord, Show)
 
 type FrmlRepr = Aggregate
 
@@ -55,22 +64,19 @@ type CLICtrlSet = CtrlSet BioAtoms
 type CLIControlType = RList CLIElemBase CLICtrlSet
 -- The particular fully applied type of axioms that are used in the user
 -- interface.
-type CLIAxiom = S.SAxiom CLIControlType BioAtoms
+type CLIAxiom = CLI (S.SAxiom CLIControlType BioAtoms)
 -- The particular fully applied type of formulas that are used in the user
 -- interface.
-type CLIFormula = S.SFormula CLIElemBase CLIControlType String
+type CLIFormula = CLI (S.SFormula CLIElemBase CLIControlType String)
 
 type CLIAxEnv = AxEnv AxRepr CLIAxiom
 type CLIThrmEnv = ThrmEnv Aggregate CLIAxiom
 
 type CLIDerTerm = SDT.SimpleDerTerm BioAtoms
 
-newtype CLITransRepr = CTR (S.SFormula () () BioAtoms, S.SFormula () () BioAtoms)
+newtype CLITransRepr = SimpleTransRepr BioAtoms
 
 type CLISrchFormula = SrchFormula CLIElemBase CLIControlType BioAtoms Int
-
-instance T.Pretty CLITransRepr where
-  pretty (CTR (f1, f2)) = T.pretty f1 ++ " --> " ++ T.pretty f2
 
 type instance DerT CLIAxiom AxRepr FrmlRepr = CLIDerTerm
 
@@ -78,20 +84,50 @@ instance Search CLIAxiom AxRepr FrmlRepr where
   type SrchF CLIAxiom AxRepr FrmlRepr = CLISrchFormula
   fromRNS (RNS _ lc cty concl) =
     maybe NonAxiomatic Axiomatic $ do
-      lc <- mapM decideN $ toNEList lc
-      to <- decideOF concl
-      return $ S.fromBasicNS lc cty to
+      nelc <- mapM decideN $ toNEList lc
+      toFrml <- decideOF concl
+      return $ CLI (S.fromBasicNS nelc cty toFrml)
   queryToGoal axs thrms (QS axlist q1 q2) = do
-    axioms <- axsFromList axs thrms axlist
-    let lc = fmap S.sAtom . unAggr $ q1
-        concl = foldr1 S.sConj . fmap S.sAtom . unAggr $ q2
-        sq = S.SQ (fromFoldable axioms) (fromNEList lc) concl
+    axioms <-
+      case names axlist of
+        Some list -> axsFromList axs thrms list
+        AllOfEm -> return (fmap snd (legitAxioms axs thrms))
+    let lc = fmap S.sAtom . unpack $ q1
+        concl = foldr1 S.sConj . fmap S.sAtom . unpack $ q2
+        sq = S.SQ (fromFoldable (fmap unpack axioms)) (fromNEList lc) concl
         gns = fst $ runState (unPM . neutralize $ sq) 0
     return gns
+  toAx = CLI . S.srchAxToSax
+  mergeAx (CLI (S.SA (LAx a c b _))) (CLI (S.SA (LAx a' c' b' _))) =
+    CLI (S.SA (LAx (bConj a a' ()) (c <> c') (bConj b b' ()) ()))
 
-instance TransDerTerm CLIDerTerm where
-  type TransRepr CLIDerTerm = CLITransRepr
-  transitions = fmap CTR . SDT.transitions
+instance SearchDump CLIAxiom AxRepr FrmlRepr where
+  goalDiff ns@(NS _ lc1 _ concl1) (GNS _ lc2 concl2) =
+    if nsIdentity ns then 0 else
+      uncurry (+) (bimap
+        (uncurry (+) . (bimap length length))
+        (uncurry (+) . (bimap length length)) diffs)
+    where
+      co1 = cToLC concl1
+      co2 = cToLC concl2
+      diffs =
+        ( T.eiFirstSecond . fmap toList $ (eq' lc1 (toLC lc2))
+        , T.eiFirstSecond . fmap toList $ (eq' co1 co2))
+  pprintSeq (NS _ lc1 _ concl) (GNS _ lc2 _) =
+    (if (not . null $ d2)
+       then " >> " ++ T.prettys d2 ++ " << "
+       else "") ++
+    (if (not . null $ d1)
+       then " << " ++ T.prettys d1 ++ " >> "
+       else "") ++
+    T.prettys comm ++
+    " ===> " ++
+    T.prettys (cToLC concl)
+    where
+      (EI d1 d2 comm) = fmap toList (eq' lc1 (toLC lc2))
+
+cToLC :: Opaque CLISrchFormula -> LinearCtxt (Opaque (SrchF CLIAxiom AxRepr FrmlRepr))
+cToLC = either (singleton . neutralToOpaque) fromFoldable . maybeNeutral
 
 --------------------------------------------------------------------------------
 -- Auxiliary PickMonad
@@ -114,12 +150,12 @@ instance Num n => T.PickMonad (PickM n) n where
     return i
 
 instance CommAx AxRepr CLIAxiom where
-  reprAx (AR from ctrl to) = do
-    return $
+  reprAx (AR fromAggr ctrl' toAggr) = do
+    return . CLI $
       S.sAx
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ from)
-        (foldr1 S.bsConj . fmap S.bsAtom . unAggr $ to)
-        (RL [(mempty, ctrl)])
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ fromAggr)
+        (foldr1 S.bsConj . fmap S.bsAtom . unpack $ toAggr)
+        (RL [(mempty, ctrl')])
 
 --------------------------------------------------------------------------------
 -- Command parsing
@@ -127,87 +163,116 @@ instance CommAx AxRepr CLIAxiom where
 type CLICommand = Command AxRepr FrmlRepr
 
 instance CParse AxRepr FrmlRepr where
-  parseCommand = bimap show id . CLI.Command.parseCommand
+  pCommand = command
 
-parseCommand :: String -> Either ParseError CLICommand
-parseCommand = parse command ""
-
-thrmName :: Parser ThrmName
-thrmName = TN <$> many1 alphaNum
+name :: Parser Name
+name = NM <$> many1 alphaNum
 
 aggregate1' :: Parser (NE.NonEmpty (BioFormula BioAtoms))
 aggregate1' = do
-  aggr <- sepBy1 (token bioExpr) comma
+  aggr <- sepBy1 (bioExpr <* spaces) (comma <* spaces)
   case aggr of
-    [] -> unexpected "invalid empty context in control set"
+    [] -> unexpected "invalid empty aggregate"
     (x:xs) -> return (x NE.:| xs)
 
+parenAggr :: Parser (NE.NonEmpty (BioFormula BioAtoms))
+parenAggr = parens (token aggregate1')
+
 neCtxt :: Parser (NonEmptyLinearCtxt (BioFormula BioAtoms))
-neCtxt = do
-  aggr <- aggregate1'
-  let ctxt = fromNEList aggr
-  return ctxt
+neCtxt = fromNEList <$> aggregate1'
 
 ctrlCtxt :: Parser (CtrlSetCtxt BioAtoms)
-ctrlCtxt =  try (token (string "regular") >> fmap Regular neCtxt)
-        <|> (token (string "super") >> fmap SupsetClosed neCtxt)
+ctrlCtxt =  try (string "regular" >> spaces >> fmap Regular neCtxt)
+        <|> (string "super" >> spaces >> fmap SupsetClosed neCtxt)
 
 ctrlSet :: Parser (CtrlSet BioAtoms)
-ctrlSet = do
-  ctxts <- many (try (parens ctrlCtxt))
-  return (fromFoldableCtxts ctxts)
+ctrlSet = parens (token pCtxts)
+  where pCtxts = do
+          ctxts <- many (parens (token ctrlCtxt) <* spaces)
+          return (fromFoldableCtxts ctxts)
 
 -- str axiom name (aggr...) (aggr...) unless ((regular ...) (super ...) ...)
 parseAxiom :: String -> Parser CLICommand
-parseAxiom str = token (string str) >> token (string "axiom") >> do
-  name <- token thrmName
-  from <- parens (aggregate1')
-  spaces
-  to <- parens (aggregate1')
+parseAxiom str = string str >> token (string "axiom") >> do
+  axName <- token name
+  fromAggr <- token parenAggr
+  toAggr <- token parenAggr
   _ <- token (string "unless")
-  ctrlset <- parens ctrlSet
-  return $ AddAxiom name (AR (Aggr from) ctrlset (Aggr to))
+  ctrlset <- token ctrlSet
+  return $ AddAxiom axName (AR (Aggr fromAggr) ctrlset (Aggr toAggr))
 
-axiomList :: Parser [ThrmName]
-axiomList = sepBy ((spaces *> thrmName <* spaces)) comma
+axiom :: Parser AxName
+axiom = fmap (foldMap1 AxNm) ll
+  where ll = sepBy1' (name <* spaces) (char '+' <* spaces)
 
--- query name (aggr...) (aggr...) with axioms (...)
+axiomList :: Parser [AxName]
+axiomList = sepBy (axiom <* spaces) (comma <* spaces)
+
+queryAxioms :: AxMode -> Parser QueryAxioms
+queryAxioms m = try allParser <|> try someParser
+  where
+    allParser :: Parser QueryAxioms
+    allParser =
+      string "all" >> spaces >> string "axioms" >> return (QA AllOfEm m)
+    someParser :: Parser QueryAxioms
+    someParser =
+      string "axioms" >> spaces >>
+      (flip QA m . Some <$> (parens (token axiomList)))
+
+queryAxMode :: Parser AxMode
+queryAxMode = try (string "refine" >> return Refine) <|> return Normal
+
+-- query name (aggr...) (aggr...) [refine] with axioms (...)
 queryTheorem :: Parser CLICommand
 queryTheorem =
-  token (string "query") >> do
-    maybeName <- fmap Just (try (token thrmName)) <|> return Nothing
-    from <- parens (aggregate1')
-    spaces
-    to <- parens (aggregate1')
-    _ <- token (string "with axioms")
-    axioms <- parens axiomList
-    let q = QS axioms (Aggr from) (Aggr to)
+  string "query" >> do
+    maybeName <- fmap Just (try (token name)) <|> return Nothing
+    fromAggr <- token parenAggr
+    toAggr <- token parenAggr
+    m <- token queryAxMode
+    _ <- token (string "with")
+    qAxs <- token (queryAxioms m)
+    let q = QS qAxs (Aggr fromAggr) (Aggr toAggr)
     case maybeName of
-      Just name -> return $ AddTheorem name q
+      Just nm -> return $ AddTheorem nm q
       Nothing -> return $ Query q
 
+url :: Parser FilePath
+url = many1 (noneOf [' '])
+
 parseLoadFile :: Parser CLICommand
-parseLoadFile =
-  token (string "load file") >> LoadFile <$> token (many1 (noneOf [' ']))
+parseLoadFile = string "load file" >> spaces >> LoadFile <$> url
+
+parseOpenFile :: Parser CLICommand
+parseOpenFile = string "open file" >> spaces >> OpenFile <$> url
+
+btwSpaces :: [String] -> Parser ()
+btwSpaces = foldr1 (>>) . intersperse spaces . fmap ((>> return ()) . string)
 
 parseSaveToFile :: Parser CLICommand
-parseSaveToFile =
-  token (string "save to file") >> SaveToFile <$> many1 (noneOf [' '])
+parseSaveToFile = btwSpaces ["save", "to", "file"] >> SaveToFile <$> token url
 
 parseRemoveAxiom :: Parser CLICommand
 parseRemoveAxiom =
-  RemoveAxiom <$> (token (string "remove axiom") >> (token thrmName))
+  btwSpaces ["remove", "axiom"] >> RemoveAxioms <$> fmap return (token name)
 
 command :: Parser CLICommand
-command =
-  parseAxiom "add" <|> parseAxiom "edit" <|> queryTheorem
-  <|> parseLoadFile <|> parseSaveToFile <|> parseRemoveAxiom
+command = commands <?> "a command name"
+  where
+    commands =
+      try (parseAxiom "add") <|>
+      try (parseAxiom "change") <|>
+      try queryTheorem <|>
+      try parseLoadFile <|>
+      try parseOpenFile <|>
+      try parseSaveToFile <|>
+      try parseRemoveAxiom
 
 comma :: Parser Char
-comma = token (char ',')
+comma = char ','
 
 parens :: Parser a -> Parser a
-parens p = token (char '(') *> p <* token (char ')')
+parens p = char '(' *> p <* char ')'
 
 token :: Parser a -> Parser a
 token p = spaces >> p
@@ -219,9 +284,9 @@ instance CPrint AxRepr FrmlRepr where
   printAx = exportAxiom
   printThrm = exportTheorem
 
-exportAxiom :: ThrmName -> AddedAxiom AxRepr -> String
-exportAxiom (TN name) (AAx (AR from cty to)) =
-  "add axiom " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to
+exportAxiom :: Name -> AddedAxiom AxRepr -> String
+exportAxiom (NM nm) (AAx (AR fromAggr cty toAggr)) =
+  "add axiom " ++ nm ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
   ++ ") unless (" ++ exportCtrl cty ++ ")"
 
 ppBioFormula :: BioFormula BioAtoms -> String
@@ -242,10 +307,19 @@ exportCtrlCtxt (SupsetClosed ctxt) = "super " ++ T.prettys list
     list :: [BioFormula BioAtoms]
     list = asFoldable toList ctxt
 
-exportTheorem :: ThrmName -> QueriedSeq FrmlRepr -> String
-exportTheorem (TN name) (QS axs from to) =
-  "query " ++ name ++ " (" ++ T.pretty from ++ ") (" ++ T.pretty to ++
-  ") with axioms (" ++ T.prettys axs ++ ")"
+exportTheorem :: Name -> QueriedSeq FrmlRepr -> String
+exportTheorem (NM nm) (QS axs fromAggr toAggr) =
+  "query " ++ nm ++ " (" ++
+  T.pretty fromAggr ++ ") (" ++ T.pretty toAggr ++ ")" ++ qMode ++ " with " ++ qAxs
+  where
+    qMode =
+      case mode axs of
+        Refine -> " refine"
+        Normal -> ""
+    qAxs =
+      case names axs of
+        AllOfEm -> "all axioms"
+        Some list -> "axioms (" ++ T.prettys list ++ ")"
 
 --------------------------------------------------------------------------------
 

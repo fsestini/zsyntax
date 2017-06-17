@@ -26,9 +26,11 @@ library
                      , Checking.ReactLists.RList, Checking.ReactLists.Sets
                      , GUI.Elements , GUI.Control, GUI.Command
                      , Rules.Relation, Rules.Interface, Rules.Frontier, Rules
+                     , Utils, Parsing
   build-depends:       base >= 4.7 && < 5, containers, transformers, mtl
                      , profunctors, parsec, split, free, mmorph, constraints
-                     , dequeue, gtk, template-haskell, safe, non-empty
+                     , dequeue, gtk, template-haskell, safe, non-empty, time
+                     , bifunctors, newtype
                      --, unordered-containers
   default-language:    Haskell2010
 

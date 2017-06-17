@@ -1,3 +1,7 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -16,8 +20,17 @@ module TypeClasses
   , PickMonad(..)
   , Coercible(..)
   , Pretty(..)
+  , PrettyK(..)
   , filterOut
   , prettys
+  , LogMonad(..)
+  , EqInfo(..)
+  , Eq'(..)
+  , mlogPretty
+  , mlogShow
+  , mlogLn
+  , eiFirstSecond
+  , StateLog(..)
   ) where
 
 import qualified Data.Set as S
@@ -27,9 +40,65 @@ import Prelude hiding (map)
 import Data.Foldable
 import Data.Constraint
 import Data.List (intersperse)
+import Data.Functor.Identity
+import Data.Semigroup
+import Control.Monad.State
+
+data EqInfo a = EI
+  { eiOnFirst :: a
+  , eiOnSecond :: a
+  , eiOnBoth :: a
+  } deriving (Functor)
+
+eiFirstSecond :: EqInfo a -> (a,a)
+eiFirstSecond (EI x y _) = (x,y)
+
+instance Monoid a => Monoid (EqInfo a) where
+  mempty = EI mempty mempty mempty
+  (EI x y z) `mappend` (EI x' y' z') =
+    EI (x `mappend` x') (y `mappend` y') (z `mappend` z')
+
+class Semigroup a => Eq' a where
+  eq' :: a -> a -> EqInfo a
+
+instance Eq' (Sum Int) where
+  eq' (Sum n) (Sum m) | n == m = EI mempty mempty (Sum n)
+                      | n < m = EI mempty (Sum (m - n)) (Sum n)
+                      | otherwise = EI (Sum (n - m)) mempty (Sum m)
+
+class Monad m => LogMonad m where
+  mlog :: String -> m ()
+
+instance LogMonad Identity where
+  mlog = const (return ())
+
+newtype StateLog a = SL (State String a)
+deriving instance Functor StateLog
+deriving instance Applicative StateLog
+deriving instance Monad StateLog
+deriving instance MonadState String StateLog
+
+instance LogMonad StateLog where
+  mlog logMsg = fmap (++ logMsg) get >>= put
+
+runStateLog :: StateLog a -> (String, a)
+runStateLog (SL a) = swap $ runState a ""
+  where swap (x,y) = (y,x)
+
+mlogPretty :: (Pretty a, LogMonad m) => a -> m ()
+mlogPretty = mlog . pretty
+
+mlogLn :: LogMonad m => String -> m ()
+mlogLn str = mlog str >> mlog "\n"
+
+mlogShow :: (Show a, LogMonad m) => a -> m ()
+mlogShow = mlog . show
 
 class Pretty a where
   pretty :: a -> String
+
+class PrettyK (f :: k -> *) where
+  prettyk :: f a -> String
 
 prettys :: (Pretty a, Foldable f) => f a -> String
 prettys = concat . intersperse "," . fmap pretty . toList

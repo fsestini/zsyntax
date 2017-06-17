@@ -21,7 +21,6 @@ import Control.Monad.Fail
 import Control.Applicative
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Formula
 import Rel (Rel)
 import Control.Monad.Trans.State.Lazy hiding (get, put)
 import Control.Monad.Trans.Reader hiding (ask)
@@ -39,8 +38,8 @@ import Prover.Search
 
 proverSearch'
   :: ( Ord seqty
-     , Monad m
-     , SearchMonad mf
+     , LogMonad m
+     , SearchMonad seqty mf
      , SearchTriple seqty goalty proof
      , Foldable f
      )
@@ -59,7 +58,7 @@ data ProverState seqty = PS
   { rules :: [Rule seqty]
   , actives :: ActiveSequents seqty
   , inactives :: InactiveSequents seqty
-  , globalIndex :: GlobalIndex seqty
+  , proverGlobalIndex :: GlobalIndex seqty
   }
 
 data ProverEnvironment s = PE
@@ -78,6 +77,9 @@ runProverT prover sequent =
                (runReaderT (unProverT prover) (PE (makeGoal sequent)))
                (PS [] emptyActives emptyInactives emptyGlobalIndex)
 
+instance LogMonad m => LogMonad (ProverT seqty goalty m) where
+  mlog msg = ProverT (lift (lift (mlog msg)))
+
 deriving instance (Functor m) => Functor (ProverT seqty goalty m)
 deriving instance (Monad m) => Applicative (ProverT seqty goalty m)
 deriving instance (Monad m) => Monad (ProverT seqty goalty m)
@@ -91,6 +93,7 @@ deriving instance
 instance (Monad m, Ord seqty, ForwardSequent seqty) =>
          HasProverState seqty (ProverT seqty goalty m) where
   getRules = rules <$> get
+  globalIndex = S.fromList . toList . proverGlobalIndex <$> get
   addRule r = do
     (PS rls as is gi) <- get
     put (PS (r : rls) as is gi)
@@ -110,7 +113,7 @@ instance (Monad m, Ord seqty, ForwardSequent seqty) =>
     (PS _ as _ _) <- get
     return as
   isNotFwdSubsumed conclSeq = do
-    gi <- globalIndex <$> get
+    gi <- proverGlobalIndex <$> get
     return $ fwdSubsumes gi conclSeq
   removeSubsumedBy fschecked = do
     (PS r as is gi) <- get
@@ -122,4 +125,4 @@ instance (Monad m, SearchTriple seqty goalty proof) =>
          HasProverEnvironment seqty proof (ProverT seqty goalty m) where
   subsumesGoal s = do
     (e :: ProverEnvironment goalty) <- ask
-    return $ s `Prover.Structures.subsumesGoalOp` (goalSequent e)
+    s `Prover.Structures.subsumesGoalOp` (goalSequent e)

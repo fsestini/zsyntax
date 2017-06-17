@@ -12,6 +12,7 @@ module Checking.ReactLists.Sets
   , fromFoldableCtxts
   , toCtxtList
   , CtrlSetCtxt(..)
+  , asFoldable
   ) where
 
 import SFormula (BioFormula(..))
@@ -51,7 +52,8 @@ respectsCtrlSet f = and . S.map (respectsCtrlCtxt f) . unCS
 
 respectsCtrlCtxt :: (Eq a, Ord a) => ElemBase a -> CtrlSetCtxt a -> Bool
 respectsCtrlCtxt (EB base) (Regular ctxt) = not (base == (toLC ctxt))
-respectsCtrlCtxt (EB base) (SupsetClosed ctxt) = not ((toLC ctxt) `subCtxtOf` base)
+respectsCtrlCtxt (EB base) (SupsetClosed ctxt) =
+  not ((toLC ctxt) `subCtxtOfBool` base)
 
 instance (Ord a, Ord l) => HasElemBase (SrchFormula (ElemBase a) cty a l) where
   formulaBase (switchF' -> T1 (AR x _)) = EB (singleton x)

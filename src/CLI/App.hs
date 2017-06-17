@@ -20,10 +20,12 @@ import Data.Bifunctor
 import Control.Monad.Morph
 import Control.Monad.Free
 import qualified Data.Map as M
+import Parsing
 
 import TypeClasses (Pretty(..))
 
-import Command.Structures (UIF(..), ThrmName(..), FEnv(..), AddedAxiom(..))
+import Command.Structures
+       (UIF(..), Name(..), FEnv(..), AddedAxiom(..), CParse(..))
 import Command.Execution (execCommand)
 import CLI.Command
 
@@ -32,12 +34,13 @@ type App a = StateT (CLIAxEnv, CLIThrmEnv) IO a
 toIO :: UIF a -> IO a
 toIO (UILog str x) = (putStrLn $ "log: " ++ str) >> return x
 toIO (UILoadFile path x) = readFile path >>= return . x
+toIO (UISaveFile path content x) = writeFile path content >> return x
 
 hoistApp :: StateT (CLIAxEnv, CLIThrmEnv) (Free UIF) a -> App a
 hoistApp = hoist (foldFree toIO)
 
-printAxiom :: (ThrmName, AddedAxiom AxRepr) -> String
-printAxiom (TN name, (AAx (AR from _ to))) =
+printAxiom :: (Name, AddedAxiom AxRepr) -> String
+printAxiom (NM name, (AAx (AR from _ to))) =
   name ++ " : " ++ (pretty from) ++ " -> " ++ (pretty to)
 
 printAxioms :: App ()
@@ -60,7 +63,7 @@ loop :: App a
 loop = do
   liftIO $ putStr "> " >> hFlush stdout
   line <- liftIO getLine
-  case parseCommand line of
+  case (parseString (padded pCommand)) line of
     Left err ->
       case line of
         "list axioms" -> printAxioms

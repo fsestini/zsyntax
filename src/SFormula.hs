@@ -21,6 +21,7 @@ module SFormula
   , bsConj
   , bsAtom
   , fromBasicNS
+  , srchAxToSax
   ) where
 
   -- ( SFormula(..)
@@ -132,8 +133,8 @@ lToS = SF . fmap (const ())
 -- fromNF :: NeutralFormula eb cs a l -> SFormula eb cs a
 -- fromNF (NF f) = fromLFormula f
 
-laxToSax :: LAxiom cs a l -> SAxiom cs a
-laxToSax = SA . fmap (const ())
+srchAxToSax :: SrchAxiom cs a l -> SAxiom cs a
+srchAxToSax = SA . fmap (const ()) . unSrchAx
 
 -- sAxiomIsSFormula
 --   :: ElemBase eb a

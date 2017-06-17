@@ -5,12 +5,16 @@ module LinearContext.PosInt
   , piMinus
   , repeatN
   , repeatNE
+  , toInt
   ) where
 
 import Data.Semigroup
 import qualified Data.List.NonEmpty as NE
 
 newtype PosInt = PI Int deriving (Eq, Ord, Show)
+
+toInt :: PosInt -> Int
+toInt (PI i) = i
 
 piOne :: PosInt
 piOne = PI 1

@@ -1,5 +1,6 @@
 module GUI.Elements where
 
+import Utils (discardResP)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
 import Control.Monad.IO.Class (liftIO)
@@ -10,14 +11,15 @@ import Text.Parsec
 import Checking.ReactLists.Sets
 import qualified TypeClasses as T
 import qualified Data.List.NonEmpty as NE
+import Control.Newtype
 
-import GUI.Command --(ThrmName(..), CtrlArea(..), FrmlArea(..), aggregate1')
+import GUI.Command
 
 --------------------------------------------------------------------------------
 
 data AxDiaContent = ADC
-  { name :: ThrmName
-  , repr :: AxRepr
+  { adcName :: Name
+  , adcRepr :: AxRepr
   }
 
 parseAggregate = parse (aggregate1' <* eof) ""
@@ -32,15 +34,19 @@ ctrlListView vbox = do
   renderer <- cellRendererTextNew
   cellLayoutPackStart col renderer True
   cellLayoutSetAttributes col renderer list $
-     \row -> [cellText := show row]
+     \row -> [cellText := shower row]
   _ <- treeViewAppendColumn tree col
   treeViewColumnSetTitle col "Control context"
   boxPackStart vbox tree PackGrow 0
   return list
+  where
+    shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
+    shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
-ctrlDialog :: IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog = do
+ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
+ctrlDialog p = do
   dia <- dialogNew
+  windowSetTransientFor dia p
   set dia [windowTitle := "Add control context..."]
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
@@ -57,18 +63,21 @@ ctrlDialog = do
     if answer == ResponseApply
       then do
         txt <- entryGetText e :: IO String
-        flip (either (const (return Nothing))) (parseCtxt txt) $ \ctxt -> do
+        flip (either (discardResP . errorDiagShow p)) (parseCtxt txt) $ \ctxt -> do
           state <- toggleButtonGetActive regularBtn
           if state
-             then return (Just (Regular ctxt))
-             else return (Just (SupsetClosed ctxt))
+            then return (Just (Regular ctxt))
+            else return (Just (SupsetClosed ctxt))
       else return Nothing
   widgetDestroy dia
   return result
 
-axiomsDialog :: String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
-axiomsDialog title content = do
+axiomsDialog
+  :: WindowClass w
+  => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
+axiomsDialog p title content = do
   dia <- dialogNew
+  windowSetTransientFor dia p
   set
     dia
     [ windowTitle := title
@@ -79,17 +88,17 @@ axiomsDialog title content = do
   dialogAddButton dia stockCancel ResponseCancel
   upbox <- dialogGetUpper dia
   axNmE <- titledEntry upbox "Name: "
-  entrySetText axNmE (maybe "" (unTN . name) content)
+  entrySetText axNmE (maybe "" (unpack . adcName) content)
   axFromE <- titledEntry upbox "Start aggregate: "
-  entrySetText axFromE (maybe "" (T.pretty . from . repr) content)
+  entrySetText axFromE (maybe "" (T.pretty . from . adcRepr) content)
   axToE <- titledEntry upbox "Result aggregate: "
-  entrySetText axToE (maybe "" (T.pretty . to . repr) content)
+  entrySetText axToE (maybe "" (T.pretty . to . adcRepr) content)
   list <- ctrlListView upbox
-  forM_ (maybe [] (toCtxtList . ctrl . repr) content) (listStoreAppend list)
+  forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
   boxPackStart upbox btnAddCtrl PackNatural 0
   onClicked btnAddCtrl $ do
-    res <- ctrlDialog
+    res <- ctrlDialog dia
     case res of
       Just ctxt -> listStoreAppend list ctxt >> return ()
       Nothing -> return ()
@@ -106,9 +115,9 @@ axiomsDialog title content = do
               from <- parseAggregate fromTxt
               to <- parseAggregate toTxt
               return (from, to)
-        flip (either (const (return Nothing))) eee $ \(from, to) ->
+        flip (either (discardResP . errorDiagShow p . show)) eee $ \(from, to) ->
           return . Just $
-          ADC (TN nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
+          ADC (NM nmTxt) (AR (Aggr from) (fromFoldableCtxts ctrls) (Aggr to))
       else return Nothing
   widgetDestroy dia
   return result
@@ -125,6 +134,45 @@ titledEntry vbox str = do
 
 --------------------------------------------------------------------------------
 
+askReplaceThrm :: Window -> Name -> IO ReplaceAnswer
+askReplaceThrm p nm@(NM name) = do
+  dia <- dialogNew
+  windowSetTransientFor dia p
+  windowSetModal dia True
+  dialogAddButton dia stockYes ResponseYes
+  dialogAddButton dia stockNo ResponseNo
+  upbox <- dialogGetUpper dia
+  l <-
+    labelNew
+      (Just ("A theorem named '" ++ name ++ "' already exists. Replace?"))
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  answer <- dialogRun dia
+  let res =
+        case answer of
+          ResponseYes -> Yes
+          _ -> No
+  widgetDestroy dia
+  return res
+
+errorDiag :: WindowClass w => w -> String -> IO ()
+errorDiag p msg = do
+  dia <- dialogNew
+  windowSetTransientFor dia p
+  windowSetModal dia True
+  dialogAddButton dia stockOk ResponseOk
+  upbox <- dialogGetUpper dia
+  l <- labelNew (Just msg)
+  boxPackStart upbox l PackNatural 0
+  widgetShowAll upbox
+  _ <- dialogRun dia
+  widgetDestroy dia
+
+errorDiagShow :: (WindowClass w, Show a) => w -> a -> IO ()
+errorDiagShow p = errorDiag p . show
+
+--------------------------------------------------------------------------------
+
 addSep :: VBox -> IO ()
 addSep vbox = hSeparatorNew >>= \s -> boxPackStart vbox s PackNatural 10
 
@@ -135,8 +183,14 @@ buildListView
   -> Packing
   -> IO (TreeView, ListStore t)
 buildListView vbox cols packing = do
+  scroll <- scrolledWindowNew Nothing Nothing
+
   list <- listStoreNew []
   tree <- treeViewNewWithModel list
+
+  sel <- treeViewGetSelection tree
+  treeSelectionSetMode sel SelectionMultiple
+
   treeViewSetHeadersVisible tree True
   forM_ cols $ \(title, render) -> do
     col <- treeViewColumnNew
@@ -146,7 +200,9 @@ buildListView vbox cols packing = do
       \row -> [cellText := (render row)]
     _ <- treeViewAppendColumn tree col
     treeViewColumnSetTitle col title
-  boxPackStart vbox tree packing 0
+
+  scrolledWindowAddWithViewport scroll tree
+  boxPackStart vbox scroll packing 0
   return (tree, list)
 
 --------------------------------------------------------------------------------
@@ -163,13 +219,34 @@ logArea vbox = do
 
 --------------------------------------------------------------------------------
 
-theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (ListStore t)
+data TheoremsArea t = TA
+  { btnRefreshThrms :: Button
+  , btnCopyThrm :: Button
+  , btnRemoveThrm :: Button
+  , storeThrms :: ListStore t
+  , treeSelThrms :: TreeSelection
+  }
+
+theoremArea :: VBox -> NE.NonEmpty (String, t -> String) -> IO (TheoremsArea t)
 theoremArea vbox renders = do
   thLabel <- labelNew (Just "Theorems:")
   miscSetAlignment thLabel 0 0
   boxPackStart vbox thLabel PackNatural 3
-  (_,thList) <- buildListView vbox renders PackGrow
-  return thList
+
+  h <- hBoxNew False 10
+  (tree, list) <- buildListView h renders PackGrow
+  treeSel <- treeViewGetSelection tree
+
+  btns <- vBoxNew False 0
+  btnRefresh <- buttonNewWithLabel "Refresh all"
+  boxPackStart btns btnRefresh PackNatural 0
+  btnCopy <- buttonNewWithLabel "Copy to area"
+  boxPackStart btns btnCopy PackNatural 0
+  btnRem <- buttonNewWithLabel "Remove theorem"
+  boxPackStart btns btnRem PackNatural 0
+  boxPackStart h btns PackNatural 0
+  boxPackStart vbox h PackGrow 0
+  return (TA btnRefresh btnCopy btnRem list treeSel)
 
 --------------------------------------------------------------------------------
 
@@ -190,7 +267,6 @@ axiomsArea vbox cols = do
   axHb <- hBoxNew False 10
   (tree, list) <- buildListView axHb cols PackGrow
   treeSel <- treeViewGetSelection tree
-  treeSelectionSetMode treeSel SelectionSingle
 
   axBtnsVb <- vBoxNew False 0
   addAxBtn <- buttonNewWithLabel "Add axiom"
@@ -209,49 +285,69 @@ axiomsArea vbox cols = do
 data TheoremEntryArea = TEA
   { eName :: Entry
   , eAxioms :: Entry
+  , rbSome :: RadioButton
+  , rbAll :: RadioButton
+  , chkRefine :: CheckButton
   , eFrom :: Entry
   , eTo :: Entry
   , btnGo :: Button
   , btnLoad :: Button
+  , btnOpen :: Button
   , btnExport :: Button
+  , btnClear :: Button
   }
 
 theoremEntryArea :: VBox -> IO TheoremEntryArea
 theoremEntryArea vbox = do
-  packLabel vbox "Prove theorem:"
-  table <- tableNew 2 4 False
+  nameHb <- hBoxNew False 0
   l1 <- labelNew (Just "Name:   ")
-  miscSetAlignment l1 1 1
   teName <- entryNew
-  tableAttachDefaults table l1 0 1 0 1
-  tableAttachDefaults table teName 1 2 0 1
-  l2 <- labelNew (Just "Axioms:   ")
-  miscSetAlignment l2 1 1
-  teAxioms <- entryNew
-  tableAttachDefaults table l2 2 3 0 1
-  tableAttachDefaults table teAxioms 3 4 0 1
-  l3 <- labelNew (Just "Start aggr.:   ")
-  miscSetAlignment l3 1 1
-  teFrom <- entryNew
-  tableAttachDefaults table l3 0 1 1 2
-  tableAttachDefaults table teFrom 1 2 1 2
-  l4 <- labelNew (Just "End aggr.:   ")
-  miscSetAlignment l4 1 1
-  teTo <- entryNew
-  tableAttachDefaults table l4 2 3 1 2
-  tableAttachDefaults table teTo 3 4 1 2
+  boxPackStart nameHb l1 PackNatural 0
+  boxPackStart nameHb teName PackGrow 0
+  boxPackStart vbox nameHb PackNatural 3
+  -- miscSetAlignment l1 1 1
 
   hb <- hBoxNew False 0
   teBtn <- buttonNewWithLabel "Go"
+  loadBtn <- buttonNewWithLabel "Load file..."
   openBtn <- buttonNewWithLabel "Open file..."
   exportBtn <- buttonNewWithLabel "Export..."
+  clearBtn <- buttonNewWithLabel "Clear"
   boxPackStart hb teBtn PackNatural 3
+  boxPackStart hb loadBtn PackNatural 3
   boxPackStart hb openBtn PackNatural 3
   boxPackStart hb exportBtn PackNatural 3
+  boxPackStart hb clearBtn PackNatural 3
 
-  boxPackStart vbox table PackNatural 0
-  boxPackStart vbox hb PackNatural 0
-  return (TEA teName teAxioms teFrom teTo teBtn openBtn exportBtn)
+  testAxHb <- hBoxNew False 0
+  testrbAx <- radioButtonNewWithLabel "Axioms: "
+  boxPackStart testAxHb testrbAx PackNatural 3
+  teAxioms <- entryNew
+  boxPackStart testAxHb teAxioms PackGrow 3
+  spaceL <- labelNew (Just "    ")
+  boxPackStart testAxHb spaceL PackNatural 3
+  testrbAll <- radioButtonNewWithLabelFromWidget testrbAx "Use all"
+  boxPackStart testAxHb testrbAll PackNatural 3
+  chkRefine <- checkButtonNewWithLabel "Refine"
+  boxPackStart testAxHb chkRefine PackNatural 3
+  boxPackStart vbox testAxHb PackNatural 3
+
+  testhb <- hBoxNew False 0
+  testl1 <- labelNew (Just "Start aggr.: ")
+  testl2 <- labelNew (Just "End aggr.: ")
+  teFrom <- entryNew
+  teTo <- entryNew
+  boxPackStart testhb testl1 PackNatural 5
+  boxPackStart testhb teFrom PackGrow 5
+  boxPackStart testhb testl2 PackNatural 5
+  boxPackStart testhb teTo PackGrow 5
+
+  boxPackStart vbox testhb PackNatural 3
+
+  boxPackStart vbox hb PackNatural 7
+  return $
+    TEA teName teAxioms testrbAx testrbAll chkRefine teFrom teTo teBtn
+        loadBtn openBtn exportBtn clearBtn
 
 packLabel box str = do
   l <- labelNew (Just str)
