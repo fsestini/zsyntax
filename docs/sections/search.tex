@@ -284,22 +284,21 @@ It is therefore important that our search procedure is not only complete for
 finite search spaces, but that is also guaranteed to stop with a successful
 answer if a sequent is provable, but may potentially generate an infinite search
 space. In the general setting of search algorithms, this property is usually
-enjoyed by algorithms operating in a depth-first way. Depth-first search may not
-be always space-efficient, but it is guaranteed to find a solution in finite
+enjoyed by algorithms operating in a breadth-first way. Breadth-first search may
+not be always space-efficient, but it is guaranteed to find a solution in finite
 time over an infinite search space (if one exists, of course).
 
-It is easy to see that the Otter loop described above operates in a depth-first
-way, as it is guaranteed to eventually apply all available rules to every
-sequent that is inserted in the inactive set. It follows that our technique of
-imposing a limit of the number of sequents actually corresponds to employing a
-depth-first search with a fixed, maximum limit to the height of the search
-space. All solutions that can be reached within that limit are thus guaranteed
-to be found in finite time. We conjecture that a limit can be found so that
-search is always guaranteed to end with success for valid (but potentially
-diverging) sequents, and fail within a reasonable amount of time for invalid
-diverging sequents.
-\footnote{Our current implementation uses a limit of 2000 sequents, which turned
-  our to be more than enough in all our tests.}
+It is easy to see that the Otter loop described above operates in a
+breadth-first way, as it is guaranteed to eventually apply all available rules
+to every sequent that is inserted in the inactive set. It follows that our
+technique of imposing a limit of the number of sequents actually corresponds to
+employing a breadth-first search with a fixed, maximum limit to the height of
+the search space. All solutions that can be reached within that limit are thus
+guaranteed to be found in finite time. We conjecture that a limit can be found
+so that search is always guaranteed to end with success for valid (but
+potentially diverging) sequents, and fail within a reasonable amount of time for
+invalid diverging sequents.  \footnote{Our current implementation uses a limit
+  of 2000 sequents, which turned our to be more than enough in all our tests.}
 
 \subsection{Theorem prover}
 
