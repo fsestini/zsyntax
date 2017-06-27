@@ -104,9 +104,9 @@ axiomsDialog p title content = do
   axNmE <- titledEntry upbox "Name: "
   entrySetText axNmE (maybe "" (unpack . adcName) content)
   axFromE <- titledEntry upbox "Start aggregate: "
-  entrySetText axFromE (maybe "" (T.pretty . from . adcRepr) content)
+  entrySetText axFromE (maybe "" (exportAggregate . from . adcRepr) content)
   axToE <- titledEntry upbox "Result aggregate: "
-  entrySetText axToE (maybe "" (T.pretty . to . adcRepr) content)
+  entrySetText axToE (maybe "" (exportAggregate . to . adcRepr) content)
   (sel, list) <- ctrlListView upbox
   forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
