@@ -1,0 +1,10 @@
+add axiom ax1 (dg, h)		    (dg <> h)		 unless ()
+add axiom ax2 (dg <> h, ATP)        ((dg <> h) <> ATP)   unless ()
+add axiom ax3 ((dg <> h) <> ATP)    (g6, h, ADP)	 unless ()
+add axiom ax4 (g6, phg)		    (g6 <> phg)		 unless ()
+add axiom ax5 (g6 <> phg)	    (f6, phg)		 unless ()
+add axiom ax6 (f6, phf)		    (f6 <> phf)		 unless ()
+add axiom ax7 (f6 <> phf, ATP)	    ((f6 <> phf) <> ATP) unless ()
+add axiom ax8 ((f6 <> phf) <> ATP)  (f16, phf, ADP)	 unless ()
+
+query pathway (dg, h, phg, phf, ATP, ATP) (f16, phf, ADP, phg, h, ADP) with all axioms
