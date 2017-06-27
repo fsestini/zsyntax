@@ -51,7 +51,7 @@ ctrlDialog p ctxt = do
   boxPackStart upbox regularBtn PackNatural 0
   supsetBtn <- radioButtonNewWithLabelFromWidget regularBtn "Superset-closed"
   boxPackStart upbox supsetBtn PackNatural 0
-  toggleButtonSetActive regularBtn True
+  toggleButtonSetActive supsetBtn True
   e <- titledEntry upbox "Context: "
   maybe' ctxt (return ()) $ \x ->
     case x of
