@@ -47,7 +47,7 @@ ctrlDialog p ctxt = do
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
   upbox <- dialogGetUpper dia
-  regularBtn <- radioButtonNewWithLabel "Regular"
+  regularBtn <- radioButtonNewWithLabel "Strict"
   boxPackStart upbox regularBtn PackNatural 0
   supsetBtn <- radioButtonNewWithLabelFromWidget regularBtn "Superset-closed"
   boxPackStart upbox supsetBtn PackNatural 0
