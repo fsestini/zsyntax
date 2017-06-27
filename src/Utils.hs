@@ -31,3 +31,6 @@ foldMap1 f = foldr1 (<>) . fmap f
 
 on' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
 on' h f g x = h (f x) (g x)
+
+maybe' :: Maybe a -> b -> (a -> b) -> b
+maybe' m x f = maybe x f m
