@@ -85,7 +85,7 @@ transitions (ImplL d1 d2 b) =
 newtype SimpleTransRepr a = STR (SFormula () () a, SFormula () () a)
 
 instance Pretty a => Pretty (SimpleTransRepr a) where
-  pretty (STR (from,to)) = pretty from ++ " --> " ++ pretty to
+  pretty (STR (from,to)) = pretty from ++ " → " ++ pretty to
 
 instance Pretty a => S.TransDerTerm (SimpleDerTerm a) where
   type TransRepr (SimpleDerTerm a) = SimpleTransRepr a

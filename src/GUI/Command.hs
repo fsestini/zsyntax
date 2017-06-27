@@ -26,6 +26,7 @@ module GUI.Command
   , execCommand
   , execCommand'
   , aggregate1'
+  , exportAggregate
   , name
   , axiom
   , comma
