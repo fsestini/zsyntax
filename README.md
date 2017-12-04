@@ -9,7 +9,7 @@
 $ stack install alex happy
 $ stack install gtk2hs-buildtools
 $ stack install glib
-$ stack install build --flag gtk:have-quartz-gtk
+$ stack build --flag gtk:have-quartz-gtk
 ```
 
 ## Execution
