@@ -1,11 +1,13 @@
 module GUI.Elements where
 
-import Utils (discardResP)
+import Safe (headMay)
+import Utils (discardResP, on', maybe')
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Layout.HBox
+import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef (IORef, newIORef, writeIORef, readIORef)
-import Control.Monad (forM_)
+import Control.Monad (forM_, liftM2)
 import Control.Monad.Free (foldFree)
 import Text.Parsec
 import Checking.ReactLists.Sets
@@ -25,38 +27,40 @@ data AxDiaContent = ADC
 parseAggregate = parse (aggregate1' <* eof) ""
 parseCtxt = parse (neCtxt <* eof) ""
 
-ctrlListView :: VBox -> IO (ListStore (CtrlSetCtxt BioAtoms))
+ctrlListView :: VBox -> IO (TreeSelection, ListStore (CtrlSetCtxt BioAtoms))
 ctrlListView vbox = do
-  list <- listStoreNew []
-  tree <- treeViewNewWithModel list
-  treeViewSetHeadersVisible tree True
-  col <- treeViewColumnNew
-  renderer <- cellRendererTextNew
-  cellLayoutPackStart col renderer True
-  cellLayoutSetAttributes col renderer list $
-     \row -> [cellText := shower row]
-  _ <- treeViewAppendColumn tree col
-  treeViewColumnSetTitle col "Control context"
-  boxPackStart vbox tree PackGrow 0
-  return list
+  (tree, list) <-
+    buildListView vbox (("Control context", shower) NE.:| []) PackGrow
+  sel <- treeViewGetSelection tree
+  return (sel, list)
   where
     shower (Regular ctxt) = "regular " ++ asFoldable T.prettys ctxt
     shower (SupsetClosed ctxt) = "superset-closed " ++ asFoldable T.prettys ctxt
 
-ctrlDialog :: WindowClass w => w -> IO (Maybe (CtrlSetCtxt BioAtoms))
-ctrlDialog p = do
+ctrlDialog
+  :: WindowClass w
+  => w -> Maybe (CtrlSetCtxt BioAtoms) -> IO (Maybe (CtrlSetCtxt BioAtoms))
+ctrlDialog p ctxt = do
   dia <- dialogNew
   windowSetTransientFor dia p
   set dia [windowTitle := "Add control context..."]
   dialogAddButton dia stockApply ResponseApply
   dialogAddButton dia stockCancel ResponseCancel
   upbox <- dialogGetUpper dia
-  regularBtn <- radioButtonNewWithLabel "Regular"
+  regularBtn <- radioButtonNewWithLabel "Strict"
   boxPackStart upbox regularBtn PackNatural 0
   supsetBtn <- radioButtonNewWithLabelFromWidget regularBtn "Superset-closed"
   boxPackStart upbox supsetBtn PackNatural 0
-  toggleButtonSetActive regularBtn True
+  toggleButtonSetActive supsetBtn True
   e <- titledEntry upbox "Context: "
+  maybe' ctxt (return ()) $ \x ->
+    case x of
+      Regular c ->
+        toggleButtonSetActive regularBtn True >>
+        entrySetText e (asFoldable T.prettys c)
+      SupsetClosed c ->
+        toggleButtonSetActive supsetBtn True >>
+        entrySetText e (asFoldable T.prettys c)
   widgetShowAll upbox
   answer <- dialogRun dia
   result <-
@@ -72,9 +76,19 @@ ctrlDialog p = do
   widgetDestroy dia
   return result
 
+--------------------------------------------------------------------------------
+
+selected :: ListStore t -> TreeSelection -> IO [(Int, t)]
+selected store treeSel =
+  treeSelectionGetSelectedRows treeSel >>=
+  mapM (on' (liftM2 (,)) (return) (listStoreGetValue store)) .
+  fmap (maybe (error "fatal error in ListStore selector") id) . fmap headMay
+
+--------------------------------------------------------------------------------
+
 axiomsDialog
   :: WindowClass w
-  => w -> String -> (Maybe AxDiaContent) -> IO (Maybe AxDiaContent)
+  => w -> String -> Maybe AxDiaContent -> IO (Maybe AxDiaContent)
 axiomsDialog p title content = do
   dia <- dialogNew
   windowSetTransientFor dia p
@@ -90,18 +104,31 @@ axiomsDialog p title content = do
   axNmE <- titledEntry upbox "Name: "
   entrySetText axNmE (maybe "" (unpack . adcName) content)
   axFromE <- titledEntry upbox "Start aggregate: "
-  entrySetText axFromE (maybe "" (T.pretty . from . adcRepr) content)
+  entrySetText axFromE (maybe "" (exportAggregate . from . adcRepr) content)
   axToE <- titledEntry upbox "Result aggregate: "
-  entrySetText axToE (maybe "" (T.pretty . to . adcRepr) content)
-  list <- ctrlListView upbox
+  entrySetText axToE (maybe "" (exportAggregate . to . adcRepr) content)
+  (sel, list) <- ctrlListView upbox
   forM_ (maybe [] (toCtxtList . ctrl . adcRepr) content) (listStoreAppend list)
   btnAddCtrl <- buttonNewWithLabel "Add control context"
-  boxPackStart upbox btnAddCtrl PackNatural 0
+  btnEditCtrl <- buttonNewWithLabel "Edit control context"
+  btnRemoveCtrl <- buttonNewWithLabel "Remove control context"
+  h <- hBoxNew True 0
+  boxPackStart h btnAddCtrl PackGrow 0
+  boxPackStart h btnEditCtrl PackGrow 0
+  boxPackStart h btnRemoveCtrl PackGrow 0
+  boxPackStart upbox h PackNatural 0
   onClicked btnAddCtrl $ do
-    res <- ctrlDialog dia
+    res <- ctrlDialog dia Nothing
     case res of
       Just ctxt -> listStoreAppend list ctxt >> return ()
       Nothing -> return ()
+  onClicked btnEditCtrl $
+    fmap headMay (selected list sel) >>= maybe (return ()) (\(i,c) ->
+      ctrlDialog dia (Just c)
+      >>= maybe (return ()) (listStoreSetValue list i))
+  onClicked btnRemoveCtrl $
+    fmap headMay (selected list sel) >>= maybe (return ()) (\(i,_) ->
+      listStoreRemove list i)
   widgetShowAll upbox
   answer <- dialogRun dia
   result <-

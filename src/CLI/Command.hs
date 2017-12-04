@@ -284,14 +284,19 @@ instance CPrint AxRepr FrmlRepr where
   printAx = exportAxiom
   printThrm = exportTheorem
 
+exportAggregate :: Aggregate -> String
+exportAggregate =
+  join . intersperse "," . fmap exportBioFormula . toList . unpack
+
 exportAxiom :: Name -> AddedAxiom AxRepr -> String
 exportAxiom (NM nm) (AAx (AR fromAggr cty toAggr)) =
-  "add axiom " ++ nm ++ " (" ++ T.pretty fromAggr ++ ") (" ++ T.pretty toAggr
-  ++ ") unless (" ++ exportCtrl cty ++ ")"
+  "add axiom " ++ nm ++ " (" ++ exportAggregate fromAggr ++
+  ") (" ++ exportAggregate toAggr ++ ") unless (" ++ exportCtrl cty ++ ")"
 
-ppBioFormula :: BioFormula BioAtoms -> String
-ppBioFormula (BioAtom x) = T.pretty x
-ppBioFormula (BioInter x y) = ppBioFormula x ++ " <> " ++ ppBioFormula y
+exportBioFormula :: BioFormula BioAtoms -> String
+exportBioFormula (BioAtom x) = T.pretty x
+exportBioFormula (BioInter x y) =
+  "(" ++ exportBioFormula x ++ " <> " ++ exportBioFormula y ++ ")"
 
 exportCtrl :: CtrlSet BioAtoms -> String
 exportCtrl =
