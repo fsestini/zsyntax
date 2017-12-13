@@ -20,8 +20,8 @@ module Prover.Structures
   , GlobalIndex
   , Rule
   , RuleRes
-  , SearchTriple(..)
   , ForwardSequent(..)
+  , ForwardGoal(..)
   , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
@@ -45,23 +45,17 @@ module Prover.Structures
   ) where
 
 import Data.Profunctor
-import Prelude hiding (fail)
 import Rel
-import Control.Monad (MonadPlus(..))
 import qualified Data.Dequeue as D
 import Data.Foldable
-import TypeClasses (LogMonad)
 
 --------------------------------------------------------------------------------
 
-class ForwardSequent seqty =>
-      SearchTriple seqty goalty proof where
-  subsumesGoal
-    :: (LogMonad ml, MonadPlus mp)
-    => seqty -> goalty -> ml (mp proof)
 class ForwardSequent s where
   subsumes :: s -> s -> Bool
 
+class ForwardSequent s => ForwardGoal s g where
+  subsumesGoal :: s -> g -> Bool
 
 --------------------------------------------------------------------------------
 -- Types.
@@ -225,7 +219,7 @@ fwdSubsumes
   -> SearchSequent Concl seqty
   -> Maybe (SearchSequent FSChecked seqty)
 fwdSubsumes (GI _ globalIndex) (ConclSS s) =
-  if or . map (\gi -> gi `subsumesBool` s) $ globalIndex
+  if or . map (\gi -> gi `subsumes` s) $ globalIndex
     then Nothing
     else Just (FSCheckedSS s)
 
@@ -237,11 +231,11 @@ removeSubsumedByOp
 removeSubsumedByOp (FSCheckedSS s) (IS r is) =
   ( IS r (D.fromList . filter filterer . toList $ is), BSCheckedSS s)
   where
-    filterer = \iseq -> not (s `subsumesBool` (extractSequent iseq))
+    filterer = \iseq -> not (s `subsumes` (extractSequent iseq))
 
 subsumesGoalOp
-  :: (MonadPlus mf, LogMonad ml, SearchTriple seqty goalty proof)
-  => SearchSequent FSChecked seqty -> SearchSequent Goal goalty -> ml (mf proof)
+  :: ForwardGoal s g
+  => SearchSequent FSChecked s -> SearchSequent Goal g -> Bool
 subsumesGoalOp (FSCheckedSS s1) (GoalSS s2) = s1 `subsumesGoal` s2
 
 toProverRules :: (seqty -> Rel seqty seqty) -> Rule seqty
