@@ -1,7 +1,10 @@
-flags: {}
+flags:
+  gtk:
+    have-quartz-gtk: true
 extra-package-dbs: []
 packages:
-- '.'
+- zsyntax-core
+- zsyntax-client
 extra-deps:
 - dequeue-0.1.12
 - gtk-0.14.6
