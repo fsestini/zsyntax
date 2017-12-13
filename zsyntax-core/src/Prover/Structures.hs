@@ -21,6 +21,7 @@ module Prover.Structures
   , Rule
   , RuleRes
   , SearchTriple(..)
+  , ForwardSequent(..)
   , applyRule
   , initialIsFSChecked
   , initialIsBSChecked
@@ -46,7 +47,6 @@ module Prover.Structures
 import Data.Profunctor
 import Prelude hiding (fail)
 import Rel
-import ForwardSequent
 import Control.Monad (MonadPlus(..))
 import qualified Data.Dequeue as D
 import Data.Foldable
@@ -59,6 +59,9 @@ class ForwardSequent seqty =>
   subsumesGoal
     :: (LogMonad ml, MonadPlus mp)
     => seqty -> goalty -> ml (mp proof)
+class ForwardSequent s where
+  subsumes :: s -> s -> Bool
+
 
 --------------------------------------------------------------------------------
 -- Types.
