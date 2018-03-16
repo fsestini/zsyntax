@@ -1,0 +1,16 @@
+packages:
+  otter-loop/
+  ./
+
+allow-newer: comonad
+
+source-repository-package
+    type: git
+    location: https://github.com/fsestini/multiset.git
+    tag: 051b7d36a30e869e83ae97be892af840e67cb1c7
+
+source-repository-package
+   type: git
+   location: https://github.com/fsestini/microlens
+   tag: ee1c82870b22d21e0db48f46e9a23af8d519b4ca
+   subdir: microlens-th
