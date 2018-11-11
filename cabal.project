@@ -1,9 +1,2 @@
 packages:
   ./
-
-allow-newer: comonad
-
-source-repository-package
-    type: git
-    location: https://github.com/fsestini/multiset.git
-    tag: 051b7d36a30e869e83ae97be892af840e67cb1c7
