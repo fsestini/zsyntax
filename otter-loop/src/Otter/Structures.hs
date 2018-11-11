@@ -44,7 +44,6 @@ module Otter.Structures
   )
    where
 
-import Data.Profunctor
 import Otter.Relation
 import qualified Data.Dequeue as D
 import qualified Data.Sequence as S
@@ -206,4 +205,4 @@ removeSubsumedByOp (FSCheckedN s) (IS is) =
   where filterer = not . (s `subsumes`) . extractNode
 
 toProverRules :: (n -> Rel n n) -> Rule n
-toProverRules = dimap extractNode (dimap extractNode ConclN)
+toProverRules = arrowDimap extractNode (relDimap extractNode ConclN)

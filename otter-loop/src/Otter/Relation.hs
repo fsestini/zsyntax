@@ -12,10 +12,11 @@ module Otter.Relation
   ( Rel(..)
   , liftFun
   , liftMaybeToRel
+  , relDimap
+  , arrowDimap
   ) where
 
 import Data.Bifunctor
-import Data.Profunctor
 -- import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
@@ -37,8 +38,11 @@ newtype Rel a b = Rel { unRel :: Maybe (Either b (a -> Rel a b)) }
 instance Functor (Rel a) where
   fmap f rel = rel >>= (return . f)
 
-instance Profunctor Rel where
-  dimap f g = Rel . fmap (bimap g (dimap f (dimap f g))) . unRel
+arrowDimap :: (a -> b) -> (c -> d) -> (b -> c) -> (a -> d)
+arrowDimap f g h x = g (h (f x))
+
+relDimap :: (a -> b) -> (c -> d) -> Rel b c -> Rel a d
+relDimap f g = Rel . fmap (bimap g (arrowDimap f (relDimap f g))) . unRel
 
 instance Applicative (Rel a) where
   pure = return
