@@ -1,23 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ExistentialQuantification #-}
-
-{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
-
-module Otter.Relation
-  ( Rel(..)
-  , liftFun
-  , liftMaybeToRel
-  , relDimap
-  , arrowDimap
-  ) where
+module Otter.Relation where
 
 import Data.Bifunctor
--- import TypeClasses
 import Control.Monad
 import Control.Monad.Fail
 import Control.Applicative
@@ -33,41 +16,39 @@ import Control.Applicative
     3. A successful computation that produces a curried function, that is
        a function accepting one argument and returning a new value of type Rel.
  -}
-newtype Rel a b = Rel { unRel :: Maybe (Either b (a -> Rel a b)) }
+newtype Rule a b = Rule { unRule :: Maybe (Either b (a -> Rule a b)) }
+type ProperRule a b = a -> Rule a b
 
-instance Functor (Rel a) where
+match :: (a -> Maybe b) -> Rule a b
+match p = Rule . Just . Right $ Rule . fmap Left . p
+
+apply :: ProperRule a b -> a -> ([b], [ProperRule a b])
+apply f = maybe mempty (either ((,[]) . pure) (([],) . pure)) . unRule . f
+
+instance Functor (Rule a) where
   fmap f rel = rel >>= (return . f)
+
+instance Applicative (Rule a) where
+  pure = return
+  (<*>) = ap
+
+instance Monad (Rule a) where
+  return = Rule . Just . Left
+  (Rule rel) >>= f =
+    Rule $ rel >>= either (unRule . f) (Just . Right . fmap (>>= f))
+
+instance Alternative (Rule a) where
+  empty = Rule Nothing
+  (Rule Nothing) <|> rel = rel
+  rel <|> _ = rel
+
+instance MonadPlus (Rule a) where
+
+instance MonadFail (Rule a) where
+  fail _ = Rule Nothing
 
 arrowDimap :: (a -> b) -> (c -> d) -> (b -> c) -> (a -> d)
 arrowDimap f g h x = g (h (f x))
 
-relDimap :: (a -> b) -> (c -> d) -> Rel b c -> Rel a d
-relDimap f g = Rel . fmap (bimap g (arrowDimap f (relDimap f g))) . unRel
-
-instance Applicative (Rel a) where
-  pure = return
-  (<*>) = ap
-
-instance Monad (Rel a) where
-  return = Rel . Just . Left
-  (Rel rel) >>= f =
-    case rel of
-      Nothing -> Rel Nothing
-      Just (Left x) -> f x
-      Just (Right g) -> Rel . Just . Right $ \input -> g input >>= f
-
-instance Alternative (Rel a) where
-  empty = Rel Nothing
-  (Rel Nothing) <|> rel = rel
-  rel <|> _ = rel
-
-instance MonadPlus (Rel a) where
-
-instance MonadFail (Rel a) where
-  fail _ = Rel Nothing
-
-liftMaybeToRel :: Maybe b -> Rel a b
-liftMaybeToRel m = Rel (fmap Left m)
-
-liftFun :: (a -> Maybe b) -> Rel a b
-liftFun f = Rel . Just . Right $ liftMaybeToRel . f
+relDimap :: (a -> b) -> (c -> d) -> Rule b c -> Rule a d
+relDimap f g = Rule . fmap (bimap g (arrowDimap f (relDimap f g))) . unRule

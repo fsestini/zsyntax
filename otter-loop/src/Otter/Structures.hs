@@ -1,13 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
-
-{-# OPTIONS_GHC
-  -Wall -Wno-unticked-promoted-constructors -Wno-redundant-constraints
-  -Wno-unused-matches -Wno-unused-imports #-}
 
 module Otter.Structures
   ( Stage(..)
@@ -20,11 +14,11 @@ module Otter.Structures
   , InactiveNodes
   , ConclNode
   , GlobalIndex
-  , Rule
-  , RuleRes
+  , SearchRule
+  , SearchProperRule
   , Subsumable(..)
   -- , OrdSearchGoal(..)
-  , applyRule
+  -- , applyRule
   , initIsFSCheckd
   , initIsBSCheckd
   , initialize
@@ -39,25 +33,15 @@ module Otter.Structures
   , emptyActives
   , emptyInactives
   , emptyGI
-  , toProverRules
+  , toProperRule
   , extractNode
   )
    where
 
 import Otter.Relation
-import qualified Data.Dequeue as D
-import qualified Data.Sequence as S
-import Data.Foldable
-
-import Debug.Trace
-
---------------------------------------------------------------------------------
 
 class Subsumable n where
   subsumes :: n -> n -> Bool
-
---------------------------------------------------------------------------------
--- Types.
 
 data Stage
   = Initial    -- | Initial node
@@ -94,9 +78,7 @@ type BSCheckedNode n = SearchNode BSChecked n
 type FSCheckedNode n = SearchNode FSChecked n
 newtype ActiveNodes n = AS [SearchNode Active n]
 type InactiveNode n = SearchNode Inactive n
--- newtype InactiveNodes n = IS (D.BankersDequeue (InactiveNode n))
 newtype InactiveNodes n = IS [InactiveNode n]
--- newtype InactiveNodes n = IS (S.Seq (InactiveNode n))
 
 type ConclNode n = SearchNode Concl n
 data GlobalIndex n = GI !Int ![n]
@@ -123,7 +105,6 @@ emptyActives = AS mempty
 
 emptyInactives :: InactiveNodes n
 emptyInactives = IS mempty
--- emptyInactives = IS [] -- D.empty
 
 emptyGI :: GlobalIndex n
 emptyGI = GI 0 mempty
@@ -135,19 +116,19 @@ emptyGI = GI 0 mempty
     Such application may either fail, succeed with a value (when the rule has
     been fully applied), or succeed with a function (when the rule is only
     partially applied and has still some premises to match). -}
-type RuleRes n = Rel (ActiveNode n) (ConclNode n)
+type SearchRule n = Rule (ActiveNode n) (ConclNode n)
 
 {-| Type of inference rules.
     Axioms are not considered rules in this case, so a rule takes at least one
     premise. Hence the corresponding type is a function from a premise sequent
     to a rule application result. -}
-type Rule n = ActiveNode n -> RuleRes n
+type SearchProperRule n = ProperRule (ActiveNode n) (ConclNode n)
+
+toProperRule :: (n -> Rule n n) -> SearchProperRule n
+toProperRule = arrowDimap extractNode (relDimap extractNode ConclN)
 
 --------------------------------------------------------------------------------
 -- Operations
-
-applyRule :: Rule n -> ActiveNode n -> RuleRes n
-applyRule = id
 
 foldActives
   :: (forall f. Foldable f => f (ActiveNode n) -> b) -> ActiveNodes n -> b
@@ -160,12 +141,6 @@ activate (AS as) (InactiveN s) = (AS (ActiveN s : as), ActiveN s)
 popInactiveOp
   :: InactiveNodes n -> Maybe (InactiveNodes n, InactiveNode n)
 popInactiveOp (IS is) =
-  -- case is of
-  --   S.Empty -> Nothing
-  --   x S.:<| xs -> Just (IS xs, x)
-  -- case D.popFront is of
-  --   Just (x, xs) -> Just (IS xs, x)
-  --   Nothing -> Nothing
   case is of
     (x : xs) -> Just (IS xs, x)
     [] -> Nothing
@@ -173,13 +148,6 @@ popInactiveOp (IS is) =
 addToInactives
   :: InactiveNodes n -> GlobalIndex n -> BSCheckedNode n
   -> (InactiveNodes n, GlobalIndex n)
--- addToInactives (IS ins) (GI n gi) (BSCheckedN s) =
---   (IS (ins S.:|> InactiveN s), GI (n + 1) (s : gi))
-
--- addToInactives (IS ins) (GI n gi) (BSCheckedN s) =
---   (IS (D.pushBack ins (InactiveN s)), GI (n + 1) (s : gi))
--- addToInactives (IS ins) gi (BSCheckedN s) =
---   (IS (InactiveN s : ins), gi)
 addToInactives (IS ins) (GI n gi) (BSCheckedN s) =
   (IS (InactiveN s : ins), GI (n + 1) (s : gi))
 
@@ -187,7 +155,6 @@ fwdSubsumes
   :: Subsumable n
   => GlobalIndex n -> SearchNode Concl n -> Maybe (FSCheckedNode n)
 fwdSubsumes (GI _ globalIndex) (ConclN s) =
-  -- Just (FSCheckedN s)
   if any (`subsumes` s) globalIndex
     then Nothing
     else Just (FSCheckedN s)
@@ -196,13 +163,6 @@ removeSubsumedByOp
   :: Subsumable n
   => FSCheckedNode n -> InactiveNodes n -> (InactiveNodes n, BSCheckedNode n)
 removeSubsumedByOp (FSCheckedN s) (IS is) =
-  -- (IS (S.filter filterer is), BSCheckedN s)
-  -- where filterer = not . (s `subsumes`) . extractNode
-  -- (IS (D.filterDequeue filterer is), BSCheckedN s)
-  -- where filterer = not . (s `subsumes`) . extractNode
   let ff = filter filterer is
-  in (IS ff, BSCheckedN s) -- traceShow (length ff) (IS ff, BSCheckedN s)
+  in (IS ff, BSCheckedN s)
   where filterer = not . (s `subsumes`) . extractNode
-
-toProverRules :: (n -> Rel n n) -> Rule n
-toProverRules = arrowDimap extractNode (relDimap extractNode ConclN)

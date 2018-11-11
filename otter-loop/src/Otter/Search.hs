@@ -10,10 +10,9 @@ import Data.Foldable
 import Otter.Relation
 import Otter.SearchRes
 import Control.Applicative
-import Data.Either
 
 data ProverState n = PS
-  { _rules :: [Rule n]
+  { _rules :: [SearchProperRule n]
   , _actives :: ActiveNodes n
   , _inactives :: InactiveNodes n
   , _index :: GlobalIndex n
@@ -23,7 +22,7 @@ data ProverState n = PS
 type Prover s g a = State (ProverState s) a
 
 -- | Result type of matching a list of rules to an input sequent.
-type RuleAppRes n = ([ConclNode n], [Rule n])
+type RuleAppRes n = ([ConclNode n], [SearchProperRule n])
 
 popInactive :: Prover s g (Maybe (ActiveNode s))
 popInactive = do
@@ -38,7 +37,7 @@ popInactive = do
 getActives :: Prover s g (ActiveNodes s)
 getActives = _actives <$> get
 
-getRules :: Prover s g [Rule s]
+getRules :: Prover s g [SearchProperRule s]
 getRules = _rules <$> get
 
 isGoalM :: FSCheckedNode s -> Prover s g (Maybe (FSCheckedNode s))
@@ -48,12 +47,6 @@ isGoalM s = do
 
 haveGoal :: [FSCheckedNode s] -> Prover s g (Maybe (FSCheckedNode s))
 haveGoal = fmap (foldr (<|>) mzero) . mapM isGoalM
-
-partitionRuleRes :: [RuleRes s] -> RuleAppRes s
-partitionRuleRes = partitionEithers . catMaybes . fmap unRel
-
-applyAll :: [Rule s] -> ActiveNode s -> RuleAppRes s
-applyAll rules as = partitionRuleRes . fmap ($ as) $ rules
 
 filterUnsubsumed
   :: Subsumable s
@@ -74,7 +67,7 @@ removeSubsumedBy fschecked = do
   put (PS r as newIs gi g)
   return bschecked
 
-addRule :: Rule s -> Prover s g ()
+addRule :: SearchProperRule s -> Prover s g ()
 addRule r = do
   (PS rls as is gi g) <- get
   put (PS (r : rls) as is gi g)
@@ -85,19 +78,19 @@ addInactive i = do
   let (newIs, newInd) = addToInactives is gi i
   put (PS r as newIs newInd g)
 
-percolate :: ActiveNodes s -> [Rule s] -> RuleAppRes s
+percolate :: ActiveNodes s -> [SearchProperRule s] -> RuleAppRes s
 percolate _ [] = mempty
 percolate actives rules = r1 `mappend` r2
   where
-    r1 = partitionRuleRes . concatMap mapper $ rules
+    activeList = foldActives toList actives
+    r1 = foldMap (uncurry apply) ((,) <$> rules <*> activeList)
     r2 = percolate actives . snd $ r1
-    mapper rule = foldActives (foldMap (pure . applyRule rule)) actives
 
 processNewActive :: ActiveNode s -> Prover s g (RuleAppRes s)
 processNewActive node = do
   actives <- getActives
   rules <- getRules
-  let r1 = applyAll rules node
+  let r1 = foldMap (`apply` node) rules
       r2 = percolate actives . snd $ r1
   return $ r1 <> r2
 
@@ -119,7 +112,7 @@ loop = do
 
 doSearch
   :: Subsumable s
-  => [SearchNode Initial s] -> [Rule s] -> Prover s g (SearchRes s)
+  => [SearchNode Initial s] -> [SearchProperRule s] -> Prover s g (SearchRes s)
 doSearch initSeqs initRls = do
   mapM_ addInactive (fmap initIsBSCheckd initSeqs)
   mapM_ addRule initRls
@@ -127,8 +120,8 @@ doSearch initSeqs initRls = do
 
 search
   :: Subsumable s
-  => [s] -> [s -> Rel s s] -> (s -> Bool) -> (SearchRes s, [s])
+  => [s] -> [s -> Rule s s] -> (s -> Bool) -> (SearchRes s, [s])
 search initial rls isGl = second (toList . _index) $
   runState
-    (doSearch (fmap initialize initial) (fmap toProverRules rls))
+    (doSearch (fmap initialize initial) (fmap toProperRule rls))
     (PS [] emptyActives emptyInactives emptyGI isGl)
