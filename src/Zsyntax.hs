@@ -5,8 +5,8 @@ module Zsyntax
   , search
   , toLabelledGoal
   , O.SearchRes
-  , O.ExtractionRes(..)
-  , O.resListUntil
+  , O.Extraction(..)
+  , O.extractResults
   ) where
 
 import qualified Otter as O

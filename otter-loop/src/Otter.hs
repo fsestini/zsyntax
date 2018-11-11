@@ -1,11 +1,11 @@
 module Otter
-  ( module Otter.Relation
-  , module Otter.Search
+  ( module Otter.Rule
   , module Otter.SearchRes
-  , module Otter.Structures
+  , Subsumable(..)
+  , search
   ) where
 
-import Otter.Relation
-import Otter.Search
+import Otter.Rule
 import Otter.SearchRes
-import Otter.Structures
+import Otter.Internal.Search
+import Otter.Internal.Structures

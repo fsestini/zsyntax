@@ -1,15 +1,16 @@
 {-# LANGUAGE DataKinds #-}
 
-module Otter.Search where
+module Otter.Internal.Search where
 
 import Data.Bifunctor (second)
 import Data.Maybe
-import Otter.Structures
 import Control.Monad.State.Lazy
 import Data.Foldable
-import Otter.Relation
-import Otter.SearchRes
 import Control.Applicative
+
+import Otter.Rule
+import Otter.Internal.Structures
+import Otter.SearchRes
 
 data ProverState n = PS
   { _rules :: [SearchProperRule n]

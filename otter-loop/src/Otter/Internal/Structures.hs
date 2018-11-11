@@ -4,7 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 
-module Otter.Structures
+module Otter.Internal.Structures
   ( Stage(..)
   , SearchNode
   , ActiveNode
@@ -39,11 +39,12 @@ module Otter.Structures
   )
    where
 
-import Otter.Relation
+import Otter.Rule
 
 class Subsumable n where
   subsumes :: n -> n -> Bool
 
+-- | Stages of proof search
 data Stage
   = Initial    -- ^ Initial node
   | Active     -- ^ Active node
@@ -54,6 +55,8 @@ data Stage
   | GlIndex    -- ^ Global index node
   | Goal       -- ^ Goal node
 
+-- | Type of search nodes in the search space, given by
+-- a node together with a proof search stage.
 data SearchNode :: Stage -> * -> * where
   InitN :: seq -> SearchNode Initial seq
   ActiveN :: seq -> SearchNode Active seq

@@ -8,10 +8,10 @@ cabal-version:  >= 1.10
 library
   exposed-modules:
       Otter
-      Otter.Relation
-      Otter.Search
+      Otter.Rule
       Otter.SearchRes
-      Otter.Structures
+      Otter.Internal.Search
+      Otter.Internal.Structures
   other-modules:
       Paths_otter_loop
   hs-source-dirs:
