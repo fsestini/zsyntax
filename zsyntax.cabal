@@ -31,7 +31,7 @@ build-type:     Simple
 cabal-version:  2
 
 extra-source-files:
-    README.md
+    README
     CHANGELOG.md
 
 source-repository head
