@@ -1,5 +1,4 @@
 packages:
-  otter-loop/
   ./
 
 allow-newer: comonad

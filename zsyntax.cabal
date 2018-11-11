@@ -46,6 +46,12 @@ library
       Zsyntax.Labelled.Rule.Frontier
       Zsyntax.Labelled.Rule.Interface
 
+      Otter
+      Otter.Rule
+      Otter.SearchRes
+      Otter.Internal.Search
+      Otter.Internal.Structures
+
   default-extensions:
       LambdaCase
       TupleSections
@@ -64,7 +70,6 @@ library
     , containers >= 0.6.0 && < 0.7
     , multiset >= 0.3.4 && < 0.4
     , mtl >= 2.2.2 && < 2.3
-    , otter-loop == 0.2.*
     , parsec >= 3.1.13 && < 3.2
     , composition >= 1.0.2 && < 1.1
     , microlens-platform >= 0.3.11 && < 0.4
@@ -76,7 +81,6 @@ test-suite zsyntax-test
   hs-source-dirs:   test
   build-depends:    base >=4.7 && <5
                   , zsyntax
-                  , otter-loop == 0.2.*
                   , containers >= 0.6.0 && < 0.7
                   , multiset >= 0.3.4 && < 0.4
                   , mtl >= 2.2.2 && < 2.3
