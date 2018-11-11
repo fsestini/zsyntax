@@ -16,7 +16,7 @@ library
       Paths_otter_loop
   hs-source-dirs:
       src
-  default-extensions: FlexibleInstances, GADTs
+  default-extensions: FlexibleInstances, GADTs, TupleSections
   ghc-options:
       -Wall
       -Wno-unused-top-binds
