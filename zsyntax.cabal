@@ -60,21 +60,25 @@ library
       -- -Werror
   build-depends:
       base >=4.7 && <5
-    , constraints
-    , containers
-    , multiset
-    , mtl
-    , otter-loop
-    , parsec
-    , composition
-    , microlens-platform
-    , extra
+    , constraints >= 0.10.1 && < 0.11
+    , containers >= 0.6.0 && < 0.7
+    , multiset >= 0.3.4 && < 0.4
+    , mtl >= 2.2.2 && < 2.3
+    , otter-loop == 0.2.*
+    , parsec >= 3.1.13 && < 3.2
+    , composition >= 1.0.2 && < 1.1
+    , microlens-platform >= 0.3.11 && < 0.4
+    , extra >= 1.6.13 && < 1.7
   default-language: Haskell2010
 
 test-suite zsyntax-test
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
-  build-depends:    base >=4.7 && <5, zsyntax, otter-loop, containers
-                  , multiset, mtl
+  build-depends:    base >=4.7 && <5
+                  , zsyntax
+                  , otter-loop == 0.2.*
+                  , containers >= 0.6.0 && < 0.7
+                  , multiset >= 0.3.4 && < 0.4
+                  , mtl >= 2.2.2 && < 2.3
   main-is:          Main.hs
   default-language: Haskell2010
