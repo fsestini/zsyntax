@@ -9,8 +9,14 @@ description:    An automated theorem prover for Zsyntax, a
                 Zsyntax sequent calculus (ZBS), a logical calculus for
                 a context-sensitive fragment of multiplicative linear
                 logic where sequents are decorated so to account for
-                the biochemical constraints, as developed in
-                <https://doi.org/10.1093/logcom/exy028>.
+                the biochemical constraints.
+
+                The theory behind the Zsyntax sequent calculus and its
+                proof search procedure is developed in F. Sestini,
+                S. Crafa, Proof-search in a context-sensitive logic
+                for molecular biology, Journal of Logic and
+                Computation, 2018
+                (<https://doi.org/10.1093/logcom/exy028>).
 
 category:       Logic, Theorem Provers, Bioinformatics
 synopsis:       Automated theorem prover for the Zsyntax biochemical calculus
