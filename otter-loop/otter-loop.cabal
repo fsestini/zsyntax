@@ -29,6 +29,5 @@ library
       base >=4.7 && <5
     , constraints
     , containers
-    , dequeue
     , mtl
   default-language: Haskell2010
