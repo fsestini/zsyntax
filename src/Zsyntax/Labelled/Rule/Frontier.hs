@@ -12,7 +12,7 @@ module Zsyntax.Labelled.Rule.Frontier where
 
 import Data.Maybe (mapMaybe)
 import Data.Constraint (Dict(..))
-import Otter (unRel, Subsumable(..))
+import Otter (unRule, Subsumable(..))
 import Data.MultiSet (MultiSet)
 import Data.Foldable (toList)
 import Data.Set (Set)
@@ -127,7 +127,7 @@ initialRules :: (Ord a, Ord l) => GoalNSequent a l -> [BipoleRule a l]
 initialRules = fmap generateRule . toList . frontier
 
 mayProperRule :: BipoleRule a l -> Maybe (ProperRule a l)
-mayProperRule = join . fmap (either (const Nothing) Just) . unRel
+mayProperRule = join . fmap (either (const Nothing) Just) . unRule
 
 maySequent :: BipoleRule a l -> Maybe (AnnLSequent a l)
-maySequent = join . fmap (either Just (const Nothing)) . unRel
+maySequent = join . fmap (either Just (const Nothing)) . unRule

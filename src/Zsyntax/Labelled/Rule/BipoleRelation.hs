@@ -50,11 +50,11 @@ type AnnLSequent a l = DerivationTerm a l ::: LSequent a l
 
 -- | A relation is an unbounded curried function with an annotated sequents as
 -- input.
-type BipoleRel a l = Rel (AnnLSequent a l)
+type BipoleRel a l = Rule (AnnLSequent a l)
 
 -- | A rule of the derived rule calculus is a relation that has
 -- derivation term-decorated sequents as both input and output.
-type BipoleRule a l = Rel (AnnLSequent a l) (AnnLSequent a l)
+type BipoleRule a l = Rule (AnnLSequent a l) (AnnLSequent a l)
 
 -- | Predicate identifying those formula kinds that correspond to focusable
 -- formulas.
@@ -77,12 +77,12 @@ matchMultiSet m1 m2 = if isSubsetOf m1 m2 then Just (m2 \\ m1) else Nothing
 matchLinearCtxt :: (Ord a, Ord l) => SchemaLCtxt a l -> LCtxt a l -> Maybe (LCtxt a l)
 matchLinearCtxt (SLC slc) = matchMultiSet slc
 
-match :: (Ord a, Ord l)
+matchSchema :: (Ord a, Ord l)
       => SSchema a l act -> AnnLSequent a l -> Maybe (DTMatchRes a l act)
-match (SSEmptyGoal delta) (term ::: LS gamma delta' cty goal) = do
+matchSchema (SSEmptyGoal delta) (term ::: LS gamma delta' cty goal) = do
   delta'' <- matchLinearCtxt delta delta'
   pure (term ::: MRFullGoal gamma delta'' cty goal)
-match (SSFullGoal delta cty cncl) (tm ::: LS gamma delta' cty' cncl') = do
+matchSchema (SSFullGoal delta cty cncl) (tm ::: LS gamma delta' cty' cncl') = do
   delta'' <- matchLinearCtxt delta delta'
   guard (cty == cty')
   guard (cncl == cncl')
@@ -90,7 +90,7 @@ match (SSFullGoal delta cty cncl) (tm ::: LS gamma delta' cty' cncl') = do
 
 matchRel :: (Ord a, Ord l)
          => LCtxt a l -> ZetaXi a l act -> BipoleRel a l (DTMatchRes a l act)
-matchRel delta zetaxi = liftFun . match $
+matchRel delta zetaxi = match . matchSchema $
   case zetaxi of
     EmptyZetaXi -> SSEmptyGoal (SLC delta)
     FullZetaXi cty g -> SSFullGoal (SLC delta) cty g
@@ -101,7 +101,7 @@ positiveFocalDispatch
   -> BipoleRel a l (DTFocMatchRes a l)
 positiveFocalDispatch fr = case fr of
   Atom a -> pure (Init a ::: MREmptyGoal mempty (singleton (N fr)))
-  Impl {} -> liftFun (match (SSFullGoal (SLC mempty) mempty (O fr)))
+  Impl {} -> match (matchSchema (SSFullGoal (SLC mempty) mempty (O fr)))
   Conj f1 f2 l -> do
     d ::: MREmptyGoal g1 d1 <- positiveFocalDispatch f1
     d' ::: MREmptyGoal g2 d2 <- positiveFocalDispatch f2
