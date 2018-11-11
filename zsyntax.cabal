@@ -5,11 +5,12 @@ description:    An automated theorem prover for Zsyntax, a
                 that can be used to automatically verify biological
                 pathways expressed as logical sequents.
 
-                The prover implements automatic proof search for the Zsyntax
-                sequent calculus (ZBS), a context-sensitive calculus for a
-                fragment of multiplicative linear logic as developed in
-                <https://doi.org/10.1093/logcom/exy028>, where sequents are
-                decorated so to account for the biochemical constraints.
+                The prover implements automatic proof search for the
+                Zsyntax sequent calculus (ZBS), a logical calculus for
+                a context-sensitive fragment of multiplicative linear
+                logic where sequents are decorated so to account for
+                the biochemical constraints, as developed in
+                <https://doi.org/10.1093/logcom/exy028>.
 
 category:       Logic, Theorem Provers, Bioinformatics
 synopsis:       Automated theorem prover for the Zsyntax biochemical calculus
