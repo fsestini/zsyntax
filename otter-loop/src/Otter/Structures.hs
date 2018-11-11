@@ -45,14 +45,14 @@ class Subsumable n where
   subsumes :: n -> n -> Bool
 
 data Stage
-  = Initial    -- | Initial node
-  | Active     -- | Active node
-  | Inactive   -- | Inactive node
-  | Concl      -- | Conclusion node
-  | FSChecked  -- | Forward subsumption-checked
-  | BSChecked  -- | Backward subsumption-checked
-  | GlIndex    -- | Global index node
-  | Goal       -- | Goal node
+  = Initial    -- ^ Initial node
+  | Active     -- ^ Active node
+  | Inactive   -- ^ Inactive node
+  | Concl      -- ^ Conclusion node
+  | FSChecked  -- ^ Forward subsumption-checked
+  | BSChecked  -- ^ Backward subsumption-checked
+  | GlIndex    -- ^ Global index node
+  | Goal       -- ^ Goal node
 
 data SearchNode :: Stage -> * -> * where
   InitN :: seq -> SearchNode Initial seq
