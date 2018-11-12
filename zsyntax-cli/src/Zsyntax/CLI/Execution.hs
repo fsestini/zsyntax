@@ -28,27 +28,29 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Lens.Micro.Platform (Lens', set, use, (^.), (%=), makeLenses)
 import Data.Bifunctor
-import qualified Otter as O
+-- import qualified Otter as O
 
-import Zsyntax (Sequent, ExtractionRes(..), toLabelledGoal,axForget)
-import qualified Zsyntax as Z (search)
+import Zsyntax ( Sequent, Extraction (..), FailureReason(..), toLabelledGoal
+               , axForget)
+import qualified Zsyntax as Z (search, extractResults)
 import Zsyntax.Labelled.DerivationTerm
 import Zsyntax.Labelled.Rule
 import Zsyntax.CLI.Structures
+import Data.List.NonEmpty (NonEmpty(..))
 -- import Zsyntax.Formula.BioFormula(prettyBioF)
 -- import Zsyntax.Formula.SFormula (axForget, prettySF, SFormula, neutralize)
 
 --------------------------------------------------------------------------------
 
 search :: Int -> Sequent Atom
-              -> (ExtractionRes (DerivationTerm Atom Int ::: LSequent Atom Int),
+              -> (Extraction (DerivationTerm Atom Int ::: LSequent Atom Int),
                  [LSequent Atom Int],
                  GoalNSequent Atom Int)
 search i s = (res, srcd, g)
   where
     g = toLabelledGoal s
     foo = Z.search g
-    (res, srcd) = bimap (O.resListUntil i) (fmap _payload) foo
+    (res, srcd) = bimap (Z.extractResults i) (fmap _payload) foo
 
 --------------------------------------------------------------------------------
 
@@ -107,29 +109,24 @@ makeLenses ''SearchConfig
 class HasSearchConfig s where
   _SearchConfig :: Lens' s SearchConfig
 
-data FailureReason = SpaceExhausted | NotATheorem
-
 data QueryResult =
     Success (DerivationTerm Atom Int ::: LSequent Atom Int)
   | Failure FailureReason [LSequent Atom Int]
 
 query :: (MonadZState s m, HasSearchConfig s, MonadError Error m)
       => QueriedSeq
-      -> m QueryResult -- (Either (DerivationTerm Atom Int ::: LSequent Atom Int)
-                       --   [LSequent Atom Int])
+      -> m QueryResult
 query q = do
   cfg <- use _SearchConfig
   goal <- queryToGoal q
   let (res, searched, lgoal) = search (_cfgSearchLimit cfg) goal
-  case _erResult res of
-    (x : _) -> pure (Success x)
-    [] -> let reason = if _erSpaceExhausted res
-                         then SpaceExhausted
-                         else NotATheorem
-              results = take (_cfgFoundListLen cfg)
-                         (sortBy (flip compare `on` (`goalDiff` lgoal))
-                          searched)
-          in pure (Failure reason results)
+  case res of
+    AllResults (x :| _) -> pure (Success x)
+    NoResults reason ->
+      let results =
+            take (_cfgFoundListLen cfg)
+                 (sortBy (flip compare `on` (`goalDiff` lgoal)) searched)
+      in pure (Failure reason results)
              
 -- Given a list of axioms that have been modified, it invalidates all
 -- theorems that depend on some of these axioms.
