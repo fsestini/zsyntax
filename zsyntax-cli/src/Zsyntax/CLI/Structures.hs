@@ -52,6 +52,9 @@ type Aggregate = NonEmpty Atom -- (BioFormula BioAtoms)
 -- type Sequent = F.Sequent ControlType Atom
 type LabelTy = Int
 
+ppAtom :: Atom -> String
+ppAtom = ppBioFormula id
+
 --------------------------------------------------------------------------------
 -- Names
 
