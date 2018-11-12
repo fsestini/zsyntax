@@ -71,6 +71,8 @@ instance Subsumable s => Subsumable (tm ::: s) where
 
 --------------------------------------------------------------------------------
 
+-- | Given two multisets m1 and m2, it checks whether m1 is contained in m2,
+-- and returns the rest of m2 if it is the case.
 matchMultiSet :: Ord a => MultiSet a -> MultiSet a -> Maybe (MultiSet a)
 matchMultiSet m1 m2 = if isSubsetOf m1 m2 then Just (m2 \\ m1) else Nothing
 
