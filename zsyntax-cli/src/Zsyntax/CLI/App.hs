@@ -3,6 +3,7 @@
 
 module Zsyntax.CLI.App (loopIO) where
 
+import Data.Foldable (toList)
 import Text.Parsec.Char (spaces)
 import Data.List
 import System.Console.Haskeline
@@ -15,7 +16,7 @@ import Lens.Micro.Platform
 
 import Zsyntax.Formula
 import Zsyntax.Labelled.Formula
-import Zsyntax.Labelled.DerivationTerm
+import Zsyntax.Labelled.DerivationTerm (transitions)
 import Zsyntax.Labelled.Rule
 import Zsyntax.CLI.Utils
 import Zsyntax.CLI.Structures
