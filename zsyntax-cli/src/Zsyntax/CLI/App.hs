@@ -3,6 +3,7 @@
 
 module Zsyntax.CLI.App (loopIO) where
 
+import Text.Parsec.String (Parser)
 import Data.Foldable (toList)
 import Text.Parsec.Char (spaces)
 import Data.List
@@ -121,14 +122,20 @@ printError (ThrmNameClash nm) =
 printError (AxNotInScope nm) =
   putStrLn' ("Axiom '" ++ nm ++ "' not in scope. Abort.")
 
--- loadFile :: FilePath -> App ()
--- loadFile path = do
---   contents <- liftIO (readFile path)
---   let commands =
---         mapM (parseString (padded clicommand))
---           (filter (not . null . trim) . lines $ contents)
---   either (\pe -> liftIO (putStrLn $ "Error parsing file: " ++ show pe)) (mapM_ execComm) commands
---   where trim = dropWhileEnd isSpace . dropWhile isSpace
+loadFile :: FilePath -> App ()
+loadFile path = do
+  contents <- liftIO (readFile path)
+  let commands =
+        mapM (parseString (padded clicommand))
+          (filter (not . null . trim) . lines $ contents)
+  either
+    (\pe -> liftIO (putStrLn $ "Error parsing file: " ++ show pe))
+    (mapM_ execComm) commands
+  where
+    padded :: Parser a -> Parser a
+    padded p = spaces *> p <* spaces
+    isSpace = (== ' ')
+    trim = dropWhileEnd isSpace . dropWhile isSpace
 
 logError :: MonadIO m => ExceptT Error m () -> m ()
 logError = join . fmap (either printError pure) . runExceptT
@@ -150,7 +157,7 @@ execComm (RemoveTheorems thms) = removeAll _ThrmEnv thms
 execComm (RefreshTheorem tm) = logError $
   refreshTheorem tm >>= maybe (putStrLn' "No such theorem.") printQR
 execComm (Query q) = logError $ query q >>= printQR
-execComm (LoadFile _) = putStrLn' "Not implemented yet." -- loadFile p
+execComm (LoadFile p) = loadFile p
 execComm (OpenFile _) = putStrLn' "Not implemented yet."
 execComm (SaveToFile p) = do
   (axs, tms) <- (,) <$> use axEnv <*> use tmEnv
