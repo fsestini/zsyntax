@@ -1,6 +1,7 @@
 name:           zsyntax-cli
 version:        0.2.0.0
-description:    Please see the README on Github at <https://github.com/fsestini/zsyntax>
+description:    Command line interface to Zsyntax, a logical calculus for
+                biochemical interactions.
 homepage:       https://github.com/fsestini/zsyntax#readme
 bug-reports:    https://github.com/fsestini/zsyntax/issues
 author:         Filippo Sestini
