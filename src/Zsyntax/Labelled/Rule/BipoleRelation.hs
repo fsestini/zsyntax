@@ -129,7 +129,8 @@ implLeft fr@(Impl f1 _ cty f2 _) = do
   let b = lcBase d2
       ext = extend b cty
   guard (respects b cty)
-  pure $ ImplL d d' fr ::: LS (g1 <> g2) (MS.insert (N fr) (d1 <> d2)) (ext <> cty') cl
+  pure $ ImplL d d' f2
+     ::: LS (g1 <> g2) (MS.insert (N fr) (d1 <> d2)) (ext <> cty') cl
 
 copyRule :: (Ord a, Ord l) => LAxiom a l -> BipoleRule a l
 copyRule ax = let fr = axToFormula ax in case fr of
@@ -138,8 +139,8 @@ copyRule ax = let fr = axToFormula ax in case fr of
     d' ::: MRFullGoal g2 d2 cty' cl <- leftActive mempty [(O f2)] EmptyZetaXi
     let b = lcBase d2 ; ext = extend b cty
     guard (respects b cty)
-    pure $ (Copy (ImplL d d' fr) ax) 
-       ::: (LS (insert ax (g1 <> g2)) (d1 <> d2) (ext <> cty') cl)
+    pure $ Copy (ImplL d d' f2) ax
+       ::: LS (insert ax (g1 <> g2)) (d1 <> d2) (ext <> cty') cl
 
 implRight :: (Ord a, Ord l) => LFormula KImpl a l -> BipoleRule a l
 implRight fr@(Impl f1 eb cty f2 l) = do
