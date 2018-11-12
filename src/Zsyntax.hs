@@ -6,6 +6,7 @@ module Zsyntax
   , toLabelledGoal
   , O.SearchRes
   , O.Extraction(..)
+  , O.FailureReason(..)
   , O.extractResults
   ) where
 
