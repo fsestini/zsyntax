@@ -20,7 +20,7 @@ module Zsyntax.CLI.Execution
 
 import Data.Function (on)
 import Data.List (sortBy)
-import Data.Maybe (isNothing)
+import Data.Maybe (isJust)
 import Data.Foldable (toList)
 import Control.Monad.State
 import Control.Monad.Except
@@ -55,7 +55,7 @@ search i s = (res, srcd, g)
 --------------------------------------------------------------------------------
 
 mHas :: Ord k => k -> Map k v -> Bool
-mHas k = isNothing . M.lookup k
+mHas k = isJust . M.lookup k
 
 -- type Transition = (SFormula () Atom , SFormula () Atom)
 
