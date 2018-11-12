@@ -29,7 +29,8 @@ import Control.Monad.Except
 -- import Data.MultiSet.NonEmpty (fromNEList, toMultiSet)
 
 import Zsyntax.ReactionList
-import Zsyntax.Formula (Sequent(..), Axiom, BioFormula, axiom, atom, conj,axiom')
+import Zsyntax.Formula ( Sequent(..), Axiom, BioFormula, axiom, atom, conj
+                       , axiom', ppBioFormula)
 import Zsyntax.Labelled.Formula (withOpaque, elemBase, bConj, unEB,maybeBFormula)
 -- , decideN, decideOF, bConj, unEB, bAtom)
 import Zsyntax.Labelled.Rule (LSequent(..), GoalNSequent(..), lcBase,withNeutral)
