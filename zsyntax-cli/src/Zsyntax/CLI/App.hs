@@ -144,8 +144,7 @@ execComm (AddTheorem nm q) = logError $ do
   printQR qr
   case qr of
     Success (_ ::: sequent) ->
-      saveTheorem nm q sequent >>=
-        maybe (pure ()) (confirmReplace "Theorem" nm)
+      saveTheorem nm q sequent >>= maybe (pure ()) (confirmReplace "Theorem" nm)
     _ -> pure ()
 execComm (RemoveTheorems thms) = removeAll _ThrmEnv thms
 execComm (RefreshTheorem tm) = logError $
