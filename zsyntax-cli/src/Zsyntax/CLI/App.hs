@@ -150,13 +150,12 @@ execComm (RefreshTheorem tm) = logError $
 execComm (Query q) = logError $ query q >>= printQR
 execComm (LoadFile _) = putStrLn' "Not implemented yet." -- loadFile p
 execComm (OpenFile _) = putStrLn' "Not implemented yet."
-execComm (SaveToFile _) = putStrLn' "Not implemented yet."
--- do
---   (axs, tms) <- (,) <$> use axEnv <*> use tmEnv
---   let axComms = fmap (uncurry exportAxiom) (M.toList axs)
---       tmComms = fmap (uncurry exportTheorem . second fst) (M.toList tms)
---   liftIO . writeFile p $
---     concat . (++ ["\n"]) . intersperse "\n" $ axComms ++ tmComms
+execComm (SaveToFile p) = do
+  (axs, tms) <- (,) <$> use axEnv <*> use tmEnv
+  let axComms = fmap (uncurry exportAxiom) (M.toList axs)
+      tmComms = fmap (uncurry exportTheorem . second fst) (M.toList tms)
+  liftIO . writeFile p $
+    concat . (++ ["\n"]) . intersperse "\n" $ axComms ++ tmComms
 execComm ListAxioms = printAxioms
 execComm ListTheorems = printTheorems
 execComm Clear = App (put initialState)
