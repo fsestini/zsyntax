@@ -49,7 +49,6 @@ library
     , microlens-platform
     , haskeline
     , extra
-    , otter-loop
     , zsyntax
   default-language: Haskell2010
 
