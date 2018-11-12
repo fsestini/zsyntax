@@ -110,7 +110,7 @@ printQR (Success (term ::: _)) = do
 printQR (Failure reason found) = do
   putStrLn' (reasonStr reason)
   printWhatFound found
-  where reasonStr SpaceExhausted = "Reached search limit."
+  where reasonStr SpaceTooBig = "Reached search limit."
         reasonStr NotATheorem   = "Not a theorem."
 
 printError :: MonadIO m => Error -> m ()
