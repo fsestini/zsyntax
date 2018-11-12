@@ -1,4 +1,5 @@
-# zsyntax core library
+zsyntax core library
+====================
 
 This library is a Haskell implementation of an automated theorem
 prover for Zsyntax, a logical calculus for molecular biology inspired
