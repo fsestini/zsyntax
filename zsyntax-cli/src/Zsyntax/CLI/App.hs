@@ -84,16 +84,18 @@ printTheorems = do
   where printTheorem nm (QS _ from to') =
           concat [nm, " : ", prettyAggr from, prettyAggr to']
 
--- fstL :: Lens' (a,b) a
--- fstL = lens fst (\p x -> (x, snd p))
-
--- sndL :: Lens' (a,b) b
--- sndL = lens snd (\p x -> second (const x) p)
+ppLSequent :: LSequent Atom Int -> String
+ppLSequent (LS _ lc _ c) = concat
+  [ concat (intersperse ","
+             (fmap (withNeutral (ppLFormula ppAtom)) (toList lc)))
+  , " ==> "
+  , withOpaque (ppLFormula ppAtom) c
+  ]
 
 printWhatFound :: MonadIO m => [LSequent Atom Int] -> m ()
-printWhatFound _ = pure () -- do
-  -- putStrLn "Some provable sequents: "
-  -- mapM_ putStrLn (fmap (prettyNS pretty) . take 3 $ seqs)
+printWhatFound seqs = liftIO $ do
+  putStrLn "Some provable sequents: "
+  mapM_ putStrLn (fmap ppLSequent . take 3 $ seqs)
 
 ppTransition :: (Opaque Atom (), Opaque Atom ()) -> String
 ppTransition (O f1, O f2) = pp f1 ++ " --> " ++ pp f2
