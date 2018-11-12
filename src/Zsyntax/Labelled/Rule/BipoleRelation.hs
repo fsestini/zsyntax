@@ -76,11 +76,12 @@ instance Subsumable s => Subsumable (tm ::: s) where
 matchMultiSet :: Ord a => MultiSet a -> MultiSet a -> Maybe (MultiSet a)
 matchMultiSet m1 m2 = if isSubsetOf m1 m2 then Just (m2 \\ m1) else Nothing
 
-matchLinearCtxt :: (Ord a, Ord l) => SchemaLCtxt a l -> LCtxt a l -> Maybe (LCtxt a l)
+matchLinearCtxt
+  :: (Ord a, Ord l) => SchemaLCtxt a l -> LCtxt a l -> Maybe (LCtxt a l)
 matchLinearCtxt (SLC slc) = matchMultiSet slc
 
 matchSchema :: (Ord a, Ord l)
-      => SSchema a l act -> AnnLSequent a l -> Maybe (DTMatchRes a l act)
+            => SSchema a l act -> AnnLSequent a l -> Maybe (DTMatchRes a l act)
 matchSchema (SSEmptyGoal delta) (term ::: LS gamma delta' cty goal) = do
   delta'' <- matchLinearCtxt delta delta'
   pure (term ::: MRFullGoal gamma delta'' cty goal)
