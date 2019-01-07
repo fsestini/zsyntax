@@ -1,0 +1,17 @@
+zsyntax core library
+====================
+
+This library is a Haskell implementation of an automated theorem
+prover for Zsyntax, a logical calculus for molecular biology inspired
+by linear logic, that can be used to automatically verify biological
+pathways expressed as logical sequents.
+
+The prover implements fully-automatic forward proof search for the
+Zsyntax sequent calculus (ZBS), a logical calculus for a
+context-sensitive fragment of multiplicative linear logic where
+sequents are decorated so to account for the biochemical constraints.
+
+The theory behind the Zsyntax sequent calculus and its proof search
+procedure is developed in F. Sestini, S. Crafa, Proof-search in a
+context-sensitive logic for molecular biology, Journal of Logic and
+Computation, 2018 (https://doi.org/10.1093/logcom/exy028).

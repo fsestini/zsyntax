@@ -1,0 +1,15 @@
+add axiom ax1 (ICL) (MUS81) unless ()
+add axiom ax2 (MUS81,FANCD21) (FAN1) unless ()
+add axiom ax3 (FANCM,ATR) (FAcore) unless ((super CHKREC))
+add axiom ax4 (FANCM,ATM) (FAcore) unless ((super CHKREC))
+add axiom ax5 (FAcore,ATM) (FANCD21) unless ((super USP1))
+add axiom ax6 (FAcore,ATR) (FANCD21) unless ((super USP1))
+add axiom ax7 (FAcore,H2AX,DSB) (FANCD21) unless ((super USP1))
+add axiom ax8 (ICL) (FANCM) unless ((super CHKREC))
+add axiom ax9 (FAN1) (DSB) unless ((super HRR,NHEJ))
+add axiom ax10 (XPF) (DBS) unless ((super HRR,NHEJ))
+add axiom ax11 (MUS81,FAN1) (ADD) unless ((super PCNATLS))
+add axiom infatm (ATM) (ATM,ATM) unless ()
+add axiom inficl (ICL) (ICL,ICL) unless ()
+query (ICL, ATM) (DSB, ADD) with all axioms
+

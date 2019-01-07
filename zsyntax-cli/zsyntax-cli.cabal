@@ -1,0 +1,66 @@
+name:           zsyntax-cli
+version:        0.2.0.0
+description:    Command line interface to Zsyntax, a logical calculus for
+                biochemical interactions.
+homepage:       https://github.com/fsestini/zsyntax#readme
+bug-reports:    https://github.com/fsestini/zsyntax/issues
+author:         Filippo Sestini
+maintainer:     sestini.filippo@gmail.com
+copyright:      2018 Filippo Sestini
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 2
+
+extra-source-files:
+    README
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/fsestini/zsyntax
+
+library
+  exposed-modules:
+      Zsyntax.CLI.App
+      Zsyntax.CLI.Command
+      Zsyntax.CLI.Execution
+      Zsyntax.CLI.Structures
+      Zsyntax.CLI.Utils
+
+  default-extensions:
+      LambdaCase
+      TupleSections
+  hs-source-dirs: src
+  ghc-options:
+      -Wall
+      -Wcompat
+      -Wincomplete-record-updates
+      -Wincomplete-uni-patterns
+      -Wredundant-constraints
+      -Wno-unticked-promoted-constructors
+      -- -Werror
+  build-depends:
+      base >=4.7 && <5
+    , constraints
+    , containers
+    , multiset
+    , mtl
+    , parsec
+    , composition
+    , microlens-platform
+    , haskeline
+    , extra
+    , zsyntax
+  default-language: Haskell2010
+
+executable zsyntax
+  main-is: Main.hs
+  other-modules:
+      Paths_zsyntax_cli
+  hs-source-dirs: .
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , zsyntax-cli
+  default-language: Haskell2010

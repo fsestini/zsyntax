@@ -1,0 +1,10 @@
+zsyntax-cli
+===========
+
+Command line interface to Zsyntax, a logical calculus for biochemical
+interactions.
+
+Build instructions
+------------------
+
+> $ cabal new-install zsyntax-cli
