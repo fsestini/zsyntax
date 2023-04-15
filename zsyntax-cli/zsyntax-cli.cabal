@@ -1,3 +1,4 @@
+cabal-version:  2.4
 name:           zsyntax-cli
 version:        0.2.0.0
 description:    Command line interface to Zsyntax, a logical calculus for
@@ -7,10 +8,9 @@ bug-reports:    https://github.com/fsestini/zsyntax/issues
 author:         Filippo Sestini
 maintainer:     sestini.filippo@gmail.com
 copyright:      2018 Filippo Sestini
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 2
 
 extra-source-files:
     README
@@ -42,16 +42,17 @@ library
       -- -Werror
   build-depends:
       base >=4.7 && <5
-    , constraints
-    , containers
-    , multiset
-    , mtl
-    , parsec
-    , composition
-    , microlens-platform
-    , haskeline
-    , extra
-    , zsyntax
+    , constraints < 0.13.5
+    , containers < 0.6.6
+    , multiset < 0.3.5
+    , mtl < 2.2.3
+    , parsec < 3.1.16
+    , composition < 0.1.3
+    , microlens-platform < 0.4.4
+    , haskeline < 0.8.3
+    , extra < 1.7.14
+    , zsyntax < 0.2.1
+    , exceptions < 0.10.5  
   default-language: Haskell2010
 
 executable zsyntax

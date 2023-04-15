@@ -24,6 +24,7 @@ import Zsyntax.CLI.Structures
 import Zsyntax.CLI.Execution
 import Zsyntax.CLI.Command
 -- import Zsyntax.Formula.BioFormula (prettyBioF)
+import Control.Monad.Catch (MonadThrow, MonadMask, MonadCatch)
 
 putStrLn' :: MonadIO m => String -> m ()
 putStrLn' = liftIO . putStrLn
@@ -41,15 +42,16 @@ instance HasThrmEnv AppState where _ThrmEnv = tmEnv
 instance HasSearchConfig AppState where _SearchConfig = searchConfig
   
 -- Just a copy of what is defined in haskeline for Control.Monad.Trans.State
-instance MonadException App where
-  controlIO f = App . StateT $ \s -> controlIO $ \(RunIO run) ->
-    let run' :: RunIO App
-        run' = RunIO (fmap (App . StateT . const) . run . flip runStateT s . unApp)
-    in fmap (flip runStateT s . unApp) $ f run'
+-- instance MonadException App where
+--   controlIO f = App . StateT $ \s -> controlIO $ \(RunIO run) ->
+--     let run' :: RunIO App
+--         run' = RunIO (fmap (App . StateT . const) . run . flip runStateT s . unApp)
+--     in fmap (flip runStateT s . unApp) $ f run'
 
 newtype App a = App
   { unApp :: StateT AppState IO a
-  } deriving (Functor, Applicative, Monad, MonadState AppState, MonadIO)
+  } deriving (Functor, Applicative, Monad, MonadState AppState, MonadIO,
+              MonadThrow, MonadCatch, MonadMask)
 
 confirmReplace :: MonadIO m => String -> Name -> m () -> m ()
 confirmReplace entity nm m = go
