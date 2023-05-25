@@ -1,7 +1,7 @@
 cabal-version:  2.4
 name:           zsyntax-cli
 version:        0.2.0.1
-description:    Command line interface to Zsyntax, a logical calculus for
+description:    Command line interface to Zsyntax, a theorem prover for
                 biochemical interactions.
 homepage:       https://github.com/fsestini/zsyntax#readme
 bug-reports:    https://github.com/fsestini/zsyntax/issues
