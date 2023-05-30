@@ -90,5 +90,8 @@ test-suite zsyntax-test
                   , containers >= 0.6.0 && < 0.7
                   , multiset >= 0.3.4 && < 0.4
                   , mtl >= 2.2.2 && < 2.3
+                  , text
+                  , hspec
+                  , QuickCheck
   main-is:          Main.hs
   default-language: Haskell2010
