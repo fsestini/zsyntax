@@ -2,8 +2,8 @@ module Otter.Rule where
 
 import Data.Bifunctor (bimap)
 import Control.Monad (MonadPlus(..), ap)
-import Control.Monad.Fail (MonadFail(..))
 import Control.Applicative (Alternative(..))
+import Data.Functor ((<&>))
 
 {-| An inference rule schema is just a curried n-ary function where n is an
     unbounded, unspecified number of input premises, possibly zero (in that
@@ -32,14 +32,13 @@ apply :: ProperRule a b -> a -> ([b], [ProperRule a b])
 apply f = maybe mempty (either ((,[]) . pure) (([],) . pure)) . unRule . f
 
 instance Functor (Rule a) where
-  fmap f rel = rel >>= (return . f)
+  fmap f rel = rel <&> f
 
 instance Applicative (Rule a) where
-  pure = return
+  pure = Rule . Just . Left
   (<*>) = ap
 
 instance Monad (Rule a) where
-  return = Rule . Just . Left
   (Rule rel) >>= f =
     Rule $ rel >>= either (unRule . f) (Just . Right . fmap (>>= f))
 

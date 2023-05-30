@@ -40,6 +40,7 @@ module Otter.Internal.Structures
    where
 
 import Otter.Rule
+import Data.Kind (Type)
 
 class Subsumable n where
   subsumes :: n -> n -> Bool
@@ -57,7 +58,7 @@ data Stage
 
 -- | Type of search nodes in the search space, given by
 -- a node together with a proof search stage.
-data SearchNode :: Stage -> * -> * where
+data SearchNode :: Stage -> Type -> Type where
   InitN :: seq -> SearchNode Initial seq
   ActiveN :: seq -> SearchNode Active seq
   InactiveN :: seq -> SearchNode Inactive seq

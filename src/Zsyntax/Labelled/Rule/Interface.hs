@@ -29,6 +29,7 @@ import Zsyntax.Labelled.Formula
 import Data.Constraint (Dict(..))
 import Data.MultiSet (MultiSet)
 import Data.Function (on)
+import Data.Kind (Type)
 
 -- import Core.FormulaKind
 -- import Formula
@@ -154,7 +155,7 @@ deriving instance (Ord l, Ord a) => Semigroup (SchemaLCtxt a l)
 data ActCase = FullXiEmptyResult | EmptyXiFullResult
 
 -- | Sequent schemas.
-data SSchema :: * -> * -> ActCase -> * where
+data SSchema :: Type -> Type -> ActCase -> Type where
   SSEmptyGoal :: SchemaLCtxt a l -> SSchema a l EmptyXiFullResult
   SSFullGoal
     :: SchemaLCtxt a l
@@ -163,13 +164,13 @@ data SSchema :: * -> * -> ActCase -> * where
     -> SSchema a l FullXiEmptyResult
 
 -- | Pre-sequents to be used as match results.
-data MatchRes :: * -> * -> ActCase -> * where
+data MatchRes :: Type -> Type -> ActCase -> Type where
   MREmptyGoal :: UCtxt a l -> LCtxt a l -> MatchRes a l FullXiEmptyResult
   MRFullGoal
     :: UCtxt a l -> LCtxt a l -> ReactionList a -> Opaque a l
     -> MatchRes a l EmptyXiFullResult
 
-data ZetaXi :: * -> * -> ActCase -> * where
+data ZetaXi :: Type -> Type -> ActCase -> Type where
   FullZetaXi
     :: ReactionList a
     -> Opaque a l

@@ -48,6 +48,7 @@ import Zsyntax.ReactionList
 import Data.MultiSet (MultiSet, singleton)
 import Data.Foldable (fold)
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Kind (Type)
 
 newtype ElemBase a = ElemBase { unEB :: MultiSet a }
   deriving (Semigroup, Monoid, Eq, Ord, Show)
@@ -58,7 +59,7 @@ type ReactionList a = RList (ElemBase a) (CtrlSet a)
 
 -- | Type of labelled formulas, indexed by a formula kind and parameterized by
 -- the type of the labels and of the logical atoms.
-data LFormula :: FKind -> * -> * -> * where
+data LFormula :: FKind -> Type -> Type -> Type where
   Atom :: a -> LFormula KAtom a l
   Conj
     :: LFormula k1 a l

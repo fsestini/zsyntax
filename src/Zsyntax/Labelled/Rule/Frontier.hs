@@ -19,12 +19,13 @@ import Data.Set (Set)
 import qualified Data.Set as S (singleton, fromList)
 import Data.Function (on)
 import Control.Monad (join)
+import Data.Kind (Type)
 
 import Zsyntax.Labelled.Rule.BipoleRelation
 import Zsyntax.Labelled.Rule.Interface
 import Zsyntax.Labelled.Formula
 
-data DecoratedFormula :: * -> * -> * where
+data DecoratedFormula :: Type -> Type -> Type where
   Unrestr :: LAxiom a l -> DecoratedFormula a l
   LinNeg :: LFormula KImpl a l -> DecoratedFormula a l
   LinPos :: Opaque a l -> DecoratedFormula a l
