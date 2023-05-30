@@ -145,7 +145,7 @@ impl (Formula f1) eb cs (Formula f2) = Formula (Impl f1 eb cs f2 ())
 data Sequent a =
   SQ { _sqUC    :: Set (Axiom a)
      , _sqLC    :: MultiSet (Formula a)
-     , _sqConcl :: (Formula a)
+     , _sqConcl :: Formula a
      }
   deriving Show
 
