@@ -95,3 +95,16 @@ test-suite zsyntax-test
                   , QuickCheck
   main-is:          Main.hs
   default-language: Haskell2010
+
+benchmark zsyntax-benchmark
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   benchmark
+  build-depends:    base >=4.7 && <5
+                  , zsyntax
+                  , containers >= 0.6.0 && < 0.7
+                  , multiset >= 0.3.4 && < 0.4
+                  , mtl >= 2.2.2 && < 2.3
+                  , text
+                  , criterion
+  main-is:          Main.hs
+  default-language: Haskell2010
