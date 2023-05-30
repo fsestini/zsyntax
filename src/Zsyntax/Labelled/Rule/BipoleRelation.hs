@@ -2,9 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-| Module of derived rule relations. -}
@@ -33,9 +31,10 @@ import Zsyntax.Labelled.Rule.Interface
 import Zsyntax.Labelled.Formula
 import Zsyntax.Labelled.DerivationTerm
 import Zsyntax.ReactionList
+import Data.Bifunctor.Sum (Sum(..))
 
 respects :: Ord a => ElemBase a -> RList (ElemBase a) (CtrlSet a) -> Bool
-respects = respectsRList (\eb cty -> msRespectsCS (unEB eb) cty)
+respects = respectsRList (msRespectsCS . unEB)
 
 --------------------------------------------------------------------------------
 
@@ -56,11 +55,18 @@ type BipoleRel a l = Rule (AnnLSequent a l)
 -- derivation term-decorated sequents as both input and output.
 type BipoleRule a l = Rule (AnnLSequent a l) (AnnLSequent a l)
 
--- | Predicate identifying those formula kinds that correspond to focusable
--- formulas.
-class IsFocusable (k :: FKind) where
-instance IsFocusable KAtom where
-instance IsFocusable KConj where
+-- -- | Predicate identifying those formula kinds that correspond to focusable
+-- -- formulas.
+-- class IsFocusable (k :: FKind) where
+-- instance IsFocusable KAtom where
+-- instance IsFocusable KConj where
+
+type Focusable = Sum LAtom LConj
+
+injFocusable :: Focusable a l -> LFormula a l
+injFocusable = \case
+  L2 a -> injAtom a
+  R2 c -> injConj c
 
 type FocMatchRes a l = MatchRes a l FullXiEmptyResult
 type DTFocMatchRes a l = DerivationTerm a l ::: FocMatchRes a l
@@ -100,53 +106,56 @@ matchRel delta zetaxi = match . matchSchema $
 
 positiveFocalDispatch
   :: (Ord l, Ord a)
-  => LFormula k a l
+  => LFormula a l
   -> BipoleRel a l (DTFocMatchRes a l)
 positiveFocalDispatch fr = case fr of
-  Atom a -> pure (Init a ::: MREmptyGoal mempty (singleton (N fr)))
-  Impl {} -> match (matchSchema (SSFullGoal (SLC mempty) mempty (O fr)))
+  Atom a -> pure (Init a ::: MREmptyGoal mempty (singleton (L2 (LAtom a))))
+  Impl {} -> match (matchSchema (SSFullGoal (SLC mempty) mempty fr))
   Conj f1 f2 l -> do
     d ::: MREmptyGoal g1 d1 <- positiveFocalDispatch f1
     d' ::: MREmptyGoal g2 d2 <- positiveFocalDispatch f2
     pure $ ConjR d d' l ::: MREmptyGoal (g1 <> g2) (d1 <> d2)
 
 leftActive
-  :: (Ord l, Ord a) => LCtxt a l -> [Opaque a l] -> ZetaXi a l act
+  :: (Ord l, Ord a) => LCtxt a l -> [LFormula a l] -> ZetaXi a l act
   -> BipoleRel a l (DTMatchRes a l act)
 leftActive delta [] zetaxi = matchRel delta zetaxi
-leftActive delta (O f : rest) zetaxi = withMaybeNeutral f
-  (leftActive (MS.insert (N f) delta) rest zetaxi)
-  (\(Conj f1 f2 _) -> do
-      d ::: res <- leftActive delta (O f2 : O f1 : rest) zetaxi
+leftActive delta (f : rest) zetaxi = withMaybeNeutral f
+  (\n -> leftActive (MS.insert n delta) rest zetaxi)
+  (\(LConj f1 f2 _) -> do
+      d ::: res <- leftActive delta (f2 : f1 : rest) zetaxi
       pure $ ConjL d ::: res)
 
-focus :: (Ord l, Ord a, IsFocusable k) => LFormula k a l -> BipoleRule a l
+-- focus :: (Ord l, Ord a, IsFocusable k) => LFormula k a l -> BipoleRule a l
+focus :: (Ord l, Ord a) => Focusable a l -> BipoleRule a l
 focus formula = do
-  d ::: MREmptyGoal gamma delta <- positiveFocalDispatch formula
-  pure (d ::: LS gamma delta mempty (O formula))
+  d ::: MREmptyGoal gamma delta <- positiveFocalDispatch formula'
+  pure (d ::: LS gamma delta mempty formula')
+  where formula' = injFocusable formula
 
-implLeft :: (Ord l, Ord a) => LFormula KImpl a l -> BipoleRule a l
-implLeft fr@(Impl f1 _ cty f2 _) = do
+implLeft :: (Ord l, Ord a) => LImpl a l -> BipoleRule a l
+implLeft fr@(LImpl f1 _ cty f2 _) = do
   d  ::: MREmptyGoal g1 d1 <- positiveFocalDispatch f1
-  d' ::: MRFullGoal g2 d2 cty' cl <- leftActive mempty [(O f2)] EmptyZetaXi
+  d' ::: MRFullGoal g2 d2 cty' cl <- leftActive mempty [f2] EmptyZetaXi
   let b = lcBase d2
       ext = extend b cty
   guard (respects b cty)
   pure $ ImplL d d' f2
-     ::: LS (g1 <> g2) (MS.insert (N fr) (d1 <> d2)) (ext <> cty') cl
+     ::: LS (g1 <> g2) (MS.insert (R2 fr) (d1 <> d2)) (ext <> cty') cl
 
 copyRule :: (Ord a, Ord l) => LAxiom a l -> BipoleRule a l
 copyRule ax = let fr = axToFormula ax in case fr of
-  Impl f1 _ cty f2 _ -> do
+  LImpl f1 _ cty f2 _ -> do
     d  ::: MREmptyGoal g1 d1 <- positiveFocalDispatch f1
-    d' ::: MRFullGoal g2 d2 cty' cl <- leftActive mempty [(O f2)] EmptyZetaXi
+    d' ::: MRFullGoal g2 d2 cty' cl <- leftActive mempty [f2] EmptyZetaXi
     let b = lcBase d2 ; ext = extend b cty
     guard (respects b cty)
     pure $ Copy (ImplL d d' f2) ax
        ::: LS (insert ax (g1 <> g2)) (d1 <> d2) (ext <> cty') cl
 
-implRight :: (Ord a, Ord l) => LFormula KImpl a l -> BipoleRule a l
-implRight fr@(Impl f1 eb cty f2 l) = do
-  tm ::: MREmptyGoal g d <- leftActive mempty [(O f1)] (FullZetaXi cty (O f2))
+implRight :: (Ord a, Ord l) => LImpl a l -> BipoleRule a l
+implRight fr@(LImpl f1 eb cty f2 l) = do
+  tm ::: MREmptyGoal g d <- leftActive mempty [f1] (FullZetaXi cty f2)
   guard (lcBase d == eb)
-  pure $ ImplR tm fr eb cty l ::: LS g d mempty (O fr)
+  pure $ ImplR tm fr' eb cty l ::: LS g d mempty fr'
+  where fr' = injImpl fr

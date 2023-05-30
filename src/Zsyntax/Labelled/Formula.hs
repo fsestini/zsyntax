@@ -1,40 +1,53 @@
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Zsyntax.Labelled.Formula
-  ( FKind(..)
-  , Label(..)
+  (
+   Label
+  -- FKind(..)
   , ElemBase(..)
   , ReactionList
   -- * Labelled formulas
   , LFormula(..)
+  , LAtom(..)
+  , LConj(..)
+  , LImpl(..)
+  , pattern Atom
+  , pattern Conj
+  , pattern Impl
+  , foldLSum
+  , injAtom
+  , injConj
+  , injImpl
   , ppLFormula
   , elemBase
   , label
-  , frmlHetEq
-  , frmlHetOrd
+  -- , frmlHetEq
+  -- , frmlHetOrd
   , deepHetComp
   -- * Labelled axioms
   , LAxiom(..)
   , axLabel
   , axToFormula
   , ppLAxiom
-  -- * Opaque formulas
-  , Opaque(..)
-  , withOpaque
-  , oConj
-  , oImpl
+  , traverseAtoms
+  -- -- * Opaque formulas
+  -- , Opaque(..)
+  -- , withOpaque
+  -- , oConj
+  -- , oImpl
   -- * Basic formulas
   , BFormula(..)
   , bAtom
@@ -45,20 +58,103 @@ module Zsyntax.Labelled.Formula
   ) where
 
 import Zsyntax.ReactionList
-import Data.MultiSet (MultiSet, singleton)
+import Data.MultiSet (MultiSet)
+import qualified Data.MultiSet as M
 import Data.Foldable (fold)
 import Data.List.NonEmpty (NonEmpty(..))
-import Data.Kind (Type)
+import Data.Bifunctor.Sum (Sum (..))
+import Data.Function (on)
+import Data.Bitraversable (Bitraversable(bitraverse))
+import Data.Text (Text)
 
 newtype ElemBase a = ElemBase { unEB :: MultiSet a }
   deriving (Semigroup, Monoid, Eq, Ord, Show)
 
-data FKind = KAtom | KConj | KImpl
+traverseElemBase :: (Ord b, Applicative f) => (a -> f b) -> ElemBase a -> f (ElemBase b)
+traverseElemBase f (ElemBase b) =
+  ElemBase . M.fromList <$> traverse f (M.toList b)
+
+-- data FKind = KAtom | KConj | KImpl
 
 type ReactionList a = RList (ElemBase a) (CtrlSet a)
 
--- | Type of labelled formulas, indexed by a formula kind and parameterized by
--- the type of the labels and of the logical atoms.
+newtype LAtom a l = LAtom { atomAtom :: a }
+  deriving (Show, Functor, Foldable, Traversable)
+data LConj a l = LConj
+  { conjLhs  :: LFormula a l
+  , conjRhs :: LFormula a l
+  , conjLabel :: l
+  } deriving (Show, Functor, Foldable, Traversable)
+data LImpl a l = LImpl
+  { implLhs  :: LFormula a l
+  , implBase :: ElemBase a
+  , implRL   :: ReactionList a
+  , implRhs  :: LFormula a l
+  , implLabel :: l
+  } deriving (Show, Functor, Foldable, Traversable)
+
+instance Eq a => Eq (LAtom a l) where (==) = on (==) atomAtom
+instance Eq l => Eq (LImpl a l) where (==) = on (==) implLabel
+instance Eq l => Eq (LConj a l) where (==) = on (==) conjLabel
+
+instance Ord a => Ord (LAtom a l) where compare = on compare atomAtom
+instance Ord l => Ord (LConj a l) where compare = on compare conjLabel
+instance Ord l => Ord (LImpl a l) where compare = on compare implLabel
+
+-- | Type of labelled formulas, parameterized by the type of the labels and of
+-- the logical atoms.
+newtype LFormula a l = LFormula { unLFormula :: Sum LAtom (Sum LConj LImpl) a l }
+  deriving newtype (Show, Functor, Foldable)
+
+instance Traversable (LFormula a) where
+  traverse f (LFormula x) = LFormula <$> traverse f x
+
+pattern Atom x = LFormula (L2 (LAtom x))
+pattern Conj x y l = LFormula (R2 (L2 (LConj x y l)))
+pattern Impl x b r y l = LFormula (R2 (R2 (LImpl x b r y l)))
+{-# COMPLETE Atom, Conj, Impl #-}
+
+foldLSum :: (LAtom a l -> b) -> (LConj a l -> b) -> (LImpl a l -> b)
+         -> LFormula a l -> b
+foldLSum f g h (LFormula x) = case x of
+  L2 a -> f a
+  R2 (L2 c) -> g c
+  R2 (R2 i) -> h i
+
+injAtom :: LAtom a l -> LFormula a l
+injAtom = LFormula . L2
+
+injConj :: LConj a l -> LFormula a l
+injConj = LFormula . R2 . L2
+
+injImpl :: LImpl a l -> LFormula a l
+injImpl = LFormula . R2 . R2
+
+type Label a l = Either a l
+
+-- | Returns the label of a labelled formula.
+label :: LFormula a l -> Label a l
+label = \case
+  Atom a -> Left a
+  Conj _ _ l -> Right l
+  Impl _ _ _ _ l -> Right l
+
+-- | Perform an effectful traversal of all atomic subformulas.
+--
+-- `LFormula` is not functorial in the first index, hence not even bitraversable,
+-- so this needs a dedicated function, for which no laws can be guaranteed.
+traverseAtoms :: (Ord b, Applicative f) => (a -> f b) -> LFormula a l -> f (LFormula b l)
+traverseAtoms f (Atom x) = Atom <$> f x
+traverseAtoms f (Conj x y l) =
+  Conj <$> traverseAtoms f x <*> traverseAtoms f y <*> pure l
+traverseAtoms f (Impl x b r y l) =
+  Impl <$> traverseAtoms f x
+       <*> traverseElemBase f b
+       <*> bitraverse (traverseElemBase f) (traverseCtrlSet f) r
+       <*> traverseAtoms f y <*> pure l
+
+{-
+
 data LFormula :: FKind -> Type -> Type -> Type where
   Atom :: a -> LFormula KAtom a l
   Conj
@@ -89,31 +185,38 @@ frmlHetEq f1 f2 = label f1 == label f2
 -- labels have been assigned in a sensible way.
 frmlHetOrd :: (Ord a, Ord l) => LFormula k1 a l -> LFormula k2 a l -> Ordering
 frmlHetOrd f1 f2 = compare (label f1) (label f2)
+-}
+
+instance (Eq a, Eq l) => Eq (LFormula a l) where
+  (==) = on (==) label
 
 foldF
   :: (a -> b)
   -> (b -> b -> l -> b)
   -> (b -> ElemBase a -> ReactionList a -> b -> l -> b)
-  -> LFormula k a l -> b
+  -> LFormula a l -> b
 foldF f _ _ (Atom a) = f a
 foldF f g h (Conj f1 f2 l) = g (foldF f g h f1) (foldF f g h f2) l
 foldF f g h (Impl f1 eb cty f2 l) = h (foldF f g h f1) eb cty (foldF f g h f2) l
 
-deriving instance Functor (LFormula k a)
-deriving instance Foldable (LFormula k a)
-deriving instance Traversable (LFormula k a)
+-- | Pretty-print labelled implications.
+ppLImpl :: (a -> Text) -> LImpl a l -> Text
+ppLImpl p (LImpl a _ _ b _) =
+  fold ["(", ppLFormula p a, " → ", ppLFormula p b, ")"]
 
 -- | Pretty-print labelled formulas, given a way to pretty-print its atoms.
 --
 -- Note that this function ignores labels, for which one should use the 'Show'
 -- instance.
-ppLFormula :: (a -> String) -> LFormula k a l -> String
+ppLFormula :: (a -> Text) -> LFormula a l -> Text
 ppLFormula p = foldF p (\a b _ -> fold [a, " ⊗ ", b])
                      (\a _ _ b _ -> fold ["(", a, " → ", b, ")"])
 
 -- | Returns the elementary base of a labelled formula.
-elemBase :: Ord a => LFormula k a l -> ElemBase a
-elemBase = foldF (ElemBase . singleton) (\a b _ -> a <> b) (\_ e _ _ _ -> e)
+elemBase :: Ord a => LFormula a l -> ElemBase a
+elemBase = foldF (ElemBase . M.singleton) (\a b _ -> a <> b) (\_ e _ _ _ -> e)
+
+{-
 
 --------------------------------------------------------------------------------
 -- Opaque formulas
@@ -145,6 +248,8 @@ oImpl :: Opaque a l -> ElemBase a -> ReactionList a -> Opaque a l -> l
       -> LFormula KImpl a l
 oImpl (O f1) eb cty (O f2) = Impl f1 eb cty f2
 
+-}
+
 --------------------------------------------------------------------------------
 -- Basic formulas
 
@@ -167,9 +272,9 @@ bConj l f1 f2 = BConj f1 f2 l
 --
 -- Note that the result formula is opaque, since it could be an atom as well as
 -- a conjunction, and thus has no determined index.
-bfToFormula :: BFormula a l -> Opaque a l
-bfToFormula (BAtom x) = O (Atom x)
-bfToFormula (BConj f1 f2 l) = O (oConj (bfToFormula f1) (bfToFormula f2) l)
+bfToFormula :: BFormula a l -> LFormula a l
+bfToFormula (BAtom x) = Atom x
+bfToFormula (BConj f1 f2 l) = Conj (bfToFormula f1) (bfToFormula f2) l
 
 -- | Unrolls a basic formula, discarding all labels and returning a (non-empty)
 -- list of all its constituent logical atoms.
@@ -179,7 +284,7 @@ bfToAtoms (BConj f1 f2 _) = bfToAtoms f1 <> bfToAtoms f2
 
 -- | Decides whether the input labelled formula is a basic formula, and if so,
 -- it returns it wrapped in 'Just' as a proper basic formula.
-maybeBFormula :: LFormula k a l -> Maybe (BFormula a l)
+maybeBFormula :: LFormula a l -> Maybe (BFormula a l)
 maybeBFormula (Atom x) = pure (BAtom x)
 maybeBFormula (Conj f1 f2 l) =
   BConj <$> maybeBFormula f1 <*> maybeBFormula f2 <*> pure l
@@ -192,32 +297,31 @@ data LAxiom a l = LAx (BFormula a l) (ReactionList a) (BFormula a l) l
   deriving (Show, Functor, Foldable, Traversable)
 
 -- | Converts a labelled axiom to a labelled formula.
-axToFormula :: Ord a => LAxiom a l -> LFormula KImpl a l
-axToFormula (LAx f1 _ f2 l) = case (bfToFormula f1, bfToFormula f2) of
-  (O f1', O f2') ->
-    Impl (mapCty (const mempty) f1') mempty mempty (mapCty (const mempty) f2') l
+axToFormula :: Ord a => LAxiom a l -> LImpl a l
+axToFormula (LAx f1 _ f2 l) = LImpl f1' mempty mempty f2' l
+  where f1' = bfToFormula f1 ; f2' =  bfToFormula f2
+  -- case (bfToFormula f1, bfToFormula f2) of
+  -- (O f1', O f2') ->
+  --   Impl (mapCty (const mempty) f1') mempty mempty (mapCty (const mempty) f2') l
 
 -- | Pretty-prints a labelled axiom, given a way to pretty-print its atoms.
 --
 -- Note that this function ignores labels, for which one should rely on the
 -- 'Show' instance.
-ppLAxiom :: Ord a => (a -> String) -> LAxiom a l -> String
-ppLAxiom p ax = ppLFormula p (axToFormula ax)
+ppLAxiom :: Ord a => (a -> Text) -> LAxiom a l -> Text
+ppLAxiom p ax = ppLImpl p (axToFormula ax)
 
--- | Type of formula labels. Note that logical atoms are their own labels.
-data Label a l
-  = L l -- ^ Regular label
-  | A a -- ^ Logical atom
-  deriving (Eq, Ord, Show)
+-- -- | Type of formula labels. Note that logical atoms are their own labels.
+-- data Label a l
+--   = L l -- ^ Regular label
+--   | A a -- ^ Logical atom
+--   deriving (Eq, Ord, Show)
 
 -- | Returns the label of a labelled axiom.
 axLabel :: LAxiom a l -> l
 axLabel (LAx _ _ _ l) = l
 
--- | Returns the label of a labelled formula.
-label :: LFormula k a l -> Label a l
-label = foldF A (\_ _ -> L) (\_ _ _ _ -> L)
-
+{-
 --------------------------------------------------------------------------------
 -- Mapping functions
 
@@ -235,6 +339,8 @@ mapCty f (Impl f1 eb cty f2 l) = Impl (mapCty f f1) eb (f cty) (mapCty f f2) l
 -- mapCtyAx :: (cty1 -> cty2) -> LAxiom a l -> LAxiom a l
 -- mapCtyAx f (LAx f1 cty f2 l) = LAx f1 (f cty) f2 l
 
+-}
+
 --------------------------------------------------------------------------------
 -- Deep heterogeneous comparison functions
 
@@ -246,9 +352,7 @@ isEq x = if x == EQ then Right x else Left x
 -- Comparison is "deep" in the sense that is considers the entire recursive
 -- structure of formulas. This is unlike 'frmlHetOrd', which only compares
 -- labels.
-deepHetComp
-  :: (Ord a, Ord l)
-  => LFormula k1 a l -> LFormula k2 a l -> Ordering
+deepHetComp :: (Ord a, Ord l) => LFormula a l -> LFormula a l -> Ordering
 deepHetComp (Atom x1) (Atom x2) = compare x1 x2
 deepHetComp (Atom _) _ = LT
 deepHetComp (Conj a1 b1 l1) (Conj a2 b2 l2) =
@@ -262,6 +366,7 @@ deepHetComp (Impl a1 eb1 cs1 b1 l1) (Impl a2 eb2 cs2 b2 l2) =
     ca = deepHetComp a1 a2 ; cb = deepHetComp b1 b2 ; ceb = compare eb1 eb2
     ccs = compare cs1 cs2 ; cl = compare l1 l2
 deepHetComp Impl{} _ = GT
+
 
 --------------------------------------------------------------------------------
 

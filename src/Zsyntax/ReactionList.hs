@@ -4,11 +4,20 @@ module Zsyntax.ReactionList where
 
 -- import Core.LinearContext
 import Data.Set (Set)
-import qualified Data.Set as S (map,fromList)
-import Data.Bifunctor (first)
+import qualified Data.Set as S (map, fromList, toList)
+import Data.Bifunctor (first, Bifunctor (..))
 import Data.Foldable (toList)
 import Data.MultiSet (MultiSet, isSubsetOf)
+import qualified Data.MultiSet as M
+import Data.Bitraversable (Bitraversable (..))
+import Data.Bifoldable (Bifoldable (..))
 -- import Data.MultiSet.NonEmpty
+
+traverseSet :: (Applicative f, Ord b) => (a -> f b) -> Set a -> f (Set b)
+traverseSet f s = S.fromList <$> traverse f (S.toList s)
+
+traverseMultiset :: (Applicative f, Ord b) => (a -> f b) -> MultiSet a -> f (MultiSet b)
+traverseMultiset f s = M.fromList <$> traverse f (M.toList s)
 
 data CtrlType = Regular | SupersetClosed deriving (Eq, Ord, Show)
 data CtrlSetCtxt af = CSC
@@ -28,6 +37,10 @@ data CtrlSetCtxt af = CSC
 newtype CtrlSet af = CS
   { unCS :: Set (CtrlSetCtxt af)
   } deriving (Eq, Ord, Semigroup, Monoid, Show)
+
+traverseCtrlSet :: (Applicative f, Ord b) => (a -> f b) -> CtrlSet a -> f (CtrlSet b)
+traverseCtrlSet f (CS s) =
+  CS <$> traverseSet (\(CSC ty ms) -> CSC ty <$> traverseMultiset f ms) s
 
 fromCSCtxts :: (Foldable f, Ord af) => f (CtrlSetCtxt af) -> CtrlSet af
 fromCSCtxts = CS . S.fromList . toList
@@ -50,6 +63,15 @@ msRespectsCS ms = and . S.map (respectsCC ms) . unCS
 newtype RList eb cs = RL
   { unRL :: [(eb, cs)]
   } deriving (Eq, Ord, Semigroup, Monoid, Show)
+
+instance Bifunctor RList where
+  bimap f g (RL xs) = RL (fmap (bimap f g) xs)
+
+instance Bifoldable RList where
+  bifoldMap f g (RL xs) = foldMap (bifoldMap f g) xs
+
+instance Bitraversable RList where
+  bitraverse f g (RL xs) = RL <$> traverse (bitraverse f g) xs
 
 justCS :: Monoid eb => cs -> RList eb cs
 justCS cs = RL [(mempty, cs)]

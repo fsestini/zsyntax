@@ -1,8 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 
 module Zsyntax.Formula where
@@ -28,8 +26,7 @@ module Zsyntax.Formula where
 import Control.Arrow ((>>>))
 import Data.Bifunctor (second)
 import Zsyntax.Labelled.Formula
-import Zsyntax.Labelled.Rule (Neutral(..),GoalNSequent(..))
--- import Data.MultiSet.NonEmpty
+import Zsyntax.Labelled.Rule (Neutral, GoalNSequent(..))
 import Data.MultiSet (MultiSet, fromList)
 import Data.Foldable (toList)
 import Data.Set (Set)
@@ -38,6 +35,8 @@ import Data.List.NonEmpty (NonEmpty(..), sort)
 import Control.Monad.State
 import Data.Either (partitionEithers)
 import Data.Function (on)
+import Data.Text (Text)
+import Data.Bifunctor.Sum (Sum(..))
 
 --------------------------------------------------------------------------------
 -- Biochemical atomic formulas
@@ -96,18 +95,19 @@ axiom' b1 r b2 = Axiom (LAx b1 r b2 ())
 
 -- | Type of logical formulas of Zsyntax, parameterized by the type of atoms
 -- (which are typically 'BioFormula's).
-data Formula a = forall k . Formula (LFormula k a ())
+newtype Formula a = Formula { unFormula :: LFormula a () }
+  deriving Show
 
 -- | Pretty-prints Zsyntax formulas, given a way to pretty-print its atoms.
-ppFormula :: (a -> String) -> Formula a -> String
-ppFormula p (Formula f) = ppLFormula p f
+ppFormula :: (a -> Text) -> Formula a -> Text
+ppFormula p = ppLFormula p . unFormula
 -- TODO: wut?
 -- @
 -- >>> ppFormula id (impl (conj (atom "foo") (atom "bar")) mempty mempty (atom "baz"))
 -- "(foo \8855 bar \8594 baz)"
 -- @
 
-deriving instance Show a => Show (Formula a)
+-- deriving instance Show a => Show (Formula a)
 
 instance Ord a => Eq (Formula a) where
   (Formula f1) == (Formula f2) = deepHetComp f1 f2 == EQ
@@ -116,16 +116,19 @@ instance Ord a => Ord (Formula a) where
   compare (Formula f1) (Formula f2) = deepHetComp f1 f2
 
 instance Ord a => Eq (Axiom a) where
-  (Axiom ax1) == (Axiom ax2) = deepHetComp (axToFormula ax1) (axToFormula ax2) == EQ
+  (Axiom ax1) == (Axiom ax2) =
+    on deepHetComp (injImpl . axToFormula) ax1 ax2 == EQ
+    -- deepHetComp (axToFormula ax1) (axToFormula ax2) == EQ
 
 instance Ord a => Ord (Axiom a) where
-  compare (Axiom ax1) (Axiom ax2) = deepHetComp (axToFormula ax1) (axToFormula ax2)
+  compare (Axiom ax1) (Axiom ax2) =
+    on deepHetComp (injImpl . axToFormula) ax1 ax2
 
 -- | Constructs an atomic formula from a logical atom.
 atom :: a -> Formula a
 atom = Formula . Atom
 
-lToS :: LFormula k a l -> Formula a
+lToS :: LFormula a l -> Formula a
 lToS = Formula . void
 
 -- | Constructs the conjunction of two formulas.
@@ -161,20 +164,15 @@ neutralize (SQ unrestr linear (Formula concl)) = GNS <$> ul <*> ln <*> nGoal
     ul = fmap S.fromList . mapM (traverse (const nuLabel) . unSA)
        . toList $ unrestr
     ln = fmap (fromList . join) . mapM neutralizeFormula . toList $ linear
-    nGoal = O <$> traverse (const nuLabel) concl
+    nGoal = traverse (const nuLabel) concl
 
-maybeNeutral :: Opaque a l -> Either (Neutral a l) [Opaque a l]
-maybeNeutral (O f@(Atom _)) = Left (N f)
-maybeNeutral (O (Conj a b _)) = Right [O a, O b]
-maybeNeutral (O f@Impl{}) = Left (N f)
-
-neutralizeOs :: (Ord a, Ord l) => [Opaque a l] -> [Neutral a l]
+neutralizeOs :: (Ord a, Ord l) => [LFormula a l] -> [Neutral a l]
 neutralizeOs [] = []
 neutralizeOs xs =
-  uncurry (<>) . second (neutralizeOs . join) .
-    partitionEithers . fmap maybeNeutral $ xs
+  uncurry (<>) . second (neutralizeOs . join) . partitionEithers . fmap maybeNeutral $ xs
+  where maybeNeutral = foldLSum (Left . L2) (\(LConj a b _) -> Right [a, b]) (Left . R2)
 
 neutralizeFormula
   :: (MonadState l m, Enum l, Ord a, Ord l) => Formula a -> m [Neutral a l]
 neutralizeFormula = labelSF >>> fmap (return >>> neutralizeOs)
-  where labelSF (Formula f) = fmap O . traverse (const nuLabel) $ f
+  where labelSF (Formula f) = traverse (const nuLabel) f

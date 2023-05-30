@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE GADTs #-}
 
 module Zsyntax.Labelled.Rule.Frontier where
@@ -11,29 +10,29 @@ module Zsyntax.Labelled.Rule.Frontier where
   -- ) where
 
 import Data.Maybe (mapMaybe)
-import Data.Constraint (Dict(..))
 import Otter (unRule, Subsumable(..))
 import Data.MultiSet (MultiSet)
 import Data.Foldable (toList)
 import Data.Set (Set)
 import qualified Data.Set as S (singleton, fromList)
 import Data.Function (on)
-import Control.Monad (join)
+import Control.Monad ((<=<))
 import Data.Kind (Type)
 
 import Zsyntax.Labelled.Rule.BipoleRelation
 import Zsyntax.Labelled.Rule.Interface
 import Zsyntax.Labelled.Formula
+import Data.Bifunctor.Sum (Sum(..))
 
 data DecoratedFormula :: Type -> Type -> Type where
   Unrestr :: LAxiom a l -> DecoratedFormula a l
-  LinNeg :: LFormula KImpl a l -> DecoratedFormula a l
-  LinPos :: Opaque a l -> DecoratedFormula a l
+  LinNeg :: LImpl a l -> DecoratedFormula a l
+  LinPos :: LFormula a l -> DecoratedFormula a l
 
 dfLabel :: DecoratedFormula a l -> Label a l
-dfLabel (Unrestr ax) = L (axLabel ax)
-dfLabel (LinNeg f) = label f
-dfLabel (LinPos (O f)) = label f
+dfLabel (Unrestr ax) = Right (axLabel ax)
+dfLabel (LinNeg f) = Right (implLabel f)
+dfLabel (LinPos f) = label f
 
 instance (Eq l, Eq a) => Eq (DecoratedFormula a l) where
   (==) = on (==) dfLabel
@@ -52,7 +51,7 @@ instance (Ord l, Ord a) => Ord (DecoratedFormula a l) where
 data GoalNSequent a l = GNS
   { _gnsUC :: Set (LAxiom a l)
   , _gnsLC :: MultiSet (Neutral a l) -- NonEmptyMultiSet (Neutral a l)
-  , _gnsConcl :: Opaque a l -- Opaque (LFormula' cty l l)
+  , _gnsConcl :: LFormula a l -- Opaque (LFormula' cty l l)
   }
   deriving Show
 
@@ -66,43 +65,38 @@ toGoalSequent (LS uc lc _ c) = GNS uc lc c
 --------------------------------------------------------------------------------
  -- Frontier computation
 
-filterImpl :: [Neutral a l] -> [LFormula 'KImpl a l]
-filterImpl = mapMaybe aux
-  where
-    aux :: Neutral a l -> Maybe (LFormula 'KImpl a l)
-    aux (N (f :: LFormula k a l)) =
-      either (const Nothing) (\Dict -> Just f) (decideNeutral @k)
+filterImpl :: [Neutral a l] -> [LImpl a l]
+filterImpl = mapMaybe $ \case { L2 _ -> Nothing ; R2 i -> Just i }
 
 frNeg :: (Ord l, Ord a) => Neutral a l -> Set (DecoratedFormula a l)
-frNeg = switchN (const mempty) (\(Impl a _ _ b _) -> foc a <> act b)
+frNeg = \case { L2 _ -> mempty ; R2 (LImpl a _ _ b _) -> foc a <> act b }
 
-frPos, foc, act :: (Ord l, Ord a) => LFormula k a l -> Set (DecoratedFormula a l)
+frPos, foc, act :: (Ord l, Ord a) => LFormula a l -> Set (DecoratedFormula a l)
 frPos f = case f of
   Atom _ -> mempty
   Conj {} -> foc f
-  Impl a _ _ b _ -> mconcat [act a, frPos b, S.singleton (LinPos (O b))]
+  Impl a _ _ b _ -> mconcat [act a, frPos b, S.singleton (LinPos b)]
 foc f = case f of
   Atom _ -> mempty
   Conj a b _ -> foc a <> foc b
-  Impl {} -> S.singleton (LinPos (O f)) <> frPos f
-act f = case f of
-  Atom _ -> mempty
-  Conj f1 f2 _ -> act f1 <> act f2
-  Impl {} -> S.singleton (LinNeg f) <> frPos f
+  Impl {} -> S.singleton (LinPos f) <> frPos f
+act =
+  foldLSum (const mempty) (\(LConj f1 f2 _) -> act f1 <> act f2)
+           (\i -> S.singleton (LinNeg i) <> frPos (injImpl i))
 
 -- | Computes the frontier of a sequent.
 frontier :: (Ord l, Ord a) => GoalNSequent a l -> Set (DecoratedFormula a l)
-frontier (GNS uc lc goal@(O fgoal)) =
-  mconcat 
+frontier (GNS uc lc fgoal) =
+  mconcat
     [ toplevelUC, toplevelLC
     , ucFrontier, linFrontier
-    , goalFrontier, S.singleton (LinPos goal)
+    , goalFrontier, S.singleton (LinPos fgoal)
     ]
   where
     lcList = toList lc
     toplevelUC = S.fromList . map Unrestr . toList $ uc
     toplevelLC = S.fromList . fmap LinNeg . filterImpl $ lcList
-    ucFrontier = mconcat . fmap (frNeg . N . axToFormula) . toList $ uc
+    ucFrontier = mconcat . fmap (frNeg . R2 . axToFormula) . toList $ uc
     linFrontier = mconcat . fmap frNeg $ lcList
     goalFrontier = frPos fgoal
 
@@ -112,9 +106,8 @@ frontier (GNS uc lc goal@(O fgoal)) =
 generateRule :: (Ord a, Ord l) => DecoratedFormula a l -> BipoleRule a l
 generateRule (Unrestr axiom) = copyRule axiom
 generateRule (LinNeg impl) = implLeft impl
-generateRule (LinPos (O f)) =
-  case f of { Atom _ -> focus f ; Conj {} -> focus f ; Impl {} -> implRight f }
-  
+generateRule (LinPos f) = foldLSum (focus . L2) (focus . R2) implRight f
+
 --------------------------------------------------------------------------------
 -- Main function
 
@@ -128,7 +121,7 @@ initialRules :: (Ord a, Ord l) => GoalNSequent a l -> [BipoleRule a l]
 initialRules = fmap generateRule . toList . frontier
 
 mayProperRule :: BipoleRule a l -> Maybe (ProperRule a l)
-mayProperRule = join . fmap (either (const Nothing) Just) . unRule
+mayProperRule = either (const Nothing) Just <=< unRule
 
 maySequent :: BipoleRule a l -> Maybe (AnnLSequent a l)
-maySequent = join . fmap (either Just (const Nothing)) . unRule
+maySequent = either Just (const Nothing) <=< unRule
