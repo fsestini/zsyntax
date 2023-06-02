@@ -75,7 +75,7 @@ main = hspec $ do
 
 checkSequent :: Ord a => Sequent a -> Bool -- IO ()
 checkSequent g =
-  case O.extractResults 2000 (fst $ search (toLabelledGoal g)) of
+  case O.extractResults 2000 (fst $ search g) of -- (toLabelledGoal g)) of
     O.AllResults _ -> True -- putStrLn "test passed."
     O.NoResults _  -> False -- putStrLn "test failed." >> exitFailure
 

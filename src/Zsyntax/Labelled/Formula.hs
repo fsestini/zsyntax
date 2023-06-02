@@ -43,6 +43,12 @@ module Zsyntax.Labelled.Formula
   , axToFormula
   , ppLAxiom
   , traverseAtoms
+  , traverseAtom
+  , traverseConj
+  , traverseImpl
+  , traverseAxiom
+  , traverseElemBase
+  , traverseRL
   -- -- * Opaque formulas
   -- , Opaque(..)
   -- , withOpaque
@@ -77,6 +83,9 @@ traverseElemBase f (ElemBase b) =
 -- data FKind = KAtom | KConj | KImpl
 
 type ReactionList a = RList (ElemBase a) (CtrlSet a)
+
+traverseRL :: (Applicative f, Ord b) => (a -> f b) -> ReactionList a -> f (ReactionList b)
+traverseRL f = bitraverse (traverseElemBase f) (traverseCtrlSet f)
 
 newtype LAtom a l = LAtom { atomAtom :: a }
   deriving (Show, Functor, Foldable, Traversable)
@@ -144,14 +153,25 @@ label = \case
 -- `LFormula` is not functorial in the first index, hence not even bitraversable,
 -- so this needs a dedicated function, for which no laws can be guaranteed.
 traverseAtoms :: (Ord b, Applicative f) => (a -> f b) -> LFormula a l -> f (LFormula b l)
-traverseAtoms f (Atom x) = Atom <$> f x
-traverseAtoms f (Conj x y l) =
-  Conj <$> traverseAtoms f x <*> traverseAtoms f y <*> pure l
-traverseAtoms f (Impl x b r y l) =
-  Impl <$> traverseAtoms f x
-       <*> traverseElemBase f b
-       <*> bitraverse (traverseElemBase f) (traverseCtrlSet f) r
-       <*> traverseAtoms f y <*> pure l
+traverseAtoms f (LFormula x) = LFormula <$> case x of
+  L2 a -> L2 <$> traverseAtom f a
+  R2 (L2 c) -> R2 . L2 <$> traverseConj f c
+  R2 (R2 i) -> R2 . R2 <$> traverseImpl f i
+
+traverseAtom :: Functor f => (a -> f b) -> LAtom a l -> f (LAtom b l)
+traverseAtom f (LAtom x) = LAtom <$> f x
+
+traverseConj :: (Ord b, Applicative f) => (a -> f b) -> LConj a l -> f (LConj b l)
+traverseConj f (LConj a b l) =
+  LConj <$> traverseAtoms f a <*> traverseAtoms f b <*> pure l
+
+traverseImpl :: (Ord b, Applicative f) => (a -> f b) -> LImpl a l -> f (LImpl b l)
+traverseImpl f (LImpl x b r y l) =
+  LImpl <$> traverseAtoms f x
+        <*> traverseElemBase f b
+        <*> bitraverse (traverseElemBase f) (traverseCtrlSet f) r
+        <*> traverseAtoms f y <*> pure l
+
 
 {-
 
@@ -258,6 +278,11 @@ oImpl (O f1) eb cty (O f2) = Impl f1 eb cty f2
 data BFormula a l = BAtom a | BConj (BFormula a l) (BFormula a l) l
   deriving (Functor, Foldable, Traversable, Show)
 
+traverseBFormula :: Applicative f => (a -> f b) -> BFormula a l -> f (BFormula b l)
+traverseBFormula f = \case
+  BAtom a -> BAtom <$> f a
+  BConj x y l -> BConj <$> traverseBFormula f x <*> traverseBFormula f y <*> pure l
+
 -- | Constructs a basic formula from a logical atom.
 bAtom :: a -> BFormula a l
 bAtom = BAtom
@@ -295,6 +320,13 @@ maybeBFormula Impl {} = Nothing
 
 data LAxiom a l = LAx (BFormula a l) (ReactionList a) (BFormula a l) l
   deriving (Show, Functor, Foldable, Traversable)
+
+traverseAxiom :: (Applicative f, Ord b) => (a -> f b) -> LAxiom a l -> f (LAxiom b l)
+traverseAxiom f (LAx x r y l) =
+  LAx <$> traverseBFormula f x
+      <*> bitraverse (traverseElemBase f) (traverseCtrlSet f) r
+      <*> traverseBFormula f y
+      <*> pure l
 
 -- | Converts a labelled axiom to a labelled formula.
 axToFormula :: Ord a => LAxiom a l -> LImpl a l

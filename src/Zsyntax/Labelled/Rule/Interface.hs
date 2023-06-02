@@ -1,6 +1,5 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -11,24 +10,17 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GADTs #-}
 
-{-# OPTIONS_GHC -Wno-unticked-promoted-constructors -Wno-orphans -Wno-unused-imports #-}
-{-# LANGUAGE PatternSynonyms #-}
-
 module Zsyntax.Labelled.Rule.Interface where
 
 import Otter (Subsumable(..))
 import Data.Foldable (toList)
-import Data.List (intersperse)
 import Data.Set (Set, (\\), isSubsetOf)
-import Data.Map (Map)
-import Data.Maybe (fromMaybe)
-import qualified Data.Map as M (lookup)
 import Zsyntax.Labelled.Formula
-import Data.Constraint (Dict(..))
 import Data.MultiSet (MultiSet)
-import Data.Function (on)
 import Data.Kind (Type)
 import Data.Bifunctor.Sum (Sum (..))
+import Zsyntax.ReactionList (traverseSet, traverseMultiset)
+import Control.Monad.Identity (Identity(runIdentity, Identity))
 
 --------------------------------------------------------------------------------
 -- Labelled sequents
@@ -47,6 +39,17 @@ data LSequent a l = LS
   , lsCty :: ReactionList a
   , lsConcl :: LFormula a l
   }
+
+traverseLSequent
+  :: (Applicative f, Ord l, Ord b) => (a -> f b) -> LSequent a l -> f (LSequent b l)
+traverseLSequent f (LS uc lc r c) =
+  LS <$> traverseSet (traverseAxiom f) uc
+     <*> traverseMultiset (traverseNeutral f) lc
+     <*> traverseRL f r
+     <*> traverseAtoms f c
+
+mapLSequent :: (Ord l, Ord b) => (a -> b) -> LSequent a l -> LSequent b l
+mapLSequent f = runIdentity . traverseLSequent (Identity . f)
 
 data SubCtxt a = SC
   { _scOnOnlyFirst :: [a]
@@ -77,6 +80,11 @@ type Neutral = Sum LAtom LImpl
   -- a l = forall k . NeutralKind k => N (LFormula k a l)
 
 -- deriving instance (Show a, Show l) => Show (Neutral a l)
+
+traverseNeutral :: (Ord b, Applicative f) => (a -> f b) -> Neutral a l -> f (Neutral b l)
+traverseNeutral f = \case
+  L2 x -> L2 <$> traverseAtom f x
+  R2 x -> R2 <$> traverseImpl f x
 
 injNeutral :: Neutral a l -> LFormula a l
 injNeutral = \case

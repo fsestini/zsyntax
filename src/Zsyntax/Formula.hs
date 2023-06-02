@@ -1,7 +1,7 @@
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Zsyntax.Formula where
   -- (
@@ -28,6 +28,8 @@ import Data.Bifunctor (second)
 import Zsyntax.Labelled.Formula
 import Zsyntax.Labelled.Rule (Neutral, GoalNSequent(..))
 import Data.MultiSet (MultiSet, fromList)
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Foldable (toList)
 import Data.Set (Set)
 import qualified Data.Set as S (fromList)
@@ -37,6 +39,7 @@ import Data.Either (partitionEithers)
 import Data.Function (on)
 import Data.Text (Text)
 import Data.Bifunctor.Sum (Sum(..))
+import Zsyntax.ReactionList (traverseSet, traverseMultiset)
 
 --------------------------------------------------------------------------------
 -- Biochemical atomic formulas
@@ -97,6 +100,9 @@ axiom' b1 r b2 = Axiom (LAx b1 r b2 ())
 -- (which are typically 'BioFormula's).
 newtype Formula a = Formula { unFormula :: LFormula a () }
   deriving Show
+
+traverseFormula :: (Applicative f, Ord b) => (a -> f b) -> Formula a -> f (Formula b)
+traverseFormula f (Formula x) = Formula <$> traverseAtoms f x
 
 -- | Pretty-prints Zsyntax formulas, given a way to pretty-print its atoms.
 ppFormula :: (a -> Text) -> Formula a -> Text
@@ -176,3 +182,19 @@ neutralizeFormula
   :: (MonadState l m, Enum l, Ord a, Ord l) => Formula a -> m [Neutral a l]
 neutralizeFormula = labelSF >>> fmap (return >>> neutralizeOs)
   where labelSF (Formula f) = traverse (const nuLabel) f
+
+newtype IntAtom = IntAtom Int deriving (Num, Show, Eq, Ord)
+
+countAtoms' :: Ord a => Sequent a -> State (Map a IntAtom, IntAtom) (Sequent IntAtom)
+countAtoms' (SQ uc lc c) =
+  SQ <$> traverseSet (fmap Axiom . traverseAxiom f . unSA) uc
+     <*> traverseMultiset (traverseFormula f) lc
+     <*> traverseFormula f c
+  where
+    f :: Ord a => a -> State (Map a IntAtom, IntAtom) IntAtom
+    f a = get >>= \(m, n) -> case M.lookup a m of
+      Just i -> pure i
+      Nothing -> put (M.insert a n m, n + 1) >> pure n
+
+countAtoms :: Ord a => Sequent a -> (Sequent IntAtom, Map a IntAtom)
+countAtoms s = (s', m) where (s', (m, _)) = runState (countAtoms' s) (M.empty, 0)

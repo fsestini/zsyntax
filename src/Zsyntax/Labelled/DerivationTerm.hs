@@ -5,6 +5,7 @@
 module Zsyntax.Labelled.DerivationTerm where
 
 import Zsyntax.Labelled.Formula
+import Control.Monad.Identity (Identity(runIdentity, Identity))
 
 -- | Derivation term of the labelled forward sequent calculus.
 data DerivationTerm a l where
@@ -18,6 +19,26 @@ data DerivationTerm a l where
         -> DerivationTerm a l
 
 deriving instance Functor (DerivationTerm a)
+
+mapDerivationTerm :: Ord b => (a -> b) -> DerivationTerm a l -> DerivationTerm b l
+mapDerivationTerm f = runIdentity . traverseDerivationTerm (Identity . f)
+
+traverseDerivationTerm
+  :: (Applicative f, Ord b)
+  => (a -> f b) -> DerivationTerm a l -> f (DerivationTerm b l)
+traverseDerivationTerm f = \case
+  Init x -> Init <$> f x
+  Copy d a -> Copy <$> traverseDerivationTerm f d <*> traverseAxiom f a
+  ConjR d d' l ->
+    ConjR <$> traverseDerivationTerm f d <*> traverseDerivationTerm f d' <*> pure l
+  ConjL d -> ConjL <$> traverseDerivationTerm f d
+  ImplR d i b r l ->
+    ImplR <$> traverseDerivationTerm f d <*> traverseAtoms f i
+          <*> traverseElemBase f b <*> traverseRL f r <*> pure l
+  ImplL d d' i ->
+    ImplL <$> traverseDerivationTerm f d
+          <*> traverseDerivationTerm f d'
+          <*> traverseAtoms f i
 
 concl :: DerivationTerm a l -> LFormula a l
 concl (Init a) = Atom a
