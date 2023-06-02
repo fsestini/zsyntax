@@ -23,6 +23,8 @@ import Zsyntax.Labelled.Rule.BipoleRelation
 import Zsyntax.Labelled.Rule.Interface
 import Zsyntax.Labelled.Formula
 import Data.Bifunctor.Sum (Sum(..))
+import Zsyntax.ReactionList (traverseSet, traverseMultiset)
+import Control.Monad.Identity (Identity(..))
 
 data DecoratedFormula :: Type -> Type -> Type where
   Unrestr :: LAxiom a l -> DecoratedFormula a l
@@ -54,6 +56,15 @@ data GoalNSequent a l = GNS
   , _gnsConcl :: LFormula a l -- Opaque (LFormula' cty l l)
   }
   deriving Show
+
+traverseGNS :: (Applicative f, Ord l, Ord b) => (a -> f b) -> GoalNSequent a l -> f (GoalNSequent b l)
+traverseGNS f (GNS uc lc c) =
+  GNS <$> traverseSet (traverseAxiom f) uc
+      <*> traverseMultiset (traverseNeutral f) lc
+      <*> traverseAtoms f c
+
+mapGNS :: (Ord l, Ord b) => (a -> b) -> GoalNSequent a l -> GoalNSequent b l
+mapGNS f = runIdentity . traverseGNS (Identity . f)
 
 instance (Ord a, Ord l) => Subsumable (GoalNSequent a l) where
   subsumes  (GNS uc lc fr) (GNS uc' lc' fr') =

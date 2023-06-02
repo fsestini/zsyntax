@@ -47,7 +47,7 @@ cons x = (Res x :)
 -- Either the search space has been exhaustively searched and no result was
 -- found (the query is not a theorem), or the search was terminated preemptively
 -- according to an upper bound imposed on the maximum depth of the search space.
-data FailureReason = NotATheorem | SpaceTooBig
+data FailureReason = NotATheorem | SpaceTooBig deriving (Eq, Show)
 
 -- | Type of the result of 'extractResults', which extracts all positive search
 -- results from a search result stream.
