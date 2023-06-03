@@ -31,7 +31,7 @@ import Control.Monad.Except
 import Zsyntax.ReactionList
 import Zsyntax.Formula ( Sequent(..), Axiom, BioFormula, axiom, atom, conj
                        , axiom', ppBioFormula)
-import Zsyntax.Labelled.Formula (withOpaque, elemBase, bConj, unEB,maybeBFormula)
+import Zsyntax.Labelled.Formula (elemBase, bConj, unEB,maybeBFormula)
 -- , decideN, decideOF, bConj, unEB, bAtom)
 import Zsyntax.Labelled.Rule (LSequent(..), GoalNSequent(..), lcBase,withNeutral)
 
@@ -93,13 +93,13 @@ toAxNames axs = fmap fst . filter (flip elem axs . snd) <$> legitAxioms
 fromNS :: LSequent Atom LabelTy -> Maybe (Axiom Atom)
 fromNS (LS _ lc cty cc) = do
   (nel, nelc) <- traverse (withNeutral maybeBFormula) (toList lc) >>= uncons . fmap void
-  toFrml <- withOpaque maybeBFormula cc
+  toFrml <- maybeBFormula cc
   pure (axiom' (foldl (bConj ()) nel nelc) cty (void toFrml))
 
 goalDiff :: LSequent Atom LabelTy -> GoalNSequent Atom LabelTy -> Int
 goalDiff s g =
-  let eb1 = withOpaque elemBase (lsConcl s)
-      eb2 = withOpaque elemBase (_gnsConcl g)
+  let eb1 = elemBase (lsConcl s)
+      eb2 = elemBase (_gnsConcl g)
       leb1 = lcBase (lsLCtxt s)
       leb2 = lcBase (_gnsLC g)
       f = (length . toList .: intersection) `on` unEB

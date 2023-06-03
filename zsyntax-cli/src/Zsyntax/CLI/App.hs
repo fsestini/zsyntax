@@ -14,6 +14,7 @@ import Data.Bifunctor
 import System.IO
 import Control.Monad.Except
 import Lens.Micro.Platform
+import Data.Text (Text, pack, unpack)
 
 import Zsyntax.Formula
 import Zsyntax.Labelled.Formula
@@ -91,9 +92,9 @@ printTheorems = do
 ppLSequent :: LSequent Atom Int -> String
 ppLSequent (LS _ lc _ c) = concat
   [ concat (intersperse ","
-             (fmap (withNeutral (ppLFormula ppAtom)) (toList lc)))
+             (fmap (unpack . withNeutral (ppLFormula (pack . ppAtom))) (toList lc)))
   , " ==> "
-  , withOpaque (ppLFormula ppAtom) c
+  , unpack $ ppLFormula (pack . ppAtom) c
   ]
 
 printWhatFound :: MonadIO m => [LSequent Atom Int] -> m ()
@@ -101,9 +102,9 @@ printWhatFound seqs = liftIO $ do
   putStrLn "Some provable sequents: "
   mapM_ putStrLn (fmap ppLSequent . take 3 $ seqs)
 
-ppTransition :: (Opaque Atom (), Opaque Atom ()) -> String
-ppTransition (O f1, O f2) = pp f1 ++ " --> " ++ pp f2
-  where pp = ppLFormula (ppBioFormula id)
+ppTransition :: (LFormula Atom (), LFormula Atom ()) -> String
+ppTransition (f1, f2) = pp f1 ++ " --> " ++ pp f2
+  where pp = unpack . ppLFormula (pack . ppBioFormula id)
 
 printQR :: MonadIO m => QueryResult -> m ()
 printQR (Success (term ::: _)) = do

@@ -32,7 +32,7 @@ import Data.Bifunctor
 
 import Zsyntax ( Sequent, Extraction (..), FailureReason(..), toLabelledGoal
                , axForget)
-import qualified Zsyntax as Z (search, extractResults)
+import qualified Zsyntax as Z (search, SearchOutput(..), extractResults)
 import Zsyntax.Labelled.DerivationTerm
 import Zsyntax.Labelled.Rule
 import Zsyntax.CLI.Structures
@@ -46,11 +46,13 @@ search :: Int -> Sequent Atom
               -> (Extraction (DerivationTerm Atom Int ::: LSequent Atom Int),
                  [LSequent Atom Int],
                  GoalNSequent Atom Int)
-search i s = (res, srcd, g)
+search i s = (res, srcd, Z.labelledGoal searchRes)
   where
-    g = toLabelledGoal s
-    foo = Z.search g
-    (res, srcd) = bimap (Z.extractResults i) (fmap _payload) foo
+    -- g = toLabelledGoal s
+    searchRes = Z.search s
+    res = Z.extractResults i (Z.otterResult searchRes)
+    srcd = map _payload (Z.searchedSequents searchRes)
+    -- (res, srcd) = bimap (Z.extractResults i) (fmap _payload) searchRes
 
 --------------------------------------------------------------------------------
 
