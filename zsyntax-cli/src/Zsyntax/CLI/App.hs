@@ -6,6 +6,7 @@ module Zsyntax.CLI.App (loopIO) where
 import Text.Parsec.String (Parser)
 import Data.Foldable (toList)
 import Text.Parsec.Char (spaces)
+import Text.Parsec (ParseError)
 import Data.List
 import System.Console.Haskeline
 import Control.Monad.State
@@ -125,20 +126,18 @@ printError (ThrmNameClash nm) =
 printError (AxNotInScope nm) =
   putStrLn' ("Axiom '" ++ nm ++ "' not in scope. Abort.")
 
-loadFile :: FilePath -> App ()
-loadFile path = do
-  contents <- liftIO (readFile path)
-  let commands =
-        mapM (parseString (padded clicommand))
-          (filter (not . null . trim) . lines $ contents)
-  either
-    (\pe -> liftIO (putStrLn $ "Error parsing file: " ++ show pe))
-    (mapM_ execComm) commands
+parseFile :: String -> Either ParseError [CLICommand]
+parseFile =
+  mapM (parseString (padded clicommand)) . filter (not . null . trim) . lines
   where
     padded :: Parser a -> Parser a
     padded p = spaces *> p <* spaces
     isSpace = (== ' ')
     trim = dropWhileEnd isSpace . dropWhile isSpace
+
+loadFile :: FilePath -> App ()
+loadFile path =
+  liftIO (readFile path) >>= either (putStrLn' . show) (mapM_ execComm) . parseFile
 
 logError :: MonadIO m => ExceptT Error m () -> m ()
 logError = join . fmap (either printError pure) . runExceptT
