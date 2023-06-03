@@ -54,6 +54,7 @@ data FailureReason = NotATheorem | SpaceTooBig deriving (Eq, Show)
 -- An element of `Extraction a` is either a non-empty list of positive results,
 -- or an element of 'SpaceExhausted' giving a reason why no result was found.
 data Extraction a = AllResults (NonEmpty a) | NoResults FailureReason
+  deriving Show
 
 resListUntil :: Int -> SearchRes a -> ([a], FailureReason)
 resListUntil _ [] = ([], NotATheorem)
