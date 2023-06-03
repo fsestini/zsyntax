@@ -56,4 +56,5 @@ examples =
   , "glycolytic"
   , "melanoma"
   , "regulatoryloop"
+  , "bool2"
   ]
