@@ -27,17 +27,12 @@ import Control.Monad.Except
 import Data.Map (Map)
 import qualified Data.Map as M
 import Lens.Micro.Platform (Lens', set, use, (^.), (%=), makeLenses)
-import Data.Bifunctor
--- import qualified Otter as O
 
-import Zsyntax ( Sequent, SearchRes, FailureReason(..), toLabelledGoal, axForget)
+import Zsyntax ( Sequent, SearchRes, FailureReason(..), axForget)
 import qualified Zsyntax as Z (search, SearchOutput(..))
 import Zsyntax.Labelled.DerivationTerm
 import Zsyntax.Labelled.Rule
 import Zsyntax.CLI.Structures
-import Data.List.NonEmpty (NonEmpty(..))
--- import Zsyntax.Formula.BioFormula(prettyBioF)
--- import Zsyntax.Formula.SFormula (axForget, prettySF, SFormula, neutralize)
 
 --------------------------------------------------------------------------------
 

@@ -2,19 +2,15 @@ module Zsyntax.CLI.Command where
 
 import Data.Foldable
 import Text.Parsec.Char
-import Text.Parsec.Prim (unexpected)
 import Text.Parsec hiding (State, token)
 import Text.Parsec.String
 
--- import Text.Parsec
--- import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
 
 import Data.Functor.Identity
 import Control.Monad
--- import Core.LinearContext
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.List (intersperse, intercalate)
 import Data.MultiSet (fromList)

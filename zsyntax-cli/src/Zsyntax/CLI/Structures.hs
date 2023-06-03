@@ -8,34 +8,26 @@ module Zsyntax.CLI.Structures where
 import Data.Function (on)
 import Data.Composition ((.:))
 import Data.Maybe (catMaybes)
-import Control.Monad (void)
 import Control.Monad.State
--- import Control.Monad.Free (Free, liftF)
 import Data.Map (Map)
 import qualified Data.Map as M (toList, insert, empty)
 import Data.Foldable (toList, foldlM)
 import Data.List (uncons) -- , intersperse)
 import Data.Bifunctor (second)
 import Data.Bitraversable (bitraverse)
--- import Core.FormulaKind (GoalNSequent'(..))
 import Data.List.NonEmpty (NonEmpty(..))
--- import Rule.IntFormula (NSequent, NSequent'(..), GoalNSequent, oFormulaBase, lcBase)
 import Data.Set (fromList)
 import Data.MultiSet (intersection)
 import qualified Data.MultiSet as MS (fromList)
 import Lens.Micro.Platform (Lens', use, (.=), makeLenses)
 import Control.Monad.Except
 
--- import Data.MultiSet.NonEmpty (fromNEList, toMultiSet)
-
 import Zsyntax.ReactionList
 import Zsyntax.Formula ( Sequent(..), Axiom, BioFormula, axiom, atom, conj
                        , axiom', ppBioFormula)
 import Zsyntax.Labelled.Formula (elemBase, bConj, unEB,maybeBFormula)
--- , decideN, decideOF, bConj, unEB, bAtom)
 import Zsyntax.Labelled.Rule (LSequent(..), GoalNSequent(..), lcBase,withNeutral)
 
--- import Lens.Micro.Platform (makeLenses)
 import Control.Monad.Extra
 
 --------------------------------------------------------------------------------

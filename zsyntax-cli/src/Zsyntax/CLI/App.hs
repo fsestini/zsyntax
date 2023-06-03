@@ -14,7 +14,7 @@ import Data.Bifunctor
 import System.IO
 import Control.Monad.Except
 import Lens.Micro.Platform
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack, unpack)
 
 import Zsyntax.Formula
 import Zsyntax.Labelled.Formula
