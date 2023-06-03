@@ -100,7 +100,7 @@ ppLSequent (LS _ lc _ c) = concat
 printWhatFound :: MonadIO m => [LSequent Atom Int] -> m ()
 printWhatFound seqs = liftIO $ do
   putStrLn "Some provable sequents: "
-  mapM_ putStrLn (fmap ppLSequent . take 3 $ seqs)
+  mapM_ putStrLn (fmap ppLSequent $ seqs)
 
 ppTransition :: (LFormula Atom (), LFormula Atom ()) -> String
 ppTransition (f1, f2) = pp f1 ++ " --> " ++ pp f2
