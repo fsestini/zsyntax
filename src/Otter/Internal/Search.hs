@@ -95,34 +95,35 @@ processNewActive node = do
       r2 = percolate actives . snd $ r1
   return $ r1 <> r2
 
-merge :: Maybe (SearchNode s a) -> SearchRes a -> SearchRes a
-merge m sr = maybe (delay sr) (\x -> cons (extractNode x) sr) m
+maybeGoal :: [FSCheckedNode s] -> Prover s g (SearchRes s) -> Prover s g (SearchRes s)
+maybeGoal xs m = haveGoal xs >>= maybe m (pure . Right . extractNode)
 
-loop :: Subsumable s => Prover s g (SearchRes s)
-loop = do
+loop :: Subsumable s => Int -> Prover s g (SearchRes s)
+loop 0 = pure (Left SpaceTooBig)
+loop n = do
   inactive <- popInactive
   case inactive of
-    Nothing -> pure []
+    Nothing -> pure (Left NotATheorem)
     Just node -> do
       res <- processNewActive node
       unsubSeqs <- filterUnsubsumed (fst res)
       unsubSeqs' <- mapM removeSubsumedBy unsubSeqs
       mapM_ addInactive unsubSeqs'
       mapM_ addRule (snd res)
-      liftM2 merge (haveGoal unsubSeqs) loop
+      maybeGoal unsubSeqs (loop (n - 1))
 
 doSearch
   :: Subsumable s
-  => [SearchNode Initial s] -> [SearchProperRule s] -> Prover s g (SearchRes s)
-doSearch initSeqs initRls = do
+  => [SearchNode Initial s] -> [SearchProperRule s] -> Int -> Prover s g (SearchRes s)
+doSearch initSeqs initRls limit = do
   mapM_ addInactive (fmap initIsBSCheckd initSeqs)
   mapM_ addRule initRls
-  liftM2 merge (haveGoal (fmap initIsFSCheckd initSeqs)) loop
+  maybeGoal (fmap initIsFSCheckd initSeqs) (loop limit)
 
 search
   :: Subsumable s
-  => [s] -> [s -> Rule s s] -> (s -> Bool) -> (SearchRes s, [s])
-search initial rls isGl = second (toList . _index) $
+  => [s] -> [s -> Rule s s] -> (s -> Bool) -> Int -> (SearchRes s, [s])
+search initial rls isGl limit = second (toList . _index) $
   runState
-    (doSearch (fmap initialize initial) (fmap toProperRule rls))
+    (doSearch (fmap initialize initial) (fmap toProperRule rls) limit)
     (PS [] emptyActives emptyInactives emptyGI isGl)

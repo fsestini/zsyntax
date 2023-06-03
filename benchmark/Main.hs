@@ -33,9 +33,9 @@ main =
 
 checkSequent :: Ord a => Sequent a -> Bool -- IO ()
 checkSequent g =
-  case O.extractResults 2000 (otterResult $ search g) of -- (toLabelledGoal g)) of
-    O.AllResults _ -> True -- putStrLn "test passed."
-    O.NoResults _  -> False -- putStrLn "test failed." >> exitFailure
+  case otterResult (search g 5000) of -- (toLabelledGoal g)) of
+    Right _ -> True -- putStrLn "test passed."
+    Left _  -> False -- putStrLn "test failed." >> exitFailure
 
 ax :: Ord a => [a] -> [a] -> [a] -> Axiom (BioFormula a)
 ax xs ys rl =

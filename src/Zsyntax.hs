@@ -5,10 +5,8 @@ module Zsyntax
   , search
   , toLabelledGoal
   , O.SearchRes
-  , O.Extraction(..)
   , O.FailureReason(..)
   , SearchOutput(..)
-  , O.extractResults
   ) where
 
 import qualified Otter as O
@@ -36,22 +34,24 @@ toLabelledGoal s = evalState (neutralize s) 0
 
 search :: Ord a
        => Sequent a
+       -> Int
        -- -> (O.SearchRes (DecoratedLSequent a Int) , [DecoratedLSequent a Int])
        -> SearchOutput a
-search s = SearchOutput oRes gi (mapGNS mFun g)
+search s n = SearchOutput oRes gi (mapGNS mFun g)
 -- bimap (map (fmap mapDLS)) (map mapDLS) res
   where
     (s', m) = countAtoms s
     g = toLabelledGoal s'
-    res = search' g
+    res = search' g n
     mMap = M.fromList . map swap . M.toAscList $ m
     mFun x = fromMaybe (error "error in generating IntAtom map") (M.lookup x mMap)
     mapDLS = bimap (mapDerivationTerm mFun) (mapLSequent mFun)
-    (oRes, gi) = bimap (map (fmap mapDLS)) (map mapDLS) res
+    (oRes, gi) = bimap (fmap mapDLS) (map mapDLS) res
 
 search' :: GoalNSequent IntAtom Int
-       -> ( O.SearchRes (DecoratedLSequent IntAtom Int)
-          , [DecoratedLSequent IntAtom Int])
+        -> Int
+        -> ( O.SearchRes (DecoratedLSequent IntAtom Int)
+           , [DecoratedLSequent IntAtom Int])
 search' goal = O.search (toList seqs) rules isGoal
   where
     initial = initialRules goal

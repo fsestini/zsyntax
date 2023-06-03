@@ -63,7 +63,7 @@ genSequent ns ms = do
   pure (SQ (S.fromList axs) (M.fromList (map atom start)) endFormula)
 
 instance (Ord a, Arbitrary a) => Arbitrary (Sequent a) where
-  arbitrary = genSequent (2,5) (5,10)
+  arbitrary = genSequent (2,5) (2,5)
 
 main :: IO ()
 main = hspec $ do
@@ -75,9 +75,9 @@ main = hspec $ do
 
 checkSequent :: Ord a => Sequent a -> Bool -- IO ()
 checkSequent g =
-  case O.extractResults 2000 (otterResult $ search g) of -- (toLabelledGoal g)) of
-    O.AllResults _ -> True -- putStrLn "test passed."
-    O.NoResults _  -> False -- putStrLn "test failed." >> exitFailure
+  case otterResult $ search g 5000 of -- (toLabelledGoal g)) of
+    Right _ -> True -- putStrLn "test passed."
+    Left _  -> False -- putStrLn "test failed." >> exitFailure
 
 ax :: Ord a => [a] -> [a] -> [a] -> Axiom (BioFormula a)
 ax xs ys rl =

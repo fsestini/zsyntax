@@ -30,9 +30,8 @@ import Lens.Micro.Platform (Lens', set, use, (^.), (%=), makeLenses)
 import Data.Bifunctor
 -- import qualified Otter as O
 
-import Zsyntax ( Sequent, Extraction (..), FailureReason(..), toLabelledGoal
-               , axForget)
-import qualified Zsyntax as Z (search, SearchOutput(..), extractResults)
+import Zsyntax ( Sequent, SearchRes, FailureReason(..), toLabelledGoal, axForget)
+import qualified Zsyntax as Z (search, SearchOutput(..))
 import Zsyntax.Labelled.DerivationTerm
 import Zsyntax.Labelled.Rule
 import Zsyntax.CLI.Structures
@@ -43,14 +42,14 @@ import Data.List.NonEmpty (NonEmpty(..))
 --------------------------------------------------------------------------------
 
 search :: Int -> Sequent Atom
-              -> (Extraction (DerivationTerm Atom Int ::: LSequent Atom Int),
+              -> (SearchRes (DerivationTerm Atom Int ::: LSequent Atom Int),
                  [LSequent Atom Int],
                  GoalNSequent Atom Int)
 search i s = (res, srcd, Z.labelledGoal searchRes)
   where
     -- g = toLabelledGoal s
-    searchRes = Z.search s
-    res = Z.extractResults i (Z.otterResult searchRes)
+    searchRes = Z.search s i
+    res = Z.otterResult searchRes
     srcd = map _payload (Z.searchedSequents searchRes)
     -- (res, srcd) = bimap (Z.extractResults i) (fmap _payload) searchRes
 
@@ -123,8 +122,8 @@ query q = do
   goal <- queryToGoal q
   let (res, searched, lgoal) = search (_cfgSearchLimit cfg) goal
   case res of
-    AllResults (x :| _) -> pure (Success x)
-    NoResults reason ->
+    Right x -> pure (Success x)
+    Left reason ->
       let results =
             take (_cfgFoundListLen cfg)
                  (sortBy (flip compare `on` (`goalDiff` lgoal)) searched)
