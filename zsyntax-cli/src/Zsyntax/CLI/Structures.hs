@@ -153,5 +153,5 @@ processThrms f = do
   env' <- processThrms' f env
   _ThrmEnv .= env'
 
-data Error = AxNameClash Name | ThrmNameClash Name | AxNotInScope Name
+data Error = AxNameClash Name | ThrmNameClash Name | AxNotInScope Name | ThrmNotInScope Name
   deriving Show
