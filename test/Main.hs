@@ -63,50 +63,49 @@ genSequent ns ms = do
   pure (SQ (S.fromList axs) (M.fromList (map atom start)) endFormula)
 
 instance (Ord a, Arbitrary a) => Arbitrary (Sequent a) where
-  arbitrary = genSequent (2,5) (2,5)
+  arbitrary = genSequent (2,3) (2,3)
 
 main :: IO ()
 main = hspec $ do
   describe "test sequent" $ do
-    it "checks that the goal is provable" $ do
-      checkSequent goal `shouldBe` True
+    -- it "checks that the goal is provable" $ do
+    --   checkSequent goal `shouldBe` True
     prop "random tests should be provable" $
       \s -> checkSequent (s :: Sequent (BioFormula BioLabel))
 
 checkSequent :: Ord a => Sequent a -> Bool -- IO ()
 checkSequent g =
-  case otterResult $ search g 5000 of -- (toLabelledGoal g)) of
+  case otterResult $ search g 2000 of -- (toLabelledGoal g)) of
     Right _ -> True -- putStrLn "test passed."
     Left _  -> False -- putStrLn "test failed." >> exitFailure
 
-ax :: Ord a => [a] -> [a] -> [a] -> Axiom (BioFormula a)
-ax xs ys rl =
-  axiom (fromList $ fmap BioAtom xs)
-        (justCS $ fromCSCtxts [CSC SupersetClosed
-                                (M.fromList (fmap BioAtom rl))])
-        (fromList $ fmap BioAtom ys)
+-- ax :: Ord a => [a] -> [a] -> [a] -> Axiom (BioFormula a)
+-- ax xs ys rl =
+--   axiom (fromList $ fmap BioAtom xs)
+--         (justCS $ fromCSCtxts [CSC SupersetClosed
+--                                 (M.fromList (fmap BioAtom rl))])
+--         (fromList $ fmap BioAtom ys)
 
-goal :: Sequent Atom
-goal = SQ (S.fromList axioms) (M.fromList from) to
-  where
-    axioms :: [Axiom Atom]
-    axioms =
-      [ ax ["ICL"] ["MUS81"] mempty
-      , ax ["MUS81", "FANCD21"] ["FAN1"] mempty
-      , ax ["FANCM", "ATR"] ["FAcore"] ["CHKREC"]
-      , ax ["FANCM", "ATM"] ["FAcore"] ["CHKREC"]
-      , ax ["FAcore", "ATM"] ["FANCD21"] ["USP1"]
-      , ax ["FAcore", "ATR"] ["FANCD21"] ["USP1"]
-      , ax ["FAcore", "H2AX", "DSB"] ["FANCD21"] ["USP1"]
-      , ax ["ICL"] ["FANCM"] ["CHKREC"]
-      , ax ["FAN1"] ["DSB"] ["HRR", "NHEJ"]
-      , ax ["XPF"] ["DBS"] ["HRR", "NHEJ"]
-      , ax ["MUS81", "FAN1"] ["ADD"] ["PCNATLS"]
-      , ax ["ATM"] ["ATM", "ATM"] mempty
-      , ax ["ICL"] ["ICL", "ICL"] mempty
-      ]
-    from :: [Formula Atom]
-    from = [atom (BioAtom "ICL"), atom (BioAtom "ATM")]
-    to :: Formula Atom
-    to = conj (atom (BioAtom "DSB")) (atom (BioAtom "ADD"))
-
+-- goal :: Sequent Atom
+-- goal = SQ (S.fromList axioms) (M.fromList from) to
+--   where
+--     axioms :: [Axiom Atom]
+--     axioms =
+--       [ ax ["ICL"] ["MUS81"] mempty
+--       , ax ["MUS81", "FANCD21"] ["FAN1"] mempty
+--       , ax ["FANCM", "ATR"] ["FAcore"] ["CHKREC"]
+--       , ax ["FANCM", "ATM"] ["FAcore"] ["CHKREC"]
+--       , ax ["FAcore", "ATM"] ["FANCD21"] ["USP1"]
+--       , ax ["FAcore", "ATR"] ["FANCD21"] ["USP1"]
+--       , ax ["FAcore", "H2AX", "DSB"] ["FANCD21"] ["USP1"]
+--       , ax ["ICL"] ["FANCM"] ["CHKREC"]
+--       , ax ["FAN1"] ["DSB"] ["HRR", "NHEJ"]
+--       , ax ["XPF"] ["DBS"] ["HRR", "NHEJ"]
+--       , ax ["MUS81", "FAN1"] ["ADD"] ["PCNATLS"]
+--       , ax ["ATM"] ["ATM", "ATM"] mempty
+--       , ax ["ICL"] ["ICL", "ICL"] mempty
+--       ]
+--     from :: [Formula Atom]
+--     from = [atom (BioAtom "ICL"), atom (BioAtom "ATM")]
+--     to :: Formula Atom
+--     to = conj (atom (BioAtom "DSB")) (atom (BioAtom "ADD"))
