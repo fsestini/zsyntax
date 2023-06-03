@@ -41,6 +41,8 @@ module Otter.Internal.Structures
 
 import Otter.Rule
 import Data.Kind (Type)
+import Data.Sequence (Seq(..), (|>))
+import qualified Data.Sequence as Seq (filter)
 
 class Subsumable n where
   subsumes :: n -> n -> Bool
@@ -83,7 +85,7 @@ type BSCheckedNode n = SearchNode BSChecked n
 type FSCheckedNode n = SearchNode FSChecked n
 newtype ActiveNodes n = AS [SearchNode Active n]
 type InactiveNode n = SearchNode Inactive n
-newtype InactiveNodes n = IS [InactiveNode n]
+newtype InactiveNodes n = IS (Seq (InactiveNode n))
 
 type ConclNode n = SearchNode Concl n
 data GlobalIndex n = GI !Int ![n]
@@ -147,14 +149,14 @@ popInactiveOp
   :: InactiveNodes n -> Maybe (InactiveNodes n, InactiveNode n)
 popInactiveOp (IS is) =
   case is of
-    (x : xs) -> Just (IS xs, x)
-    [] -> Nothing
+    (x :<| xs) -> Just (IS xs, x)
+    Empty -> Nothing
 
 addToInactives
   :: InactiveNodes n -> GlobalIndex n -> BSCheckedNode n
   -> (InactiveNodes n, GlobalIndex n)
 addToInactives (IS ins) (GI n gi) (BSCheckedN s) =
-  (IS (InactiveN s : ins), GI (n + 1) (s : gi))
+  (IS (ins |> InactiveN s), GI (n + 1) (s : gi))
 
 fwdSubsumes
   :: Subsumable n
@@ -168,6 +170,6 @@ removeSubsumedByOp
   :: Subsumable n
   => FSCheckedNode n -> InactiveNodes n -> (InactiveNodes n, BSCheckedNode n)
 removeSubsumedByOp (FSCheckedN s) (IS is) =
-  let ff = filter filterer is
+  let ff = Seq.filter filterer is
   in (IS ff, BSCheckedN s)
   where filterer = not . (s `subsumes`) . extractNode
