@@ -39,6 +39,7 @@ data LSequent a l = LS
   , lsCty :: ReactionList a
   , lsConcl :: LFormula a l
   }
+  deriving Show
 
 traverseLSequent
   :: (Applicative f, Ord l, Ord b) => (a -> f b) -> LSequent a l -> f (LSequent b l)
