@@ -15,3 +15,10 @@ The theory behind the Zsyntax sequent calculus and its proof search
 procedure is developed in F. Sestini, S. Crafa, Proof-search in a
 context-sensitive logic for molecular biology, Journal of Logic and
 Computation, 2018 (https://doi.org/10.1093/logcom/exy028).
+
+GUI application
+===============
+
+Version 0.1 of Zsyntax comes with a GUI for MacOS, that I have
+not ported to the current version yet. See the "Releases" page,
+or checkout the "0.1" tag in this repository.
